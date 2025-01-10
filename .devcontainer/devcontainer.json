@@ -1,0 +1,18 @@
+{
+	"name": "HumbliHumble",
+	"updateRemoteUserUID": false,
+	"postStartCommand": ".devcontainer/onStart.sh",
+	
+	"mounts": ["type=bind,source=${localWorkspaceFolder}/.devcontainer/history,target=/home/Georg/.cache/zsh/history"],
+    "build": {
+        "dockerfile": "Dockerfile"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-vscode.cpptools-extension-pack"
+			]
+		}
+	}
+}
