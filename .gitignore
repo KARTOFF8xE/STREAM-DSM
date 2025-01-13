@@ -1,4 +1,5 @@
-.devcontainer/history
+.devcontainer/zsh_history
 build/
 install/
 log/
+Fast-DDS/

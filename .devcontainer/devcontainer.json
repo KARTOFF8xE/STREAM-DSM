@@ -1,9 +1,11 @@
 {
 	"name": "HumbliHumble",
 	"updateRemoteUserUID": false,
-	"postStartCommand": ".devcontainer/onStart.sh",
+	"postStartCommand": ".devcontainer/onStart.zsh",
+	"postCreateCommand": ".devcontainer/onCreate.zsh",
 	
-	"mounts": ["type=bind,source=${localWorkspaceFolder}/.devcontainer/history,target=/home/Georg/.cache/zsh/history"],
+	"mounts": ["source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/Georg/.cache/zsh/history,type=bind"],
+	
     "build": {
         "dockerfile": "Dockerfile"
 	},
@@ -11,7 +13,8 @@
 		"vscode": {
 			"extensions": [
 				"ms-vscode.cpptools",
-				"ms-vscode.cpptools-extension-pack"
+				"ms-vscode.cpptools-extension-pack",
+				"Gruntfuggly.todo-tree"
 			]
 		}
 	}
