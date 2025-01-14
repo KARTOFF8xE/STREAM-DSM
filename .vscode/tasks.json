@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "colcon build all",
+            "command": "colcon",
+            "type": "cppbuild",
+            "args": [
+                "build",
+                "--cmake-args", "-DFASTDDS_STATISTICS=ON", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                "--symlink-install",
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true,
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/ws",
+                "shell": "zsh",
+            },
+            "group": "build",
+        }
+    ]
+}
