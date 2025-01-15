@@ -37,7 +37,7 @@ RUN chsh $user -s $(which zsh)
 
 # ros2/tracing
 RUN apt update && apt upgrade -y
-RUN apt install lttng-tools liblttng-ust-dev -y
+RUN apt install lttng-tools liblttng-ust-dev liblttng-ctl-dev babeltrace2 -y
 RUN apt install python3-babeltrace python3-lttng python3-pytest-cov -y
 
 # install requirements for Fast-DDS with statistics Module

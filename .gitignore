@@ -2,5 +2,6 @@
 build/
 install/
 log/
+tmp/
 Fast-DDS/
-ros2_tracing
+ros2_tracing/

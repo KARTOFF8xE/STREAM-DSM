@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "colcon build all",
+            "label": "build all",
             "command": "colcon",
             "type": "cppbuild",
             "args": [
@@ -21,6 +21,28 @@
                 "shell": "zsh",
             },
             "group": "build",
-        }
+        },
+        {
+            "label": "build tracer",
+            "command": "colcon",
+            "type": "cppbuild",
+            "args": [
+                "build",
+                "--cmake-args", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                "--symlink-install",
+                "--packages-up-to", "tracer"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true,
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/ws",
+                "shell": "zsh",
+            },
+            "group": "build",
+        },
     ]
 }
