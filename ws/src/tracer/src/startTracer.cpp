@@ -23,19 +23,6 @@ void startTracing() {
 }
 
 int main() {
-  // create_lttng_session("ros_trace_session", "/tmp");
-
-  // const char *session = "tracing_session";
-  // int ret = lttng_create_session(session, "/workspaces/DiplArbeitContainer/tmp");
-  // if (ret) {
-  //   fprintf(stderr, "Failed to create session, ret = %d\n", ret);
-  // }
-
-  // ret = lttng_start_tracing(session);
-  // if (ret) {
-  //   fprintf(stderr, "Failed to create session, ret = %d\n", ret);
-  // }
-
   createSession("lttng_tracing", "/workspaces/DiplArbeitContainer/tmp/");
   enableEvent("ros2:rcl_node_init");
   addContext("vpid");
