@@ -5,3 +5,4 @@ log/
 tmp/
 Fast-DDS/
 ros2_tracing/
+.vscode/browse.d*

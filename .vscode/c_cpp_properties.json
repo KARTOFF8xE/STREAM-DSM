@@ -4,12 +4,17 @@
             "name": "linux",
             "compileCommands": "${workspaceFolder}/ws/build/compile_commands.json",
             "includePath": [
-                "/usr/include/lttng/"          
-            ],
+                "${workspaceFolder}/**",
+                "/usr/include",
+                "/usr/local/include"
+              ],
+            "browse": {
+                "databaseFilename": "${workspaceFolder}/.vscode/browse.d",
+            },
             "intelliSenseMode": "linux-gcc-x64",
             "cStandard": "c17",
             "cppStandard": "gnu++17"
-        }        
+        }
     ],
     "version": 4
 }
