@@ -10,7 +10,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find_library(LTTNG_LIBRARIES NAMES lttng-ctl REQUIRED)
+find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(PkgConfig 0.29 REQUIRED)
@@ -23,15 +23,19 @@ pkg_check_modules(
 
 add_executable(start src/startTracer.cpp)
 add_executable(stop src/stopTracer.cpp)
+add_executable(babel src/babelTrace.c)
 ament_target_dependencies(start)
 ament_target_dependencies(stop)
+ament_target_dependencies(babel)
 
 install(TARGETS
   start
   stop
+  babel
   DESTINATION lib/${PROJECT_NAME})
 
 target_link_libraries(start PRIVATE ${lttng_LIBRARIES})
 target_link_libraries(stop PRIVATE ${lttng_LIBRARIES})
+target_link_libraries(babel PRIVATE ${babeltrace2_LIBRARIES})
 
 ament_package()

@@ -18,6 +18,11 @@ void addContext(std::string context) {
   system(cmd.c_str());
 }
 
+void enableRotation(std::string session, int time) {
+  std::string cmd = "lttng enable-rotation --session="+session+" --timer="+std::to_string(time);
+  system(cmd.c_str());
+}
+
 void startTracing() {
   system("lttng start");
 }
@@ -27,6 +32,7 @@ int main() {
   enableEvent("ros2:rcl_node_init");
   addContext("vpid");
   addContext("procname");
+  enableRotation("lttng_tracing", 1000000);
   startTracing();
 
   return 0;

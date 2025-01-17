@@ -3,18 +3,19 @@
 
 #include <lttng/lttng.h>
 
-void stopTracing() {
-  system("lttng stop");
+void stopTracing(std::string session) {
+  std::string cmd = "lttng stop "+session;
+  system(cmd.c_str());
 }
 
-void destroyTracer() {
-  system("lttng destroy");
+void destroyTracer(std::string session) {
+  std::string cmd = "lttng destroy "+session;
+  system(cmd.c_str());
 }
-
 
 int main() {
-  stopTracing();
-  destroyTracer();
+  stopTracing("lttng_tracing");
+  destroyTracer("lttng_tracing");
 
   return 0;
 }
