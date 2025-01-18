@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 int main() {
-    printf("Load Plugin\n");
-    const bt_plugin *plugin;
+    printf("Load Plugin ctl.lttng-live\n");
+    const bt_plugin *plugin_lttnglive;
     bt_plugin_find_status plugin_find_status = bt_plugin_find(
         "ctf",
         BT_FALSE,
@@ -11,7 +11,7 @@ int main() {
         BT_TRUE,
         BT_TRUE,
         BT_TRUE,
-        &plugin);
+        &plugin_lttnglive);
     switch (plugin_find_status) {
         case BT_PLUGIN_FIND_STATUS_OK: printf("\tSuccess.\n"); break;
         case BT_PLUGIN_FIND_STATUS_NOT_FOUND: fprintf(stderr, "\tPlugin not found.\n"); break;
@@ -20,8 +20,8 @@ int main() {
         default: printf("\tHopefully never reached\n");
     }
 
-    const bt_component_class_source *component_class_source;
-    component_class_source = bt_plugin_borrow_source_component_class_by_name_const(plugin, "lttng-live");
+    const bt_component_class_source *source_class_lttnglive;
+    source_class_lttnglive = bt_plugin_borrow_source_component_class_by_name_const(plugin_lttnglive, "lttng-live");
 
     printf("Create Array value\n");
     bt_value *array_value = bt_value_array_create();
@@ -50,28 +50,66 @@ int main() {
         return 1;
     }
 
-    printf("Add Component to Graph\n");
-    const bt_component_source *component_source;
-    bt_graph_add_component_status add_source_component_status = bt_graph_add_source_component(
+    printf("Add source Component to Graph\n");
+    const bt_component_source *source_lttnglive;
+    bt_graph_add_component_status add_component_status = bt_graph_add_source_component(
         graph,
-        component_class_source,
+        source_class_lttnglive,
         "lttng-live-foo",
         map_value,
         BT_LOGGING_LEVEL_TRACE,
-        &component_source
+        &source_lttnglive
     );
-    switch (add_source_component_status) {
+    switch (add_component_status) {
         case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\tSuccess.\n"); break;
         case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "Out of Memory.\n"); break;
         case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\tOther error.\n"); break;
         default: printf("\tHopefully never reached\n");
     }
     
-    printf("Number of Ports the Source Component has: %ld\n", bt_component_source_get_output_port_count(component_source));
+    printf("Number of Ports the Source Component has: %ld\n", bt_component_source_get_output_port_count(source_lttnglive));
     //-------------------------------
 
     
+    printf("Load Plugin text.details\n");
+    const bt_plugin *plugin_text;
+    plugin_find_status = bt_plugin_find(
+        "text",
+        BT_FALSE,
+        BT_FALSE,
+        BT_TRUE,
+        BT_TRUE,
+        BT_TRUE,
+        &plugin_text);
+    switch (plugin_find_status) {
+        case BT_PLUGIN_FIND_STATUS_OK: printf("\tSuccess.\n"); break;
+        case BT_PLUGIN_FIND_STATUS_NOT_FOUND: fprintf(stderr, "\tPlugin not found.\n"); break;
+        case BT_PLUGIN_FIND_STATUS_MEMORY_ERROR: fprintf(stderr, "\tOut of memory.\n"); break;
+        case BT_PLUGIN_FIND_STATUS_ERROR: fprintf(stderr, "\tError.\n"); break;
+        default: printf("\tHopefully never reached\n");
+    }
 
+    const bt_component_class_sink *sink_class_details;
+    sink_class_details = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "details");
+
+    printf("Add sink Component to Graph\n");
+    const bt_component_sink *sink_details;
+    add_component_status = bt_graph_add_sink_component(
+        graph,
+        sink_class_details,
+        "details-foo",
+        NULL,
+        BT_LOGGING_LEVEL_TRACE,
+        &sink_details
+    );
+    switch (add_component_status) {
+        case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\tSuccess.\n"); break;
+        case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "Out of Memory.\n"); break;
+        case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\tOther error.\n"); break;
+        default: printf("\tHopefully never reached\n");
+    }
+
+    printf("Number of Ports the Sink Component has: %ld\n", bt_component_sink_get_input_port_count(sink_details));
 
 
 
