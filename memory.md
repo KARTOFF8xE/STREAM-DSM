@@ -19,6 +19,8 @@
 ```
 
 ### run lttng CLI:
+#### classic:
+
 ```bash
     $ lttng create lttng_tracing --output ~/.lttng
         Session lttng_tracing created.
@@ -38,5 +40,29 @@
         Tracing stopped for session tracing_session2
     $ babeltrace .lttng2/             
         [07:52:17.476095213] (+?.?????????) 2279fadf17a2 ros2:rcl_node_init: { cpu_id = 1 }, { vpid = 20227, vtid = 20227, procname = "talker" }, { node_handle = 0x63CDC2EFB6E0, rmw_handle = 0x63CDC30308D0, node_name = "minimal_publisher", namespace = "/" }
+```
 
+#### live:
+
+```bash
+    $ lttng-relayd -d
+    $ lttng create --live 1000000 -U net://localhost
+    Live session {foo} created.
+    Traces will be output to tcp4://127.0.0.1:5342/ [data: 5343]
+    Live timer interval set to 1000000 us
+    $ lttng enable-event --userspace 'ros2:rcl_node_init'
+        ust event ros2:rcl_node_init created in channel channel0
+    $ lttng add-context --userspace --type=vpid 
+        ust context vpid added to all channels
+    $ lttng add-context --userspace --type=vtid
+        ust context vtid added to all channels
+    $ lttng add-context --userspace --type=procname
+        ust context procname added to all channels
+    $ lttng start                                  
+        Tracing started for session tracing_session2
+    $ lttng stop 
+        Waiting for data availability
+        Tracing stopped for session tracing_session2
+    $ babeltrace .lttng2/             
+        [07:52:17.476095213] (+?.?????????) 2279fadf17a2 ros2:rcl_node_init: { cpu_id = 1 }, { vpid = 20227, vtid = 20227, procname = "talker" }, { node_handle = 0x63CDC2EFB6E0, rmw_handle = 0x63CDC30308D0, node_name = "minimal_publisher", namespace = "/" }
 ```
