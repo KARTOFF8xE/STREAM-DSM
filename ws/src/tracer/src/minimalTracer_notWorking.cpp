@@ -1,36 +1,3 @@
-/*
- * Session rotation example control application
- *
- * Copyright 2017, Julien Desfossez <jdesfossez@efficios.com>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
-/*
- * Compile with:
- *     gcc -o rotate-client rotate-client-example.c -llttng-ctl
- *
- * Run with the following command to rotate the session every second and
- * compress the chunk, until ctrl-c:
- *     ./rotate-client mysession 1 -1 ./rotate-client-compress.sh
- */
-
 #include <lttng/lttng.h>
 
 #include <assert.h>
@@ -56,9 +23,9 @@ static int setup_session(const char *session_name, const char *path) {
 		fprintf(stderr, "Failed to create session, ret = %d\n", ret);
 		goto end;
 	}
-
-	dom.type = LTTNG_DOMAIN_KERNEL;
-	dom.buf_type = LTTNG_BUFFER_GLOBAL;
+	
+	dom.type = LTTNG_DOMAIN_UST;
+	dom.buf_type = LTTNG_BUFFER_PER_PID;
 
 	chan_handle = lttng_create_handle(session_name, &dom);
 	if (chan_handle == NULL) {
@@ -66,8 +33,24 @@ static int setup_session(const char *session_name, const char *path) {
 		goto end;
 	}
 
+struct lttng_channel chan;
+memset(&chan, 0, sizeof(chan));
+strcpy(chan.name, "mychan");
+chan.attr.overwrite = 1;                 // Optional: Überschreibmodus
+chan.attr.subbuf_size = 4096;            // Größe der Unterpuffer
+chan.attr.num_subbuf = 8;                // Anzahl der Unterpuffer
+chan.attr.switch_timer_interval = 0;     // Kein Wechsel-Timer
+chan.attr.read_timer_interval = 200;     // Leseintervall
+// chan.att = LTTNG_BUFFER_PER_PID; // Buffer-Typ
+
+ret = lttng_enable_channel(chan_handle, &chan);
+if (ret < 0) {
+    fprintf(stderr, "Failed to enable channel (ret = %d)\n", ret);
+    goto end;
+}
+
 	memset(&ev, 0, sizeof(ev));
-	ev.type = LTTNG_EVENT_SYSCALL;
+	ev.type = LTTNG_EVENT_USERSPACE_PROBE;
 	strcpy(ev.name, "ros2:rcl_node_init");
 	ev.loglevel_type = LTTNG_EVENT_LOGLEVEL_ALL;
 
