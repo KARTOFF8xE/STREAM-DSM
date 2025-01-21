@@ -6,7 +6,7 @@ int load_Plugin(const char *plugin_name, const bt_plugin **plugin) {
     bt_plugin_find_status plugin_find_status = bt_plugin_find(
         plugin_name,
         BT_FALSE,
-        BT_FALSE,
+        BT_TRUE,
         BT_TRUE,
         BT_TRUE,
         BT_TRUE,
@@ -89,35 +89,13 @@ int main() {
     }
     printf("\t\033[33m%s\033[0m\n", bt_value_string_get(url_val));
 
-    /***Continue instantiating source.ctl.lttng-plugin***/
-    printf("Create Array value....."); fflush(stdout);
-    bt_value *array_value = bt_value_array_create();
-    bt_value_array_append_element_status array_append_element_status = bt_value_array_append_string_element(
-        array_value,
-        bt_value_string_get(url_val)
-    );
-    switch (array_append_element_status) {
-        case BT_VALUE_ARRAY_APPEND_ELEMENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-        case BT_VALUE_ARRAY_APPEND_ELEMENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
-        default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-    }
-
-    printf("Create Map value....."); fflush(stdout);
-    bt_value *map_value = bt_value_map_create();
-    bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "inputs", array_value);
-    switch (map_insert_entry_status) {
-        case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-        case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
-        default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-    }
-
     /***Load Plugin sink.text.details***/
     printf("Load Plugin text.details....."); fflush(stdout);
     const bt_plugin *plugin_text;
-    load_Plugin("text", &plugin_text);
+    load_Plugin("publisher", &plugin_text);
 
     /***Create Graph and add Components***/
-    printf("Create Graph"); fflush(stdout);
+    printf("Create Graph\n"); fflush(stdout);
     bt_graph *graph = bt_graph_create(0);
     if (!graph) {
         fprintf(stderr, "\033[31;1m.....Error: not able to create Graph\033[0m\n");
@@ -126,41 +104,76 @@ int main() {
 
     printf("Add source Component to Graph....."); fflush(stdout);
     const bt_component_source *source_lttnglive;
-    bt_graph_add_component_status add_component_status = bt_graph_add_source_component(
-        graph,
-        source_class_lttnglive,
-        "lttng-live",
-        map_value,
-        BT_LOGGING_LEVEL_WARNING,
-        &source_lttnglive
-    );
-    switch (add_component_status) {
-        case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-        case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
-        case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
-        default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+    {
+        bt_value *array_value = bt_value_array_create();
+        bt_value_array_append_element_status array_append_element_status = bt_value_array_append_string_element(
+            array_value,
+            bt_value_string_get(url_val)
+        );
+        switch (array_append_element_status) {
+            case BT_VALUE_ARRAY_APPEND_ELEMENT_STATUS_OK: break;
+            case BT_VALUE_ARRAY_APPEND_ELEMENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at at configuration\033[0m\n"); break;
+            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        }
+        bt_value *map_value = bt_value_map_create();
+        bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "inputs", array_value);
+        switch (map_insert_entry_status) {
+            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: break;
+            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at at configuration\033[0m\n"); break;
+            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        }
+        bt_graph_add_component_status add_component_status = bt_graph_add_source_component(
+            graph,
+            source_class_lttnglive,
+            "lttng-live",
+            map_value,
+            BT_LOGGING_LEVEL_WARNING,
+            &source_lttnglive
+        );
+        switch (add_component_status) {
+            case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
+            case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
+            case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
+            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        }
     }
 
     printf("Add sink Component to Graph....."); fflush(stdout);
-    const bt_component_class_sink *sink_class_details;
-    sink_class_details = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "pretty");
-
     const bt_component_sink *sink_details;
-    add_component_status = bt_graph_add_sink_component(
-        graph,
-        sink_class_details,
-        "details",
-        NULL,
-        BT_LOGGING_LEVEL_WARNING,
-        &sink_details
-    );
-    switch (add_component_status) {
-        case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-        case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
-        case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
-        default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-    }
+    {
+        bt_value *string_value = bt_value_string_create();
+        bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "FOO");
+        switch (string_set_status) {
+            case BT_VALUE_STRING_SET_STATUS_OK: break;
+            case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        }
+        bt_value *map_value = bt_value_map_create();
+        bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "topic", string_value);
+        switch (map_insert_entry_status) {
+            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: break;
+            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        }
 
+        const bt_component_class_sink *sink_class_details;
+        sink_class_details = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "output");
+
+        bt_graph_add_component_status add_component_status = bt_graph_add_sink_component(
+            graph,
+            sink_class_details,
+            "details",
+            map_value,
+            BT_LOGGING_LEVEL_WARNING,
+            &sink_details
+        );
+        switch (add_component_status) {
+            case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
+            case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
+            case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
+            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        }
+    }
     /***Connect Components***/
     printf("Get output port lttng-live/out\n");
     const bt_port_output *source_lttnglive_port_out;

@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>tracer</name>
+  <name>babeltrace_plugins</name>
   <version>0.0.0</version>
-  <description>Simple PublisherSubscriber</description>
-  <maintainer email="georgmuck1@gmail.com">Georg</maintainer>
+  <description>Plugins for building babeltraces TraceGraph</description>
+  <maintainer email="georgmuck1@gmail.com">KARTOFF8xE</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -14,8 +14,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <depend>rclcpp</depend>
-    <depend>std_msgs</depend>
     <depend>tracetools</depend>
   </export>
 </package>

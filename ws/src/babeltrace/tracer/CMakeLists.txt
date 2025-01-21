@@ -24,22 +24,18 @@ pkg_check_modules(
 add_executable(start src/startTracer.cpp)
 add_executable(stop src/stopTracer.cpp)
 add_executable(babel src/babelTrace.c)
-add_executable(minimalTracer src/minimalTracer_notWorking.cpp)
 ament_target_dependencies(start)
 ament_target_dependencies(stop)
 ament_target_dependencies(babel)
-ament_target_dependencies(minimalTracer)
 
 install(TARGETS
   start
   stop
   babel
-  minimalTracer
   DESTINATION lib/${PROJECT_NAME})
 
 target_link_libraries(start PRIVATE ${lttng_LIBRARIES})
 target_link_libraries(stop PRIVATE ${lttng_LIBRARIES})
-target_link_libraries(minimalTracer PRIVATE ${lttng_LIBRARIES})
 target_link_libraries(babel PRIVATE ${babeltrace2_LIBRARIES})
 
 ament_package()
