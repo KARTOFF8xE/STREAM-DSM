@@ -21,21 +21,13 @@ pkg_check_modules(
   REQUIRED
 )
 
-add_executable(start src/startTracer.cpp)
-add_executable(stop src/stopTracer.cpp)
-add_executable(babel src/babelTrace.c)
-ament_target_dependencies(start)
-ament_target_dependencies(stop)
+add_executable(babel src/babelTrace.cpp)
 ament_target_dependencies(babel)
 
 install(TARGETS
-  start
-  stop
   babel
   DESTINATION lib/${PROJECT_NAME})
 
-target_link_libraries(start PRIVATE ${lttng_LIBRARIES})
-target_link_libraries(stop PRIVATE ${lttng_LIBRARIES})
 target_link_libraries(babel PRIVATE ${babeltrace2_LIBRARIES})
 
 ament_package()
