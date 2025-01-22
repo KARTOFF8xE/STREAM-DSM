@@ -72,8 +72,8 @@ int find_existing_instances_at_ip(const char *ip, bt_component_class_source *sou
 }
 
 int main() {
-    /***Load Plugin source.ctl.lttng-live***/
-    printf("Load Plugin ctl.lttng-live....."); fflush(stdout);
+    /***Load Plugin source.ctf.lttng-live***/
+    printf("Load Plugin ctf.lttng-live....."); fflush(stdout);
     const bt_plugin *plugin_lttnglive;
     load_Plugin("ctf", &plugin_lttnglive);
 
@@ -89,7 +89,7 @@ int main() {
     }
     printf("\t\033[33m%s\033[0m\n", bt_value_string_get(url_val));
 
-    /***Load Plugin sink.text.details***/
+    /***Load Plugin sink.publisher.details***/
     printf("Load Plugin text.details....."); fflush(stdout);
     const bt_plugin *plugin_text;
     load_Plugin("publisher", &plugin_text);
@@ -141,15 +141,41 @@ int main() {
     printf("Add sink Component to Graph....."); fflush(stdout);
     const bt_component_sink *sink_details;
     {
-        bt_value *string_value = bt_value_string_create();
-        bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "FOO");
-        switch (string_set_status) {
-            case BT_VALUE_STRING_SET_STATUS_OK: break;
-            case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        // bt_value *string_value = bt_value_string_create();
+        // bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "FOO");
+        // switch (string_set_status) {
+        //     case BT_VALUE_STRING_SET_STATUS_OK: break;
+        //     case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+        //     default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        // }
+        //----- set string
+        bt_value *arr_value = bt_value_array_create();
+        {
+            bt_value *string_value = bt_value_string_create();
+            bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_node_init");
+            switch (string_set_status) {
+                case BT_VALUE_STRING_SET_STATUS_OK: break;
+                case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+                default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+            }
+            bt_value_array_append_element(arr_value, string_value);
         }
+        {
+            bt_value *string_value = bt_value_string_create();
+            bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_publisher_init");
+            switch (string_set_status) {
+                case BT_VALUE_STRING_SET_STATUS_OK: break;
+                case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+                default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+            }
+            bt_value_array_append_element(arr_value, string_value);
+        }
+        // printf("Length of array in here: %ld\n", bt_value_array_get_length(arr_value));
+
+
+
         bt_value *map_value = bt_value_map_create();
-        bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "topic", string_value);
+        bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "topic", arr_value);
         switch (map_insert_entry_status) {
             case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: break;
             case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
@@ -179,11 +205,11 @@ int main() {
     const bt_port_output *source_lttnglive_port_out;
     source_lttnglive_port_out = bt_component_source_borrow_output_port_by_name_const(source_lttnglive, "out");
 
-    printf("Get input port details/in\n");
+    printf("Get input port output/in\n");
     const bt_port_input *sink_details_port_in;
     sink_details_port_in = bt_component_sink_borrow_input_port_by_name_const(sink_details, "in");
 
-    printf("Connect ports lttng-live/out -> details/in....."); fflush(stdout);
+    printf("Connect ports lttng-live/out -> output/in....."); fflush(stdout);
     const bt_connection *connectionlttngdetails;
     bt_graph_connect_ports_status connect_ports_status = bt_graph_connect_ports(graph, source_lttnglive_port_out, sink_details_port_in, &connectionlttngdetails);
     switch (connect_ports_status) {

@@ -54,6 +54,8 @@ RUN pip3 install -U colcon-common-extensions vcstool
 # other stuff
 RUN apt install ament-cmake -y
 
+RUN apt update && apt upgrade -y
+
 # set user
 USER $USERNAME
 WORKDIR /home/$USERNAME

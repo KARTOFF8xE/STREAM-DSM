@@ -7,7 +7,7 @@
  
 struct publisher {
     bt_message_iterator *message_iterator;
-    const bt_value *publisher_topic;
+    const bt_value *publisher_params;
 };
  
 /***Initializes Component***/
@@ -22,12 +22,12 @@ static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink_as_self_component(self_component_sink),
         publisher);
 
-    publisher->publisher_topic =
+    publisher->publisher_params =
         bt_value_map_borrow_entry_value_const(params, "topic");
-    bt_value_get_ref(publisher->publisher_topic); 
-    if (!publisher->publisher_topic) {
+    bt_value_get_ref(publisher->publisher_params); 
+    if (!publisher->publisher_params) {
         fprintf(stderr, "\033[31;1mparam 'topic' is mandatory\033[0m\n");
-        bt_value_string_get(publisher->publisher_topic);
+        bt_value_string_get(publisher->publisher_params);
     } 
 
     bt_self_component_sink_add_input_port(self_component_sink,
@@ -109,7 +109,21 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
 
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
-    printf("%s (would be published onto %s);\n", bt_event_class_get_name(event_class), bt_value_string_get(publisher->publisher_topic));
+    printf("Length of array: %ld\n", bt_value_array_get_length(publisher->publisher_params));
+    for (uint64_t i = 0; i < bt_value_array_get_length(publisher->publisher_params); i++) {
+        const bt_value *key = bt_value_array_borrow_element_by_index_const(publisher->publisher_params, i);
+        if (strcmp(
+            bt_event_class_get_name(event_class), 
+            bt_value_string_get(key)) == 0) {
+                printf("\t\t%s (would be published onto %s)\n", bt_event_class_get_name(event_class), bt_value_string_get(key));
+                break;
+        }
+
+        if (i == bt_value_array_get_length(publisher->publisher_params)-1) {
+            printf("\t\t%ld: no topic given for %s\n", i, bt_event_class_get_name(event_class));
+        }
+    }
+
 
     /***analyze context***/
     const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
