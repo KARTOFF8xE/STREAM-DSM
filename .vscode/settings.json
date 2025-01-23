@@ -82,6 +82,7 @@
         "variant": "cpp",
         "babeltrace.h": "c",
         "stdio.h": "c",
-        "inttypes.h": "c"
+        "inttypes.h": "c",
+        "*.ipp": "cpp"
     }
 }
