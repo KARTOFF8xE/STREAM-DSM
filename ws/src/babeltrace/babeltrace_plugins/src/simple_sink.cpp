@@ -4,7 +4,10 @@
 #include <inttypes.h>
 #include <string.h>
 #include <babeltrace2/babeltrace.h>
- 
+
+#include "neo4j.cpp"
+#include "extract.cpp"
+
 struct publisher {
     bt_message_iterator *message_iterator;
     const bt_value *publisher_params;
@@ -13,10 +16,10 @@ struct publisher {
 /***Initializes Component***/
 static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink *self_component_sink,
-        bt_self_component_sink_configuration *configuration,
-        const bt_value *params, void *initialize_method_data) {
+        bt_self_component_sink_configuration *,
+        const bt_value *params, void *) {
 
-    struct publisher *publisher = malloc(sizeof(*publisher));
+    struct publisher *publisher = (struct publisher *)malloc(sizeof(*publisher));
  
     bt_self_component_set_data(
         bt_self_component_sink_as_self_component(self_component_sink),
@@ -38,7 +41,7 @@ static bt_component_class_initialize_method_status publisher_initialize(
 
 /***Finalize Component (on destroy)***/
 static void publisher_finalize(bt_self_component_sink *self_component_sink) {
-    struct publisher *publisher = bt_self_component_get_data(
+    struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
  
     free(publisher);
@@ -47,7 +50,7 @@ static void publisher_finalize(bt_self_component_sink *self_component_sink) {
 /***Configure Component***/
 static bt_component_class_sink_graph_is_configured_method_status
 publisher_graph_is_configured(bt_self_component_sink *self_component_sink) {
-    struct publisher *publisher = bt_self_component_get_data(
+    struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
  
     bt_self_component_port_input *in_port =
@@ -71,15 +74,15 @@ void get_value(
 
     switch(bt_field_class_get_type(field_class)) {
         case BT_FIELD_CLASS_TYPE_STRING: {
-            printf("%s\n", bt_field_string_get_value(field));
+            printf("%s (string)\n", bt_field_string_get_value(field));
             break;
         }
         case BT_FIELD_CLASS_TYPE_SIGNED_INTEGER: {
-            printf("%ld\n", bt_field_integer_signed_get_value(field));
+            printf("%ld (Uint)\n", bt_field_integer_signed_get_value(field));
             break;
         }
         case BT_FIELD_CLASS_TYPE_UNSIGNED_INTEGER: {
-            printf("%ld\n", bt_field_integer_unsigned_get_value(field));
+            printf("%ld (Int)\n", bt_field_integer_unsigned_get_value(field));
             break;
         }
         default: printf("\033[33;1UNKNOWN TYPE\033[0m\n");
@@ -88,8 +91,6 @@ void get_value(
 
 /***Show every Element of a structure***/
 void analyzeField(const bt_field *field) {
-    uint64_t member_count = bt_field_class_structure_get_member_count(bt_field_borrow_class_const(field));
-
     const bt_field_class *field_class = bt_field_borrow_class_const(field);
     if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
         uint64_t field_count = bt_field_class_structure_get_member_count(field_class);
@@ -99,45 +100,72 @@ void analyzeField(const bt_field *field) {
             printf("\t%s:\t", bt_field_class_structure_member_get_name(member));
             get_value(field, member);
         }
+
     } else { printf("\033[33;1UNKNOWN TYPE\033[0m\n"); }
 }
 
 /***Publish the message (till now to the cli, later to another module of the tool)***/
-static void publish(bt_self_component_sink *self_component_sink, const bt_message *message) {
-    struct publisher *publisher = bt_self_component_get_data(
-        bt_self_component_sink_as_self_component(self_component_sink));
+static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_message *message) {
+    // struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
+    //     bt_self_component_sink_as_self_component(self_component_sink));
 
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
-    printf("Length of array: %ld\n", bt_value_array_get_length(publisher->publisher_params));
-    for (uint64_t i = 0; i < bt_value_array_get_length(publisher->publisher_params); i++) {
-        const bt_value *key = bt_value_array_borrow_element_by_index_const(publisher->publisher_params, i);
+    if (strcmp(
+        "ros2:rcl_publisher_init",
+        bt_event_class_get_name(event_class)) != 0) {
+        std::cout << bt_event_class_get_name(event_class) << std::endl;
+        /***analyze context***/
+        const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
+        analyzeField(ctx_field);
+        /***analyze payload***/
+        const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
+        analyzeField(payload_field);
+        }
         if (strcmp(
-            bt_event_class_get_name(event_class), 
-            bt_value_string_get(key)) == 0) {
-                printf("\t\t%s (would be published onto %s)\n", bt_event_class_get_name(event_class), bt_value_string_get(key));
-                break;
+            "ros2:rcl_node_init",
+            bt_event_class_get_name(event_class)) == 0) {
+                Node node = extractNodeInfoFromEvent(event);
+                bringNodeToGraph(node);
+                return;
         }
 
-        if (i == bt_value_array_get_length(publisher->publisher_params)-1) {
-            printf("\t\t%ld: no topic given for %s\n", i, bt_event_class_get_name(event_class));
+        if (strcmp(
+            "ros2:rcl_publisher_init",
+            bt_event_class_get_name(event_class)) == 0) {
+                Topic topic = extractTopicInfoFromEvent(event);
+                bringPubTopicToGraph(topic);
+                return;
         }
-    }
 
+        if (strcmp(
+            "ros2:rcl_subscription_init",
+            bt_event_class_get_name(event_class)) == 0) {
+                Topic topic = extractTopicInfoFromEvent(event);
+                bringSubTopicToGraph(topic);
+                return;
+        }
 
-    /***analyze context***/
-    const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
-    analyzeField(ctx_field);
+        std::cout << "unknown topic" << std::endl;
+    // for (uint64_t i = 0; i < bt_value_array_get_length(publisher->publisher_params); i++) {
+    //     const bt_value *key = bt_value_array_borrow_element_by_index_const(publisher->publisher_params, i);
+    //     // if (strcmp(
+    //     //     bt_event_class_get_name(event_class), 
+    //     //     bt_value_string_get(key)) == 0) {
+    //     //         printf("%s (would be published onto %s)\n", bt_event_class_get_name(event_class), bt_value_string_get(key));
+    //     //         break;
+    //     // }
 
-    /***analyze payload***/
-    const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
-    analyzeField(payload_field);
+    //     if (i == bt_value_array_get_length(publisher->publisher_params)-1) {
+    //         printf("\t\t%ld: no topic given for %s\n", i, bt_event_class_get_name(event_class));
+    //     }
+    // }
 }
 
 /***Consumes the messages***/
 bt_component_class_sink_consume_method_status publisher_consume(
         bt_self_component_sink *self_component_sink) {
-    struct publisher *publisher = bt_self_component_get_data(
+    struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
  
     bt_message_array_const messages;
@@ -164,8 +192,7 @@ bt_component_class_sink_consume_method_status publisher_consume(
         const bt_message *message = messages[i];
 
         if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT) {
-            printf("msg-count: %ld\n", message_count);
-            publish(self_component_sink, message);
+            publish(/*self_component_sink,*/ message);
         }
  
         bt_message_put_ref(message);

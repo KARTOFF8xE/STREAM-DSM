@@ -4,7 +4,11 @@
 	"postStartCommand": ".devcontainer/onStart.zsh",
 	"postCreateCommand": ".devcontainer/onCreate.zsh",
 	
-	"mounts": ["source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/Georg/.cache/zsh/history,type=bind"],
+	"mounts": [
+		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/Georg/.cache/zsh/history,type=bind",
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	],
+	"forwardPorts": [7474],
 	
     "build": {
         "dockerfile": "Dockerfile"

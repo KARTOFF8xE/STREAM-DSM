@@ -1,3 +1,7 @@
 #!/bin/zsh
 
-./.devcontainer/onStart/*.zsh
+for file in ./.devcontainer/onStart/*.zsh
+do
+    echo "\e[34;1mexecuting ./$file\e[0m"
+    ./$file
+done

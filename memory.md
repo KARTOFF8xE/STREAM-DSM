@@ -66,3 +66,11 @@
     $ babeltrace .lttng2/             
         [07:52:17.476095213] (+?.?????????) 2279fadf17a2 ros2:rcl_node_init: { cpu_id = 1 }, { vpid = 20227, vtid = 20227, procname = "talker" }, { node_handle = 0x63CDC2EFB6E0, rmw_handle = 0x63CDC30308D0, node_name = "minimal_publisher", namespace = "/" }
 ```
+
+#### start neo4j
+```bash
+    $ docker run \                     
+        --restart always \                    
+        --publish=7474:7474 --publish=7687:7687 \
+        neo4j:5.26.1
+```
