@@ -68,9 +68,24 @@
 ```
 
 #### start neo4j
+
 ```bash
     $ docker run \                     
         --restart always \                    
         --publish=7474:7474 --publish=7687:7687 \
         neo4j:5.26.1
 ```
+
+#### small example
+* start neo4j
+    ```bash
+        $ docker run \                     
+            --restart always \                    
+            --publish=7474:7474 --publish=7687:7687 \
+            --env NEO4J_AUTH=neo4j/123456789 \
+            neo4j:5.26.1
+    ```
+* run devcontainer
+* `./lttng_startsession.zsh`
+* `ros2 run tracer babel`
+* do whatever needs to be tracked

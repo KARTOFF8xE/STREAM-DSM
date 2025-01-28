@@ -1,6 +1,7 @@
 #!/bin/zsh
 
+git config --global --add safe.directory /workspaces/DiplArbeitContainer/ws/src/ros2_tracing
 cd /workspaces/DiplArbeitContainer/ws/src
-git clone git@github.com:ros2/ros2_tracing.git
+git clone https://github.com/ros2/ros2_tracing.git
 cd ros2_tracing
-git checkout humble
+git checkout rolling

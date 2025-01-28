@@ -1,5 +1,5 @@
 {
-	"name": "HumbliHumble",
+	"name": "RollyRolling",
 	"updateRemoteUserUID": false,
 	"postStartCommand": ".devcontainer/onStart.zsh",
 	"postCreateCommand": ".devcontainer/onCreate.zsh",
