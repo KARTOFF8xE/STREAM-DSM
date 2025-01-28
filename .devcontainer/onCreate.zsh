@@ -8,5 +8,5 @@ done
 
 # ./.devcontainer/onCreate/setupEverything.zsh
 cd /workspaces/DiplArbeitContainer/ws
-source /opt/ros/humble/setup.zsh
+source /opt/ros/rolling/setup.zsh
 colcon build --cmake-args -DFASTDDS_STATISTICS=ON --symlink-install

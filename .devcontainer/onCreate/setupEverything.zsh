@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 declare -a sources=(
-    "/opt/ros/humble/setup.zsh"
+    "/opt/ros/rolling/setup.zsh"
     "/workspaces/DiplArbeitContainer/ws/install/setup.zsh"
     "/usr/share/colcon_argcomplete/hook/colcon-argcomplete.zsh"
     )

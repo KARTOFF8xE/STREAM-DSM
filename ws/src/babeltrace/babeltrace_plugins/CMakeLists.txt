@@ -24,4 +24,6 @@ target_link_libraries(simple_sink PRIVATE ${curl_LIBRARIES})
 target_link_libraries(simple_sink PRIVATE ${babeltrace2_LIBRARIES})
 
 install(TARGETS simple_sink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
-install(CODE "execute_process(COMMAND touch ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/local_setup.zsh)") # dummy setup.zsh, otherwise its annoying
+if(NOT EXISTS "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/local_setup.zsh")
+  file(TOUCH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/local_setup.zsh") # dummy setup.zsh, otherwise its annoying
+endif()
