@@ -10,3 +10,5 @@ for source in "${sources[@]}"
 do
     echo "source $source" | sudo tee -a ~/.zshrc > /dev/null
 done
+
+sudo chmod -R 777 /workspaces/DiplArbeitContainer

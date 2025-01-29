@@ -89,3 +89,32 @@
 * `./lttng_startsession.zsh`
 * `ros2 run tracer babel`
 * do whatever needs to be tracked
+
+#### possibility for detecting client/server-communication:
+* detect server Node:
+    ```log
+        ros2:rcl_node_init:     { procname = "server", vpid = 19157 }, { node_handle = 0x5F5A11C26E70, rmw_handle = 0x5F5A11DA7A80, node_name = "add_two_ints_server", namespace = "/" }
+    ```
+* give server Node property "server" (match by PID):
+    ```log
+        ros2:rcl_service_init:  { procname = "server", vpid = 19157 }, { service_handle = 0x5F5A11F170E0, node_handle = 0x5F5A11C26E70, rmw_service_handle = 0x5F5A11F31AD0, service_name = "/add_two_ints" }
+    ```
+* detect client Node:
+    ```log
+        ros2:rcl_node_init:     { procname = "client", vpid = 19181 }, { node_handle = 0x597901C00EC0, rmw_handle = 0x597901D8B100, node_name = "add_two_ints_client", namespace = "/" }
+    ```
+* give client Node property "client" and store gid (match by PID):
+    ```log
+        ros2:rmw_client_init:   { procname = "client", vpid = 19181 }, { rmw_client_handle = 0x597901F18980, gid = [ [0] = 1, [1] = 15, [2] = 112, [3] = 183, [4] = 237, [5] = 74, [6] = 142, [7] = 220, [8] = 0, [9] = 0, [10] = 0, [11] = 0, [12] = 0, [13] = 0, [14] = 20, [15] = 4 ] }
+    ```
+* Link client with service (match by service_name, add property "usage" to link)
+    ```log
+        ros2:rcl_client_init:   { procname = "client", vpid = 19181 }, { client_handle = 0x597901F01780, node_handle = 0x597901C00EC0, rmw_client_handle = 0x597901F18980, service_name = "/add_two_ints" }
+    ```
+<!-- ros2:rmw_send_request:  { procname = "client", vpid = 19181 }, { rmw_client_handle = 0x597901F18980, request = 0x597901F21100, sequence_number = 1 } -->
+<!-- ros2:rmw_take_request:  { procname = "server", vpid = 19157 }, { rmw_service_handle = 0x5F5A11F31AD0, request = 0x5F5A11F38BA0, client_gid = [ [0] = 1, [1] = 15, [2] = 112, [3] = 183, [4] = 237, [5] = 74, [6] = 142, [7] = 220, [8] = 0, [9] = 0, [10] = 0, [11] = 0, [12] = 0, [13] = 0, [14] = 20, [15] = 4 ], sequence_number = 1, taken = 1 } -->
+* increment "usage"-counter of link between server (match by PID) and client (match by gid):
+    ```log
+        ros2:rmw_send_response: { procname = "server", vpid = 19157 }, { rmw_service_handle = 0x5F5A11F31AD0, response = 0x5F5A11F398D0, client_gid = [ [0] = 1, [1] = 15, [2] = 112, [3] = 183, [4] = 237, [5] = 74, [6] = 142, [7] = 220, [8] = 0, [9] = 0, [10] = 0, [11] = 0, [12] = 0, [13] = 0, [14] = 20, [15] = 4 ], sequence_number = 1, timestamp = 1738137710236125455 }
+    ```
+```
