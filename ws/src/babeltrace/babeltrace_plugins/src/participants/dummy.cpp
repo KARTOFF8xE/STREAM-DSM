@@ -1,22 +1,17 @@
-#pragma once
-
 #include <fmt/core.h>
 #include <string>
 #include <iostream>
 
-#include "../interface.h"
-#include "../curl.cpp"
+#include "interface.h"
+#include "participants/dummy.h"
+#include "curl.h"
 
-class FooDummy: public IParticipant {
-    private:
-        std::string getPayload() override {
-            return "";
-        }
+std::string FooDummy::getPayload() {
+    return "";
+}
 
-    public:
-        void extractInfo(const bt_event *) override {
-            std::cout << "Found unknown Type, not handled" << std::endl;
-        }
+void FooDummy::extractInfo(const bt_event *) {
+    std::cout << "Found unknown Type, not handled" << std::endl;
+}
 
-        void toGraph() override{}
-};
+void FooDummy::toGraph() {}

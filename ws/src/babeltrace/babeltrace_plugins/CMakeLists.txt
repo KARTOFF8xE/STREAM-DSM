@@ -16,6 +16,15 @@ find_package(fmt REQUIRED)
 
 add_library(simple_sink SHARED
     src/simple_sink.cpp
+    src/participantFactory.cpp
+    src/curl.cpp
+    src/participants/client.cpp
+    src/participants/node.cpp
+    src/participants/dummy.cpp
+    src/participants/service.cpp
+    src/participants/subscriber.cpp
+    src/participants/publisher.cpp
+    src/participants/subscriber.cpp
 )
 
 target_include_directories(simple_sink PRIVATE include)

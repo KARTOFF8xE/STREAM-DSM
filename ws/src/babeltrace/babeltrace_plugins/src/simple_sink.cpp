@@ -6,13 +6,9 @@
 #include <babeltrace2/babeltrace.h>
 
 #include "interface.h"
-#include "participantFactory.cpp"
+#include "simple_sink.h"
+#include "participantFactory.h"
 
-struct publisher {
-    bt_message_iterator *message_iterator;
-    const bt_value *publisher_params;
-};
- 
 /***Initializes Component***/
 static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink *self_component_sink,
