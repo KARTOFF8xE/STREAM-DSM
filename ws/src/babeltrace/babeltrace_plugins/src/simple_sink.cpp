@@ -5,8 +5,10 @@
 #include <string.h>
 #include <babeltrace2/babeltrace.h>
 
-#include "neo4j.cpp"
-#include "extract.cpp"
+// #include "neo4j.cpp"
+// #include "extract.cpp"
+#include "interface.cpp"
+#include "participants.cpp"
 
 struct publisher {
     bt_message_iterator *message_iterator;
@@ -109,7 +111,14 @@ static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_me
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
-    if (strcmp(
+    Participant *participant;
+    participant = ParticipantFactory::getParticipant(bt_event_class_get_name(event_class));
+
+    participant->extractInfo(event);
+    participant->toGraph();
+
+    return;
+/*    if (strcmp(
         "ros2:rcl_node_init",
         bt_event_class_get_name(event_class)) == 0) {
             Node node = extractNodeInfoFromEvent(event);
@@ -148,6 +157,7 @@ static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_me
             bringClientToGraph(client);
             return;
     }
+*/
     // TODO: add client traffic here
 
     /***unknown Topic***/
