@@ -5,10 +5,8 @@
 #include <string.h>
 #include <babeltrace2/babeltrace.h>
 
-// #include "neo4j.cpp"
-// #include "extract.cpp"
-#include "interface.cpp"
-#include "participants.cpp"
+#include "interface.h"
+#include "participantFactory.cpp"
 
 struct publisher {
     bt_message_iterator *message_iterator;
@@ -111,64 +109,23 @@ static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_me
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
-    Participant *participant;
+    IParticipant *participant;
     participant = ParticipantFactory::getParticipant(bt_event_class_get_name(event_class));
 
     participant->extractInfo(event);
     participant->toGraph();
 
     return;
-/*    if (strcmp(
-        "ros2:rcl_node_init",
-        bt_event_class_get_name(event_class)) == 0) {
-            Node node = extractNodeInfoFromEvent(event);
-            bringNodeToGraph(node);
-            return;
-    }
 
-    if (strcmp(
-        "ros2:rcl_publisher_init",
-        bt_event_class_get_name(event_class)) == 0) {
-            Topic topic = extractTopicInfoFromEvent(event);
-            bringPubTopicToGraph(topic);
-            return;
-    }
-
-    if (strcmp(
-        "ros2:rcl_subscription_init",
-        bt_event_class_get_name(event_class)) == 0) {
-            Topic topic = extractTopicInfoFromEvent(event);
-            bringSubTopicToGraph(topic);
-            return;
-    }
-
-    if (strcmp(
-        "ros2:rcl_service_init",
-        bt_event_class_get_name(event_class)) == 0) {
-            ServiceClient service = extractServiceClientInfoFromEvent(event);
-            bringServiceToGraph(service);
-            return;
-    }
-
-    if (strcmp(
-        "ros2:rcl_client_init",
-        bt_event_class_get_name(event_class)) == 0) {
-            ServiceClient client = extractServiceClientInfoFromEvent(event);
-            bringClientToGraph(client);
-            return;
-    }
-*/
-    // TODO: add client traffic here
-
-    /***unknown Topic***/
-    std::cout << "unknown topic" << std::endl;
-        std::cout << bt_event_class_get_name(event_class) << std::endl;
-        /***analyze context***/
-        const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
-        analyzeField(ctx_field);
-        /***analyze payload***/
-        const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
-        analyzeField(payload_field);
+    // /***unknown Topic***/
+    // std::cout << "unknown topic" << std::endl;
+    //     std::cout << bt_event_class_get_name(event_class) << std::endl;
+    //     /***analyze context***/
+    //     const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
+    //     analyzeField(ctx_field);
+    //     /***analyze payload***/
+    //     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
+    //     analyzeField(payload_field);
 }
 
 /***Consumes the messages***/

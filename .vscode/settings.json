@@ -83,6 +83,10 @@
         "babeltrace.h": "c",
         "stdio.h": "c",
         "inttypes.h": "c",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "charconv": "cpp",
+        "expected": "cpp",
+        "format": "cpp",
+        "span": "cpp"
     }
 }
