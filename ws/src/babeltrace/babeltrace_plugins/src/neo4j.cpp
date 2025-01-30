@@ -30,7 +30,11 @@ struct Topic {
 	std::string name;
     u_int64_t   pubsub_handle;
 	u_int64_t   node_handle;
+};
 
+struct ServiceClient {
+    std::string name;
+    u_int64_t node_handle;
 };
 
 std::string getPayloadCreateNode(Node node) {
@@ -70,7 +74,6 @@ std::string getPayloadCreatePubTopic(Topic topic, std::string type) {
 }
 
 std::string getPayloadCreateSubTopic(Topic topic, std::string type) {
-    std::cout << ".--------------" << std::endl;
     return fmt::format(R"(
         {{
             "statements":
@@ -86,6 +89,38 @@ std::string getPayloadCreateSubTopic(Topic topic, std::string type) {
                 ]
         }}
     )", topic.name, topic.pubsub_handle, topic.node_handle, type);
+}
+
+std::string getPayloadAddServiceToNode(ServiceClient service) {
+    return fmt::format(R"(
+        {{
+            "statements":
+                [
+                    {{ "statement": "MATCH (n:Node {{handle: $node_handle}}) SET n.Services = COALESCE(n.Services, []) + $name WITH n MATCH (c:Node) WHERE $name IN c.Clients CREATE (c)-[:requests]->(n) CREATE (n)-[:response]->(c) ",
+                       "parameters": {{
+                        "name": "{}",
+                        "node_handle": "{}"
+                        }}
+                    }}
+                ]
+        }}
+    )", service.name, service.node_handle);
+}
+
+std::string getPayloadAddClientToNode(ServiceClient client) {
+    return fmt::format(R"(
+        {{
+            "statements":
+                [
+                    {{ "statement": "MATCH (n:Node {{handle: $node_handle}}) SET n.Clients = COALESCE(n.Clients, []) + $name WITH n MATCH (s:Node) WHERE $name IN s.Services CREATE (n)-[:requests]->(s) CREATE (s)-[:response]->(n) ",
+                       "parameters": {{
+                        "name": "{}",
+                        "node_handle": "{}"
+                        }}
+                    }}
+                ]
+        }}
+    )", client.name, client.node_handle);
 }
 
 CURL *getCurl(Request *request) {
@@ -147,8 +182,8 @@ int bringPubTopicToGraph(Topic topic) {
     if (res != CURLE_OK) {
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
     } else {
-        std::cout << "Antwort von Neo4j:" << std::endl;
-        std::cout << request->query_response << std::endl;
+        // std::cout << "Antwort von Neo4j:" << std::endl;
+        // std::cout << request->query_response << std::endl;
     }
 
     return int(res);
@@ -168,8 +203,50 @@ int bringSubTopicToGraph(Topic topic) {
     if (res != CURLE_OK) {
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
     } else {
-        std::cout << "Antwort von Neo4j:" << std::endl;
-        std::cout << request->query_response << std::endl;
+        // std::cout << "Antwort von Neo4j:" << std::endl;
+        // std::cout << request->query_response << std::endl;
+    }
+
+    return int(res);
+}
+
+int bringServiceToGraph(ServiceClient service) {
+    struct Request *request = new Request;
+
+    request->username = "neo4j";
+    request->password = "123456789";
+    request->url = "http://172.17.0.1:7474/db/neo4j/tx/commit";
+
+    request->query_request = getPayloadAddServiceToNode(service);
+    CURL *curl = getCurl(request);
+
+    CURLcode res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+        std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
+    } else {
+        // std::cout << "Antwort von Neo4j:" << std::endl;
+        // std::cout << request->query_response << std::endl;
+    }
+
+    return int(res);
+}
+
+int bringClientToGraph(ServiceClient client) {
+    struct Request *request = new Request;
+
+    request->username = "neo4j";
+    request->password = "123456789";
+    request->url = "http://172.17.0.1:7474/db/neo4j/tx/commit";
+
+    request->query_request = getPayloadAddClientToNode(client);
+    CURL *curl = getCurl(request);
+
+    CURLcode res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+        std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
+    } else {
+        // std::cout << "Antwort von Neo4j:" << std::endl;
+        // std::cout << request->query_response << std::endl;
     }
 
     return int(res);
