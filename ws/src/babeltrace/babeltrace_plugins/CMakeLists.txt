@@ -34,4 +34,4 @@ target_link_libraries(simple_sink PRIVATE ${babeltrace2_LIBRARIES})
 
 install(TARGETS simple_sink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
 
-file(APPEND "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/local_setup.zsh" "")
+file(TOUCH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/local_setup.zsh" "")

@@ -12,3 +12,4 @@ do
 done
 
 sudo chmod -R 777 /workspaces/DiplArbeitContainer
+git config --global core.filemode false
