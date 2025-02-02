@@ -63,6 +63,7 @@ RUN apt install cmake g++ python3-pip \
 RUN pip3 install --break-system-packages -U colcon-common-extensions vcstool
 
 # other stuff
+RUN apt install nano -y
 RUN apt update && apt upgrade -y
 
 # set user
