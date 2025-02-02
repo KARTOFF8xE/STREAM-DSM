@@ -5,14 +5,10 @@
 #include <string.h>
 #include <babeltrace2/babeltrace.h>
 
-#include "neo4j.cpp"
-#include "extract.cpp"
+#include "interface.h"
+#include "simple_sink.h"
+#include "participantFactory.h"
 
-struct publisher {
-    bt_message_iterator *message_iterator;
-    const bt_value *publisher_params;
-};
- 
 /***Initializes Component***/
 static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink *self_component_sink,
@@ -106,60 +102,26 @@ void analyzeField(const bt_field *field) {
 
 /***Publish the message (till now to the cli, later to another module of the tool)***/
 static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_message *message) {
-    // struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
-    //     bt_self_component_sink_as_self_component(self_component_sink));
-
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
-    if (strcmp(
-        "ros2:rcl_publisher_init",
-        bt_event_class_get_name(event_class)) != 0) {
-        std::cout << bt_event_class_get_name(event_class) << std::endl;
-        /***analyze context***/
-        const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
-        analyzeField(ctx_field);
-        /***analyze payload***/
-        const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
-        analyzeField(payload_field);
-        }
-        if (strcmp(
-            "ros2:rcl_node_init",
-            bt_event_class_get_name(event_class)) == 0) {
-                Node node = extractNodeInfoFromEvent(event);
-                bringNodeToGraph(node);
-                return;
-        }
 
-        if (strcmp(
-            "ros2:rcl_publisher_init",
-            bt_event_class_get_name(event_class)) == 0) {
-                Topic topic = extractTopicInfoFromEvent(event);
-                bringPubTopicToGraph(topic);
-                return;
-        }
+    IParticipant *participant;
+    participant = ParticipantFactory::getParticipant(bt_event_class_get_name(event_class));
 
-        if (strcmp(
-            "ros2:rcl_subscription_init",
-            bt_event_class_get_name(event_class)) == 0) {
-                Topic topic = extractTopicInfoFromEvent(event);
-                bringSubTopicToGraph(topic);
-                return;
-        }
+    participant->extractInfo(event);
+    participant->toGraph();
 
-        std::cout << "unknown topic" << std::endl;
-    // for (uint64_t i = 0; i < bt_value_array_get_length(publisher->publisher_params); i++) {
-    //     const bt_value *key = bt_value_array_borrow_element_by_index_const(publisher->publisher_params, i);
-    //     // if (strcmp(
-    //     //     bt_event_class_get_name(event_class), 
-    //     //     bt_value_string_get(key)) == 0) {
-    //     //         printf("%s (would be published onto %s)\n", bt_event_class_get_name(event_class), bt_value_string_get(key));
-    //     //         break;
-    //     // }
+    return;
 
-    //     if (i == bt_value_array_get_length(publisher->publisher_params)-1) {
-    //         printf("\t\t%ld: no topic given for %s\n", i, bt_event_class_get_name(event_class));
-    //     }
-    // }
+    // /***unknown Topic***/
+    // std::cout << "unknown topic" << std::endl;
+    //     std::cout << bt_event_class_get_name(event_class) << std::endl;
+    //     /***analyze context***/
+    //     const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
+    //     analyzeField(ctx_field);
+    //     /***analyze payload***/
+    //     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
+    //     analyzeField(payload_field);
 }
 
 /***Consumes the messages***/
