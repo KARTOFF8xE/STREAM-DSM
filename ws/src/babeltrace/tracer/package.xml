@@ -15,6 +15,5 @@
   <export>
     <build_type>ament_cmake</build_type>
     <depend>babeltrace_plugins</depend>
-    <depend>ipc</depend>
   </export>
 </package>

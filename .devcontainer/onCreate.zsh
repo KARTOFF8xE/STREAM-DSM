@@ -6,7 +6,4 @@ do
     ./$file
 done
 
-# ./.devcontainer/onCreate/setupEverything.zsh
-cd /workspaces/DiplArbeitContainer/ws
-source /opt/ros/rolling/setup.zsh
-colcon build --cmake-args -DFASTDDS_STATISTICS=ON --symlink-install
+git config --global --add safe.directory /workspaces/DiplArbeitContainer
