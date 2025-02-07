@@ -1,12 +1,11 @@
 {
 	"name": "RollyRolling",
 	"updateRemoteUserUID": false,
-	"postStartCommand": ".devcontainer/onStart.zsh",
 	"postCreateCommand": ".devcontainer/onCreate.zsh",
 	
 	"mounts": [
 		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/Georg/.cache/zsh/history,type=bind",
-		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+		"source=/home/georg/.ssh/,target=/home/Georg/.ssh/,type=bind"
 	],
 	"forwardPorts": [7474],
 	

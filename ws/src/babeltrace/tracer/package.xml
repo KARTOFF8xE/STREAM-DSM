@@ -14,7 +14,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <depend>tracetools</depend>
     <depend>babeltrace_plugins</depend>
   </export>
 </package>
