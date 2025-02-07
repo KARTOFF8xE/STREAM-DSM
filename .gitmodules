@@ -1,0 +1,6 @@
+[submodule "ws/src/ipc"]
+	path = ws/src/ipc
+	url = git@github.com:Nummer42O/STREAM-IPC.git
+[submodule "ws/src/ros2_tracing"]
+	path = ws/src/ros2_tracing
+	url = https://github.com/ros2/ros2_tracing.git
