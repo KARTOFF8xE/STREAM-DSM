@@ -6,3 +6,5 @@ tmp/
 Fast-DDS/
 .vscode/browse*
 playground/
+ros2_tracing/
+ipc/

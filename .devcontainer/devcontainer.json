@@ -7,6 +7,9 @@
 		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/Georg/.cache/zsh/history,type=bind",
 		"source=/home/georg/.ssh/,target=/home/Georg/.ssh/,type=bind"
 	],
+	"workspaceMount": "source=${localWorkspaceFolder}/,target=/home/Georg/stream/,type=bind",
+	"workspaceFolder": "/home/Georg/stream/",
+
 	"forwardPorts": [7474],
 	
     "build": {
