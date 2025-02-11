@@ -1,15 +1,16 @@
 FROM osrf/ros:rolling-desktop AS rollyrolling
 WORKDIR /usr/local/app
+ARG USERNAME=ubuntu
 
-# non-root user support
-RUN apt install sudo -y
-ARG USERNAME=Georg
-ARG USER_UID=1001
-ARG USER_GID=$USER_UID
+# # non-root user support
+# RUN apt install sudo -y
+# ARG USERNAME=Georg
+# ARG USER_UID=1001
+# ARG USER_GID=$USER_UID
 
-# RUN groupadd --gid $USER_GID $USERNAME
-RUN getent group $USER_GID || groupadd --gid $USER_GID $USERNAME
-RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+# # RUN groupadd --gid $USER_GID $USERNAME
+# RUN getent group $USER_GID || groupadd --gid $USER_GID $USERNAME
+# RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 RUN set -x && \
   echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
@@ -35,7 +36,7 @@ RUN mkdir -p /home/$USERNAME/.zsh_scripts/plugins && \
   zsh -c "source /home/$USERNAME/.zsh_scripts/plugins/git.plugin.zsh"
 RUN mkdir -p /home/$USERNAME/.cache/zsh && \
   touch /home/$USERNAME/.cache/zsh/history
-RUN SNIPPET="export HISTFILE=/home/Georg/.cache/zsh/history \nsetopt APPEND_HISTORY \nsetopt INC_APPEND_HISTORY \nsetopt SHARE_HISTORY\n" \
+RUN SNIPPET="export HISTFILE=/home/$USERNAME/.cache/zsh/history \nsetopt APPEND_HISTORY \nsetopt INC_APPEND_HISTORY \nsetopt SHARE_HISTORY\n" \
   && echo "$SNIPPET" >> "/home/$USERNAME/.zshrc"
 RUN chmod 777 /home/$USERNAME/.cache/zsh
 RUN chsh $user -s $(which zsh)
@@ -64,8 +65,13 @@ RUN pip3 install --break-system-packages -U colcon-common-extensions vcstool
 
 # other stuff
 RUN apt install nano -y
+RUN apt install openssh-client -y
 RUN apt update && apt upgrade -y
 
-# set user
+# # set user
+# USER $USERNAME
+# WORKDIR /home/$USERNAME
+
+
 USER $USERNAME
 WORKDIR /home/$USERNAME

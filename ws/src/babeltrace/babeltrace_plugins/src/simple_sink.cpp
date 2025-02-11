@@ -9,7 +9,6 @@
 #include "simple_sink.h"
 #include "participantFactory.h"
 
-/***Initializes Component***/
 static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink *self_component_sink,
         bt_self_component_sink_configuration *,
@@ -35,7 +34,6 @@ static bt_component_class_initialize_method_status publisher_initialize(
     return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
-/***Finalize Component (on destroy)***/
 static void publisher_finalize(bt_self_component_sink *self_component_sink) {
     struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
@@ -43,7 +41,6 @@ static void publisher_finalize(bt_self_component_sink *self_component_sink) {
     free(publisher);
 }
 
-/***Configure Component***/
 static bt_component_class_sink_graph_is_configured_method_status
 publisher_graph_is_configured(bt_self_component_sink *self_component_sink) {
     struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
@@ -59,7 +56,6 @@ publisher_graph_is_configured(bt_self_component_sink *self_component_sink) {
     return BT_COMPONENT_CLASS_SINK_GRAPH_IS_CONFIGURED_METHOD_STATUS_OK;
 }
 
-/***extracting the value of a member***/
 void get_value(
     const bt_field *structure_field,
     const bt_field_class_structure_member *member
@@ -85,7 +81,6 @@ void get_value(
     }
 }
 
-/***Show every Element of a structure***/
 void analyzeField(const bt_field *field) {
     const bt_field_class *field_class = bt_field_borrow_class_const(field);
     if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
@@ -100,7 +95,6 @@ void analyzeField(const bt_field *field) {
     } else { printf("\033[33;1UNKNOWN TYPE\033[0m\n"); }
 }
 
-/***Publish the message (till now to the cli, later to another module of the tool)***/
 static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_message *message) {
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
@@ -124,7 +118,6 @@ static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_me
     //     analyzeField(payload_field);
 }
 
-/***Consumes the messages***/
 bt_component_class_sink_consume_method_status publisher_consume(
         bt_self_component_sink *self_component_sink) {
     struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
@@ -163,7 +156,6 @@ bt_component_class_sink_consume_method_status publisher_consume(
     return BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_OK;
 }
 
-/***Configuring the Plugin**/
 BT_PLUGIN_MODULE();
 
 BT_PLUGIN(publisher);

@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-wsPath="/home/Georg/stream"
+wsPath="/home/ubuntu/stream"
 
 declare -a sources=(
     "/opt/ros/rolling/setup.zsh"
@@ -13,6 +13,6 @@ do
     echo "source $source" | sudo tee -a ~/.zshrc > /dev/null
 done
 
-sudo chmod -R 777 ${wsPath}
-sudo chown Georg:Georg -R ${wsPath}
-git config --global core.filemode false
+# sudo chmod -R 777 ${wsPath}
+# sudo chown Georg:Georg -R ${wsPath}
+# git config --global core.filemode false
