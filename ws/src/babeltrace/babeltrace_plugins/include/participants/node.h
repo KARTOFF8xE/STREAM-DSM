@@ -8,6 +8,7 @@ class Node: public IParticipant {
         std::string nameSpace;
         u_int64_t   handle;
         u_int32_t   pid;
+        u_int32_t   bootcounter;
 
         std::string getPayload() override;
         std::string getFullName();
