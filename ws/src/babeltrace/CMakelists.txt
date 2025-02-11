@@ -3,3 +3,4 @@ project(babeltrace)
 
 add_subdirectory(babeltrace_plugins)
 add_subdirectory(tracer)
+add_subdirectory(datamgmt)
