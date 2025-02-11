@@ -4,6 +4,12 @@
 
 #include "interface.h"
 
-// size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userp);
 
+/**
+ * @brief Sets up a POST request.
+ *
+ * @param request The request so send
+ * 
+ * @return The payload.
+ */
 CURL *getCurl(Request *request);

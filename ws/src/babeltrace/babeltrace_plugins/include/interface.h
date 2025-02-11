@@ -12,9 +12,26 @@ struct Request {
 };
 
 class IParticipant {
- public:
-  // virtual ~IParticipant() = 0;
-  virtual void extractInfo(const bt_event *event) = 0;
+
+private:
+/**
+ * @brief Builds the payload used to query Graph-DB.
+ *
+ * @return The payload.
+ */
   virtual std::string getPayload() = 0;
+
+public:
+  
+/**
+ * @brief Extracts the information of a given trace event (trace message).
+ *
+ * @param event The event to extract.
+ */
+  virtual void extractInfo(const bt_event *event) = 0;
+
+/**
+ * @brief Sends component to Graph.
+ */
   virtual void toGraph() = 0;
 };
