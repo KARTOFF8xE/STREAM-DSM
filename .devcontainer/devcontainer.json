@@ -4,12 +4,12 @@
 	"postCreateCommand": ".devcontainer/onCreate.zsh",
 	
 	"mounts": [
-		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/Georg/.cache/zsh/history,type=bind",
-		"source=/home/georg/.ssh/,target=/home/Georg/.ssh/,type=bind",
-		"source=/home/georg/.gitconfig,target=/home/Georg/.gitconfig,type=bind"
+		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/ubuntu/.cache/zsh/history,type=bind",
+		"source=/home/georg/.ssh/,target=/home/ubuntu/.ssh/,type=bind",
+		"source=/home/georg/.gitconfig,target=/home/ubuntu/.gitconfig,type=bind"
 	],
-	"workspaceMount": "source=${localWorkspaceFolder}/,target=/home/Georg/stream/,type=bind",
-	"workspaceFolder": "/home/Georg/stream/",
+	"workspaceMount": "source=${localWorkspaceFolder}/,target=/home/ubuntu/stream/,type=bind",
+	"workspaceFolder": "/home/ubuntu/stream/",
 
 	"forwardPorts": [7474],
 	

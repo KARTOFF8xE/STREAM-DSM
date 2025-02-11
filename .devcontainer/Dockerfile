@@ -1,15 +1,16 @@
 FROM osrf/ros:rolling-desktop AS rollyrolling
 WORKDIR /usr/local/app
+ARG USERNAME=ubuntu
 
-# non-root user support
-RUN apt install sudo -y
-ARG USERNAME=Georg
-ARG USER_UID=1001
-ARG USER_GID=$USER_UID
+# # non-root user support
+# RUN apt install sudo -y
+# ARG USERNAME=Georg
+# ARG USER_UID=1001
+# ARG USER_GID=$USER_UID
 
-# RUN groupadd --gid $USER_GID $USERNAME
-RUN getent group $USER_GID || groupadd --gid $USER_GID $USERNAME
-RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+# # RUN groupadd --gid $USER_GID $USERNAME
+# RUN getent group $USER_GID || groupadd --gid $USER_GID $USERNAME
+# RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 RUN set -x && \
   echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
@@ -67,6 +68,10 @@ RUN apt install nano -y
 RUN apt install openssh-client -y
 RUN apt update && apt upgrade -y
 
-# set user
+# # set user
+# USER $USERNAME
+# WORKDIR /home/$USERNAME
+
+
 USER $USERNAME
 WORKDIR /home/$USERNAME
