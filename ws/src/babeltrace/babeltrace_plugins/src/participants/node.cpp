@@ -11,7 +11,7 @@ std::string Node::getPayload() {
         {{
             "statements":
                 [
-                    {{ "statement": "MERGE (n:Node{{name:$name}}) ON CREATE SET n.bootcounter = 1, n.handle=$handle, n.pid=$pid, n.state=1 ON MATCH SET n.bootcounter = n.bootcounter+1, n.handle=$handle, n.pid=$pid, n.state=1 WITH n MATCH (n)-[r]-() DELETE r ",
+                    {{ "statement": "MERGE (n:Node{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1 WITH n MATCH (n)-[r]-() DELETE r ",
                     "parameters": {{
                         "name": "{}",
                         "handle": "{}",
