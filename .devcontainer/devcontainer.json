@@ -5,7 +5,8 @@
 	
 	"mounts": [
 		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/Georg/.cache/zsh/history,type=bind",
-		"source=/home/georg/.ssh/,target=/home/Georg/.ssh/,type=bind"
+		"source=/home/georg/.ssh/,target=/home/Georg/.ssh/,type=bind",
+		"source=/home/georg/.gitconfig,target=/home/Georg/.gitconfig,type=bind"
 	],
 	"workspaceMount": "source=${localWorkspaceFolder}/,target=/home/Georg/stream/,type=bind",
 	"workspaceFolder": "/home/Georg/stream/",

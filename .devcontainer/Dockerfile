@@ -64,6 +64,7 @@ RUN pip3 install --break-system-packages -U colcon-common-extensions vcstool
 
 # other stuff
 RUN apt install nano -y
+RUN apt install openssh-client -y
 RUN apt update && apt upgrade -y
 
 # set user
