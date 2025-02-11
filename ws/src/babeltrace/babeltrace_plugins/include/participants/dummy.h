@@ -2,7 +2,7 @@
 
 #include "interface.h"
 
-class FooDummy: public IParticipant {
+class Dummy: public IParticipant {
     private:
         std::string getPayload() override;
 

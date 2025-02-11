@@ -2,7 +2,7 @@
 
 #include "interface.h"
 
-class FooSubscriber: public IParticipant {
+class Subscriber: public IParticipant {
     private:
         std::string name;
         u_int64_t   pubsub_handle;

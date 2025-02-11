@@ -6,7 +6,7 @@
 #include "participants/subscriber.h"
 #include "curl.h"
 
-std::string FooSubscriber::getPayload() {
+std::string Subscriber::getPayload() {
     return fmt::format(R"(
     {{
         "statements":
@@ -23,7 +23,7 @@ std::string FooSubscriber::getPayload() {
 )", this->name, this->pubsub_handle, this->node_handle);
 }
 
-void FooSubscriber::extractInfo(const bt_event *event) {
+void Subscriber::extractInfo(const bt_event *event) {
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
     const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
     if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
@@ -36,7 +36,7 @@ void FooSubscriber::extractInfo(const bt_event *event) {
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 }
 
-void FooSubscriber::toGraph() {
+void Subscriber::toGraph() {
     struct Request *request = new Request;
 
     request->username = "neo4j";

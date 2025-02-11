@@ -2,7 +2,7 @@
 
 #include "interface.h"
 
-class FooService: public IParticipant {
+class Service: public IParticipant {
     private:
         std::string name;
         u_int64_t node_handle;
