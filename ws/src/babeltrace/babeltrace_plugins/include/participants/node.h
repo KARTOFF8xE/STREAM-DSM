@@ -2,7 +2,7 @@
 
 #include "interface.h"
 
-class FooNode: public IParticipant {
+class Node: public IParticipant {
     private:
         std::string name;
         std::string nameSpace;
@@ -10,6 +10,7 @@ class FooNode: public IParticipant {
         u_int32_t   pid;
 
         std::string getPayload() override;
+        std::string getFullName();
 
     public:
         void extractInfo(const bt_event *) override;

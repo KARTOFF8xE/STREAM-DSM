@@ -6,12 +6,12 @@
 #include "participants/dummy.h"
 #include "curl.h"
 
-std::string FooDummy::getPayload() {
+std::string Dummy::getPayload() {
     return "";
 }
 
-void FooDummy::extractInfo(const bt_event *) {
+void Dummy::extractInfo(const bt_event *) {
     std::cout << "Found unknown Type, not handled" << std::endl;
 }
 
-void FooDummy::toGraph() {}
+void Dummy::toGraph() {}

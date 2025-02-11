@@ -6,25 +6,24 @@
 #include "participants/node.h"
 #include "curl.h"
 
-std::string FooNode::getPayload() {
+std::string Node::getPayload() {
     return fmt::format(R"(
         {{
             "statements":
                 [
-                    {{ "statement": "CREATE (:Node{{name:$name, namespace:$namespace, handle:$handle, pid:$pid, state:1}}) ",
+                    {{ "statement": "CREATE (:Node{{name:$name, handle:$handle, pid:$pid, state:1}}) ",
                     "parameters": {{
                         "name": "{}",
-                        "namespace": "{}",
                         "handle": "{}",
                         "pid": "{}"
                         }}
                     }}
                 ]
         }}
-    )", this->name, this->nameSpace, this->handle, this->pid);
+    )", this->getFullName(), this->handle, this->pid);
 }
 
-void FooNode::extractInfo(const bt_event *event) {
+void Node::extractInfo(const bt_event *event) {
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
     const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
     if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
@@ -46,7 +45,7 @@ void FooNode::extractInfo(const bt_event *event) {
     return;
 }
 
-void FooNode::toGraph() {
+void Node::toGraph() {
     struct Request *request = new Request;
 
     request->username = "neo4j";
@@ -63,4 +62,12 @@ void FooNode::toGraph() {
         // std::cout << "Antwort von Neo4j:" << std::endl;
         // std::cout << request->query_response << std::endl;
     }
+}
+
+std::string Node::getFullName() {
+    if (this->nameSpace == "/") {
+        return this->nameSpace + this->name;
+    }
+
+    return this->nameSpace + "/" + this->name;
 }
