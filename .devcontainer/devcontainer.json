@@ -2,6 +2,7 @@
 	"name": "RollyRolling",
 	"updateRemoteUserUID": false,
 	"postCreateCommand": ".devcontainer/onCreate.zsh",
+	"updateContentCommand": "sudo apt update && sudo apt upgrade -y",
 	
 	"mounts": [
 		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/ubuntu/.cache/zsh/history,type=bind",

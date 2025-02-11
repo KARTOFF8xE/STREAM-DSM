@@ -36,7 +36,7 @@ RUN mkdir -p /home/$USERNAME/.zsh_scripts/plugins && \
   zsh -c "source /home/$USERNAME/.zsh_scripts/plugins/git.plugin.zsh"
 RUN mkdir -p /home/$USERNAME/.cache/zsh && \
   touch /home/$USERNAME/.cache/zsh/history
-RUN SNIPPET="export HISTFILE=/home/Georg/.cache/zsh/history \nsetopt APPEND_HISTORY \nsetopt INC_APPEND_HISTORY \nsetopt SHARE_HISTORY\n" \
+RUN SNIPPET="export HISTFILE=/home/$USERNAME/.cache/zsh/history \nsetopt APPEND_HISTORY \nsetopt INC_APPEND_HISTORY \nsetopt SHARE_HISTORY\n" \
   && echo "$SNIPPET" >> "/home/$USERNAME/.zshrc"
 RUN chmod 777 /home/$USERNAME/.cache/zsh
 RUN chsh $user -s $(which zsh)
