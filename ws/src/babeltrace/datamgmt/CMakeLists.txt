@@ -7,8 +7,14 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ipc REQUIRED)
 
 add_executable(datamgmt src/datamgmt.cpp)
+
+target_link_libraries(datamgmt
+  PRIVATE
+    ipc::ipc_lib
+)
 
 install(TARGETS
   datamgmt
