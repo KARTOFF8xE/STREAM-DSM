@@ -4,8 +4,13 @@
 #include <chrono>
 #include <atomic>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 
 #include <ipc/ipc-server.hpp>
+
+std::mutex m;
+std::condition_variable cv;
 
 struct Client {
     pid_t pid;

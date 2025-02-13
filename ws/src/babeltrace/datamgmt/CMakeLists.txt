@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(datamgmt)
 
 # Default to C++17
@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ipc REQUIRED)
 
 add_executable(datamgmt src/datamgmt.cpp)
+target_include_directories(datamgmt PRIVATE include/)
 
 target_link_libraries(datamgmt
   PRIVATE
