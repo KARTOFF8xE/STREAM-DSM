@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "build all",
-            "command": "source /opt/ros/rolling/setup.zsh && colcon build --cmake-args -DFASTDDS_STATISTICS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-ignore fastdds discovery_statistics --symlink-install",
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-ignore fastdds discovery_statistics --symlink-install",
             "type": "shell",
             "problemMatcher": [],
             "presentation": {
@@ -19,7 +19,7 @@
         },
         {
             "label": "build selected",
-            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DFASTDDS_STATISTICS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ${input:packages}",
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ${input:packages}",
             "type": "shell",
             "problemMatcher": [],
             "presentation": {
