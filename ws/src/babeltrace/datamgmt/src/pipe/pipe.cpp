@@ -1,10 +1,10 @@
-#include "pipe.hpp"
-#include "datamgmt/common.hpp"
-#include "util.hpp"
-
 #include <iostream>
 #include <unistd.h>
 #include <fcntl.h>
+
+#include "pipe/pipe.hpp"
+#include "datamgmt/common.hpp"
+#include "util.hpp"
 
 int getPipe(int p[2], bool blocking = false) {
     if (int ret = pipe(p) != 0) {
@@ -23,12 +23,9 @@ int getPipe(int p[2], bool blocking = false) {
     return 0;
 }
 
-template ssize_t writeT<Data>(int __fd, const Data payload, size_t __n = MSGSIZE);
-template ssize_t readT<Data>(int __fd, const Data &payload, size_t __n = MSGSIZE);
-
 template<typename T>
-ssize_t writeT(int __fd, const T payload, size_t __n = MSGSIZE) {
-    char *msg = serialize(payload);
+ssize_t writeT(int __fd, const T payload, size_t __n) {
+    char *msg = serialize<Data>(payload);
     
     int ret = write(__fd, msg, __n);
     if (ret == -1) {
@@ -36,18 +33,20 @@ ssize_t writeT(int __fd, const T payload, size_t __n = MSGSIZE) {
     }
     
     return ret;
-};
+}
+template ssize_t writeT<Data>(int, const Data, size_t);
 
 template<typename T>
-ssize_t readT(int __fd, const T &payload, size_t __n = MSGSIZE) {
-    char *msg;
+ssize_t readT(int __fd, T &payload, size_t __n) {
+    char *msg = new char[__n];
     int ret = read(__fd, msg, __n);
     if (ret == -1) {
         std::cerr << "\e[31mError: Failed to read pipe.\e[30m" << std::endl;
         return ret;
     }
 
-    payload = deserialize(msg);
+    payload = deserialize<Data>(msg);
 
     return 0;
-};
+}
+template ssize_t readT<Data>(int, Data &, size_t);

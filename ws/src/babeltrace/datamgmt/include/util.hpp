@@ -18,4 +18,4 @@ char* serialize(const T& structure);
  * @return The deserialized struct.
  */
 template<typename T>
-T deserialize(const char* buffer);
+T deserialize(char* buffer);
