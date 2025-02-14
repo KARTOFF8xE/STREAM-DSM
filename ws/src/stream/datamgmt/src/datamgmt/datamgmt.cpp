@@ -54,6 +54,15 @@ void procObserver(int pipe_r, std::atomic<bool> &running) {
             }
             std::cout << "nrOf supped Clients: " << clients.size() << std::endl;
         }
+
+        for (const pid_t &pid : pids) {
+            if (kill(pid, 0) != 0) {
+                std::cout << pid << " died." << std::endl;
+                pids.erase(find(pids.begin(), pids.end(), pid));
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     } while(!clients.empty());
     std::cout << "empty now" << std::endl;
 
