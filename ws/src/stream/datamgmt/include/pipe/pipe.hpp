@@ -2,6 +2,12 @@
 
 #include "datamgmt/common.hpp"
 
+
+struct Pipe {
+    int read;
+    int write;
+};
+
 /**
  * @brief Creates a pipe and optionally sets it to non-blocking mode.
  * 

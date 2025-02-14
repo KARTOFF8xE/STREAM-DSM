@@ -5,12 +5,8 @@
 #include <atomic>
 
 #include <ipc/ipc-server.hpp>
+#include "pipe/pipe.hpp"
 #include "common.hpp"
-
-struct Pipe {
-    int read;
-    int write;
-};
 
 struct Module {
     std::optional<std::thread> thread;
