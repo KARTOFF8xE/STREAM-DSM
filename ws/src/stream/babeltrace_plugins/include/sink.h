@@ -4,7 +4,6 @@
 
 struct publisher {
     bt_message_iterator *message_iterator;
-    const bt_value *publisher_params;
 };
 
 /**

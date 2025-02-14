@@ -6,7 +6,7 @@
 #include <babeltrace2/babeltrace.h>
 
 #include "interface.h"
-#include "simple_sink.h"
+#include "sink.h"
 #include "participantFactory.h"
 
 static bt_component_class_initialize_method_status publisher_initialize(
@@ -19,14 +19,6 @@ static bt_component_class_initialize_method_status publisher_initialize(
     bt_self_component_set_data(
         bt_self_component_sink_as_self_component(self_component_sink),
         publisher);
-
-    publisher->publisher_params =
-        bt_value_map_borrow_entry_value_const(params, "topic");
-    bt_value_get_ref(publisher->publisher_params); 
-    if (!publisher->publisher_params) {
-        fprintf(stderr, "\033[31;1mparam 'topic' is mandatory\033[0m\n");
-        bt_value_string_get(publisher->publisher_params);
-    } 
 
     bt_self_component_sink_add_input_port(self_component_sink,
         "in", NULL, NULL);
