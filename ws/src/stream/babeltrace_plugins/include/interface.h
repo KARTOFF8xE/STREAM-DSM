@@ -3,6 +3,8 @@
 #include <string>
 #include <babeltrace2/babeltrace.h>
 
+#include "common.h"
+
 struct Request {
     std::string url;
     std::string username;
@@ -14,24 +16,29 @@ struct Request {
 class IParticipant {
 
 private:
-/**
- * @brief Builds the payload used to query Graph-DB.
- *
- * @return The payload.
- */
+  /**
+   * @brief Builds the payload used to query Graph-DB.
+   *
+   * @return The payload.
+   */
   virtual std::string getPayload() = 0;
 
 public:
   
-/**
- * @brief Extracts the information of a given trace event (trace message).
- *
- * @param event The event to extract.
- */
+  /**
+   * @brief Extracts the information of a given trace event (trace message).
+   *
+   * @param event The event to extract.
+   */
   virtual void extractInfo(const bt_event *event) = 0;
 
-/**
- * @brief Sends component to Graph.
- */
+  /**
+   * @brief Sends component to Graph.
+   */
   virtual void toGraph() = 0;
+
+  /**
+   * // TODO
+   */
+  virtual void response(Communication &communication, bool enabled) {}
 };

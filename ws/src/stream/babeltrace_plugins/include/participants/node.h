@@ -1,6 +1,10 @@
 #pragma once
 
+#include <ipc/ipc-server.hpp>
+
 #include "interface.h"
+
+#include <sink.h>
 
 class Node: public IParticipant {
     private:
@@ -36,4 +40,9 @@ class Node: public IParticipant {
          * @brief Sends Node to Graph.
          */
         void toGraph() override;
+
+        /**
+         * // TODO
+         */
+        void response(Communication &communication, bool enabled);
 };

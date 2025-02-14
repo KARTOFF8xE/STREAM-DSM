@@ -11,6 +11,7 @@
 #include <bits/stdc++.h>
 
 #include <ipc/ipc-server.hpp>
+#include <ipc/ipc-client.hpp>
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
@@ -22,9 +23,25 @@ void procObserver(int pipe_r, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
 
     std::vector<Client> clients;
+    std::vector<pid_t> pids;
+    
+    IpcClient ipcClient(2);
+    requestId_t requestId;
+    {
+        ProcSwitchRequest msg = ProcSwitchRequest{
+            .updates = true
+        };
+        ipcClient.sendProcSwitchRequest(msg, requestId, false);
+    }
     
     Client client;
     do {
+        std::optional<ProcSwitchResponse> response = ipcClient.receiveProcSwitchResponse(false);
+        if (response.has_value()) {
+            pids.push_back(response.value().pid);
+            std::cout << "Received new Node with PID: " << response.value().pid << std::endl;
+        }
+
         int ret = readT<Client>(pipe_r, client);
         if (ret != -1) {
             std::cout << "pid: " << client.pid << "\tupdates: " << client.updates << std::endl;
@@ -47,6 +64,12 @@ void procObserver(int pipe_r, std::atomic<bool> &running) {
         // TODO if no more subscribers, exit loop
 
     // TODO unsubscribe Events
+
+    ProcSwitchRequest msg = ProcSwitchRequest{
+        .updates = false
+    };
+    ipcClient.sendProcSwitchRequest(msg, requestId, false);
+
     running.store(false);
 }
 
@@ -66,7 +89,7 @@ void runModule(Module_t module_t, Module &module) {
 }
 
 int main() {
-    IpcServer server(2);
+    IpcServer server(1);
 
     std::map<Module_t, Module> modules;
     for (int i = PROCOBSERVER; i < LASTOPTION; i++) {

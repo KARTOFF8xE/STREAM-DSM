@@ -3,7 +3,10 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
+#include <optional>
 #include <babeltrace2/babeltrace.h>
+
+#include <ipc/ipc-server.hpp>
 
 #include "interface.h"
 #include "sink.h"
@@ -14,15 +17,19 @@ static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink_configuration *,
         const bt_value *params, void *) {
 
-    struct publisher *publisher = (struct publisher *)malloc(sizeof(*publisher));
- 
+    // struct publisher *publisher = (struct publisher *)malloc(sizeof(*publisher));
+    struct publisher *publisher = new struct publisher();
+    new (&publisher->communication.server) IpcServer(2);
+
     bt_self_component_set_data(
         bt_self_component_sink_as_self_component(self_component_sink),
         publisher);
 
     bt_self_component_sink_add_input_port(self_component_sink,
         "in", NULL, NULL);
- 
+
+    // publisher->communication.server = IpcServer(2);
+
     return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }
 
@@ -87,7 +94,10 @@ void analyzeField(const bt_field *field) {
     } else { printf("\033[33;1UNKNOWN TYPE\033[0m\n"); }
 }
 
-static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_message *message) {
+static void publish(bt_self_component_sink *self_component_sink, const bt_message *message) {
+    struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
+        bt_self_component_sink_as_self_component(self_component_sink));
+
     const bt_event *event = bt_message_event_borrow_event_const(message);
     const bt_event_class *event_class = bt_event_borrow_class_const(event);
 
@@ -96,6 +106,7 @@ static void publish(/*bt_self_component_sink *self_component_sink,*/ const bt_me
 
     participant->extractInfo(event);
     participant->toGraph();
+    participant->response(publisher->communication, publisher->sendToProcObserver);
 
     return;
 
@@ -114,13 +125,12 @@ bt_component_class_sink_consume_method_status publisher_consume(
         bt_self_component_sink *self_component_sink) {
     struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
- 
+
     bt_message_array_const messages;
     uint64_t message_count;
     bt_message_iterator_next_status next_status =
         bt_message_iterator_next(publisher->message_iterator, &messages,
             &message_count);
- 
     switch (next_status) {
         case BT_MESSAGE_ITERATOR_NEXT_STATUS_END:
             bt_message_iterator_put_ref(publisher->message_iterator);
@@ -134,12 +144,21 @@ bt_component_class_sink_consume_method_status publisher_consume(
         default:
             break;
     }
- 
+
+    std::optional<ProcSwitchRequest> request = publisher->communication.server.receiveProcSwitchRequest(
+        publisher->communication.requestId,
+        publisher->communication.pid,
+        false
+    );
+    if (request.has_value()) {
+        publisher->sendToProcObserver = request.value().updates;
+    }
+
     for (uint64_t i = 0; i < message_count; i++) {
         const bt_message *message = messages[i];
 
         if (bt_message_get_type(message) == BT_MESSAGE_TYPE_EVENT) {
-            publish(/*self_component_sink,*/ message);
+            publish(self_component_sink, message);
         }
  
         bt_message_put_ref(message);

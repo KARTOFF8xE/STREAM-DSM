@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 
+#include "common.h"
 #include "interface.h"
 #include "participants/node.h"
 #include "curl.h"
@@ -70,4 +71,11 @@ std::string Node::getFullName() {
     }
 
     return this->nameSpace + "/" + this->name;
+}
+
+void Node::response(Communication &communication, bool enabled) {
+    ProcSwitchResponse msg {
+        .pid = (pid_t) this->pid
+    };
+    communication.server.sendProcSwitchResponse(msg, communication.pid, false);
 }
