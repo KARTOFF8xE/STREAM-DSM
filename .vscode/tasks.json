@@ -19,7 +19,7 @@
         },
         {
             "label": "build selected",
-            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ${input:packages}",
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ${input:packages}",
             "type": "shell",
             "problemMatcher": [],
             "presentation": {
