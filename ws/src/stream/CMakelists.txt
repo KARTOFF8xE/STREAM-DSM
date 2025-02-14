@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(babeltrace)
+project(stream)
 
 add_subdirectory(babeltrace_plugins)
 add_subdirectory(tracer)
