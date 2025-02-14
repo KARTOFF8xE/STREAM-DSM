@@ -6,9 +6,9 @@
 #include "datamgmt/common.hpp"
 #include "util.hpp"
 
-int getPipe(int p[2], bool blocking = false) {
-    if (int ret = pipe(p) != 0) {
-        std::cerr << "\e[31mError: Failed to create pipe. Code: " << ret << "\e[30m" << std::endl;
+int getPipe(int p[2], bool blocking) {
+    if (int ret = pipe(p); ret != 0) {
+        std::cerr << "\e[31mError: Failed to create pipe. Code: " << ret << "\e[0m" << std::endl;
         return ret;
     }
 
@@ -25,28 +25,36 @@ int getPipe(int p[2], bool blocking = false) {
 
 template<typename T>
 ssize_t writeT(int __fd, const T payload, size_t __n) {
-    char *msg = serialize<Data>(payload);
+    char *msg = serialize<T>(payload);
     
     int ret = write(__fd, msg, __n);
     if (ret == -1) {
-        std::cerr << "\e[31mError: Failed to write pipe.\e[30m" << std::endl;
+        std::cerr << "\e[31mError: Failed to write pipe.\e[0m" << std::endl;
     }
     
     return ret;
 }
-template ssize_t writeT<Data>(int, const Data, size_t);
+template ssize_t writeT<Client>(int, const Client, size_t);
 
 template<typename T>
 ssize_t readT(int __fd, T &payload, size_t __n) {
     char *msg = new char[__n];
     int ret = read(__fd, msg, __n);
     if (ret == -1) {
-        std::cerr << "\e[31mError: Failed to read pipe.\e[30m" << std::endl;
-        return ret;
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return -1;
+        } else {
+            std::cerr << "\e[31mError: Failed to read pipe.\e[0m" << std::endl;
+            return -1;
+        }
     }
-
-    payload = deserialize<Data>(msg);
+    // if (ret == -1) {
+    //     std::cerr << "\e[31mError: Failed to read pipe.\e[0m" << std::endl;
+    //     return ret;
+    // }
+    
+    payload = deserialize<T>(msg);
 
     return 0;
 }
-template ssize_t readT<Data>(int, Data &, size_t);
+template ssize_t readT<Client>(int, Client &, size_t);

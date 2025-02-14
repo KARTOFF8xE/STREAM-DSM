@@ -4,9 +4,11 @@
 #include <chrono>
 #include <atomic>
 #include <vector>
+#include <future>
 #include <mutex>
 #include <condition_variable>
 #include <map>
+#include <bits/stdc++.h>
 
 #include <ipc/ipc-server.hpp>
 
@@ -16,7 +18,28 @@
 std::mutex m;
 std::condition_variable cv;
 
-void procObserver(int pipe) {
+void procObserver(int pipe_r, std::atomic<bool> &running) {
+    std::cout << "started procObserver" << std::endl;
+
+    std::vector<Client> clients;
+    
+    Client client;
+    do {
+        int ret = readT<Client>(pipe_r, client);
+        if (ret != -1) {
+            std::cout << "pid: " << client.pid << "\tupdates: " << client.updates << std::endl;
+            if (client.updates) {
+                if (std::find(clients.begin(), clients.end(), client) == clients.end()) {
+                    clients.push_back(client);
+                }
+            } else if (std::find(clients.begin(), clients.end(), client) != clients.end()) {
+                clients.erase(find(clients.begin(), clients.end(), client));
+            }
+            std::cout << "nrOf supped Clients: " << clients.size() << std::endl;
+        }
+    } while(!clients.empty());
+    std::cout << "empty now" << std::endl;
+
     // TODO gather a list with all Node-PIDs (neo4j query)
     // TODO needs a communication with tracer (subscribe Events)
     
@@ -24,12 +47,17 @@ void procObserver(int pipe) {
         // TODO if no more subscribers, exit loop
 
     // TODO unsubscribe Events
+    running.store(false);
 }
 
 void runModule(Module_t module_t, Module &module) {
     switch (module_t) {
         case PROCOBSERVER:
-            module.thread = std::thread(procObserver, module.pipe.read);
+            if (module.thread.has_value() && module.thread.value().joinable()){
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(procObserver, module.pipe.read, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
@@ -38,34 +66,32 @@ void runModule(Module_t module_t, Module &module) {
 }
 
 int main() {
-    IpcServer server(0);
+    IpcServer server(2);
 
     std::map<Module_t, Module> modules;
-    for (int i = PROCOBSERVER; i < DUMMY; i++) {
-        modules[static_cast<Module_t>(i)] = Module{
-            .thread = {}
-        };
+    for (int i = PROCOBSERVER; i < LASTOPTION; i++) {
+        modules[static_cast<Module_t>(i)];
     }
 
     while (true) {
         Client newClient;
         std::optional<ProcessRequest> request = server.receiveProcessRequest(newClient.requestId, newClient.pid, false);
+        
         if (request.has_value()) {
-            if (!modules[PROCOBSERVER].thread.has_value()) {    // create thread if not existing
-                runModule(PROCOBSERVER, modules[PROCOBSERVER]);
-            }
-            
             // extract msg and send to thread (write to pipe)
             ProcessRequest requestPayload = request.value();
-            Data clientInfo {
-                .client = Client{
-                    .pid = requestPayload.pid,
-                },
-                .subscribed = requestPayload.updates
+            Client clientInfo {
+                .pid = newClient.pid,
+                .requestId = newClient.requestId,
+                .updates = requestPayload.updates,
             };
+            writeT<Client>(modules[PROCOBSERVER].pipe.write, clientInfo);
 
-            writeT<Data>(modules[PROCOBSERVER].pipe.write, clientInfo);
+            if (!modules[PROCOBSERVER].running) {
+                runModule(PROCOBSERVER, modules[PROCOBSERVER]);
+            }
         }
+
         // TODO receive different messages as a server (subscriptions and unsubscriptions)
         // TODO handle threads that are running
     }

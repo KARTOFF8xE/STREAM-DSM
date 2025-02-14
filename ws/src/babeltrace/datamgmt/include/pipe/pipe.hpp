@@ -3,6 +3,16 @@
 #include "datamgmt/common.hpp"
 
 /**
+ * @brief Creates a pipe and optionally sets it to non-blocking mode.
+ * 
+ * @param p Array of two integers that will hold the file descriptors for the pipe.
+ * @param blocking If false, the pipe is set to non-blocking mode (default: false).
+ * 
+ * @return 0 on success, or an error code on failure.
+ */
+int getPipe(int p[2], bool blocking = false);
+
+/**
  * @brief Transforms the payload into a message and writes it to the pipe.
  * 
  * @param __fd File descriptor for the write end of the pipe.
@@ -24,4 +34,4 @@ ssize_t writeT(int __fd, const T payload, size_t __n = MSGSIZE);
  * @return The number read. -1 for errors or 0 for EOF.
  */
 template<typename T>
-ssize_t readT(int __fd, const T &payload, size_t __n = MSGSIZE);
+ssize_t readT(int __fd, T &payload, size_t __n = MSGSIZE);

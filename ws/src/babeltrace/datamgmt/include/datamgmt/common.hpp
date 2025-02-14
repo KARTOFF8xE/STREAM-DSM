@@ -7,11 +7,10 @@
 struct Client {
     pid_t pid;
     requestId_t requestId;
-    bool subState;
-};
+    bool updates;
 
-struct Data {
-    Client client;
-    bool subscribed;
+    bool operator==(const Client& other) const {
+        return this->pid == other.pid;
+    }
 };
-#define MSGSIZE sizeof(Data)
+#define MSGSIZE sizeof(Client)

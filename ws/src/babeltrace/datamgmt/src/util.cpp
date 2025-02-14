@@ -10,7 +10,7 @@ char* serialize(const T &structure) {
     std::memcpy(buffer, &structure, sizeof(T));
     return buffer;
 }
-template char* serialize(const Data &);
+template char* serialize(const Client &);
 
 template<typename T>
 T deserialize(char *buffer) {
@@ -18,4 +18,4 @@ T deserialize(char *buffer) {
     std::memcpy(&d, buffer, sizeof(T));
     return d;
 }
-template Data deserialize(char *);
+template Client deserialize(char *);
