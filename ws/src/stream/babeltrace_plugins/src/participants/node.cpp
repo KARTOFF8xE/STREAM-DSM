@@ -2,27 +2,14 @@
 #include <string>
 #include <iostream>
 
+#include <neo4j/node/node.hpp>
+#include <curl/myCurl.hpp>
+
 #include "common.h"
 #include "interface.h"
 #include "participants/node.h"
 #include "curl.h"
 
-std::string Node::getPayload() {
-    return fmt::format(R"(
-        {{
-            "statements":
-                [
-                    {{ "statement": "MERGE (n:Node{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1 WITH n MATCH (n)-[r]-() DELETE r ",
-                    "parameters": {{
-                        "name": "{}",
-                        "handle": "{}",
-                        "pid": "{}"
-                        }}
-                    }}
-                ]
-        }}
-    )", this->getFullName(), this->handle, this->pid);
-}
 
 void Node::extractInfo(const bt_event *event) {
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
@@ -46,25 +33,6 @@ void Node::extractInfo(const bt_event *event) {
     return;
 }
 
-void Node::toGraph() {
-    struct Request *request = new Request;
-
-    request->username = "neo4j";
-    request->password = "123456789";
-    request->url = "http://172.17.0.1:7474/db/neo4j/tx/commit";
-
-    request->query_request = getPayload();
-    CURL *curl = getCurl(request);
-
-    CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
-    } else {
-        // std::cout << "Antwort von Neo4j:" << std::endl;
-        // std::cout << request->query_response << std::endl;
-    }
-}
-
 std::string Node::getFullName() {
     if (this->nameSpace == "/") {
         return this->nameSpace + this->name;
@@ -78,4 +46,12 @@ void Node::response(Communication &communication, bool enabled) {
         .pid = (pid_t) this->pid
     };
     communication.server.sendProcSwitchResponse(msg, communication.pid, false);
+}
+
+std::string Node::getPayload() {
+    return node::getPayload(this->name, this->handle, this->pid);
+}
+
+void Node::toGraph(std::string payload) {
+    curl::push(payload);
 }

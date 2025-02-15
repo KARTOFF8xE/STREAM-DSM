@@ -2,26 +2,13 @@
 #include <string>
 #include <iostream>
 
+#include <neo4j/subscriber/subscriber.hpp>
+#include <curl/myCurl.hpp>
+
 #include "interface.h"
 #include "participants/subscriber.h"
 #include "curl.h"
 
-std::string Subscriber::getPayload() {
-    return fmt::format(R"(
-    {{
-        "statements":
-            [
-                {{ "statement": "MATCH (n:Node {{handle:$node_handle}}) MERGE (t:Topic{{name:$name}}) CREATE (n)<-[:sends_to]-(t) ",
-                "parameters": {{
-                    "name": "{}",
-                    "handle": "{}",
-                    "node_handle": "{}"
-                    }}
-                }}
-            ]
-    }}
-)", this->name, this->pubsub_handle, this->node_handle);
-}
 
 void Subscriber::extractInfo(const bt_event *event) {
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
@@ -36,21 +23,10 @@ void Subscriber::extractInfo(const bt_event *event) {
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 }
 
-void Subscriber::toGraph() {
-    struct Request *request = new Request;
+std::string Subscriber::getPayload() {
+    return subscriber::getPayload(this->name, this->pubsub_handle, this->node_handle);
+}
 
-    request->username = "neo4j";
-    request->password = "123456789";
-    request->url = "http://172.17.0.1:7474/db/neo4j/tx/commit";
-
-    request->query_request = getPayload();
-    CURL *curl = getCurl(request);
-
-    CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
-    } else {
-        // std::cout << "Antwort von Neo4j:" << std::endl;
-        // std::cout << request->query_response << std::endl;
-    }
+void Subscriber::toGraph(std::string payload) {
+    curl::push(payload);
 }

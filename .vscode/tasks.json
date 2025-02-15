@@ -35,7 +35,7 @@
         },
         {
             "label": "build stream",
-            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ipc tracer babeltrace_plugins datamgmt",
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ipc neo4j tracer babeltrace_plugins datamgmt",
             "type": "shell",
             "problemMatcher": [],
             "presentation": {

@@ -7,13 +7,6 @@ class Client: public IParticipant {
         std::string name;
         u_int64_t node_handle;
 
-        /**
-         * @brief Builds the payload used to query Graph-DB.
-         *
-         * @return The payload.
-         */
-        std::string getPayload() override;
-
     public:
         /**
          * @brief Extracts the information of a trace event (trace message).
@@ -23,7 +16,16 @@ class Client: public IParticipant {
         void extractInfo(const bt_event *event) override;
 
         /**
-         * @brief Sends Client to Graph.
+         * @brief Builds the payload used to query Graph-DB.
+         *
+         * @return The payload.
          */
-        void toGraph() override;
+        std::string getPayload() override;
+
+        /**
+         * @brief Sends Client to Graph.
+         * 
+         * TODO
+         */
+        void toGraph(std::string payload) override;
 };

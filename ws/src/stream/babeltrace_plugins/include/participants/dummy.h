@@ -3,14 +3,6 @@
 #include "interface.h"
 
 class Dummy: public IParticipant {
-    private:
-        /**
-         * @brief Builds the payload used to query Graph-DB.
-         *
-         * @return The payload.
-         */
-        std::string getPayload() override;
-
     public:
         /**
          * @brief Extracts the information of a trace event (trace message).
@@ -20,7 +12,16 @@ class Dummy: public IParticipant {
         void extractInfo(const bt_event *) override;
 
         /**
-         * @brief Sends Dummy to Graph.
+         * @brief Builds the payload used to query Graph-DB.
+         *
+         * @return The payload.
          */
-        void toGraph() override;
+        std::string getPayload() override;
+
+        /**
+         * @brief Sends Dummy to Graph.
+         * 
+         * TODO
+         */
+        void toGraph(std::string payload) override;
 };

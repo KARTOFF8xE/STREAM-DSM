@@ -15,13 +15,6 @@ class Node: public IParticipant {
         u_int32_t   bootcounter;
 
         /**
-         * @brief Builds the payload used to query Graph-DB.
-         *
-         * @return The payload.
-         */
-        std::string getPayload() override;
-
-        /**
          * @brief Concats the namespace and the name and inserts a "/" if needed.
          *
          * @return The full name.
@@ -37,9 +30,18 @@ class Node: public IParticipant {
         void extractInfo(const bt_event *) override;
 
         /**
-         * @brief Sends Node to Graph.
+         * @brief Builds the payload used to query Graph-DB.
+         *
+         * @return The payload.
          */
-        void toGraph() override;
+        std::string getPayload() override;
+
+        /**
+         * @brief Sends Node to Graph.
+         * 
+         * TODO
+         */
+        void toGraph(std::string payload) override;
 
         /**
          * // TODO

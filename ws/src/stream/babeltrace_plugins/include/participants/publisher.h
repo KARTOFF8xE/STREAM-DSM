@@ -8,13 +8,6 @@ class Publisher: public IParticipant {
         u_int64_t   pubsub_handle;
         u_int64_t   node_handle;
 
-        /**
-         * @brief Builds the payload used to query Graph-DB.
-         *
-         * @return The payload.
-         */
-        std::string getPayload() override;
-
     public:
         /**
          * @brief Extracts the information of a trace event (trace message).
@@ -24,7 +17,16 @@ class Publisher: public IParticipant {
         void extractInfo(const bt_event *event) override;
 
         /**
-         * @brief Sends Publisher to Graph.
+         * @brief Builds the payload used to query Graph-DB.
+         *
+         * @return The payload.
          */
-        void toGraph() override;
+        std::string getPayload() override;
+
+        /**
+         * @brief Sends Publisher to Graph.
+         * 
+         * TODO
+         */
+        void toGraph(std::string payload) override;
 };
