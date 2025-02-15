@@ -5,9 +5,8 @@
 #include <neo4j/subscriber/subscriber.hpp>
 #include <curl/myCurl.hpp>
 
-#include "interface.h"
-#include "participants/subscriber.h"
-#include "curl.h"
+#include "interface.hpp"
+#include "participants/subscriber.hpp"
 
 
 void Subscriber::extractInfo(const bt_event *event) {

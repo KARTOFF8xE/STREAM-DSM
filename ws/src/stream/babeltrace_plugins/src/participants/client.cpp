@@ -2,12 +2,11 @@
 #include <string>
 #include <iostream>
 
-#include "interface.h"
-#include "participants/client.h"
-#include "curl.h"
-
 #include <neo4j/client/client.hpp>
 #include <curl/myCurl.hpp>
+
+#include "interface.hpp"
+#include "participants/client.hpp"
 
 
 void Client::extractInfo(const bt_event *event) {

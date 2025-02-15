@@ -5,9 +5,8 @@
 #include <neo4j/publisher/publisher.hpp>
 #include <curl/myCurl.hpp>
 
-#include "interface.h"
-#include "participants/publisher.h"
-#include "curl.h"
+#include "interface.hpp"
+#include "participants/publisher.hpp"
 
 
 void Publisher::extractInfo(const bt_event *event) {

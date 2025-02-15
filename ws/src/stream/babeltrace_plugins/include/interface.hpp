@@ -3,7 +3,7 @@
 #include <string>
 #include <babeltrace2/babeltrace.h>
 
-#include "common.h"
+#include "common.hpp"
 
 struct Request {
     std::string url;
@@ -31,14 +31,17 @@ public:
   virtual std::string getPayload() = 0;
   
   /**
-   * @brief Sends component to Graph.
-   * 
-   * TODO
+   * @brief Sends a request by a query to a Neo4j database.
+   *
+   * @param payload The query to be sent to the Neo4j database.
    */
-  virtual void toGraph(std::string) = 0;
+  virtual void toGraph(std::string payload) = 0;
 
   /**
-   * // TODO
+   * @brief Sends a response message.
+   *
+   * @param communication Reference to a Communication object used for sending the response.
+   * @param enabled Enables/Disables if messages are being send.
    */
-  virtual void response(Communication &communication, bool enabled) {}
+  virtual void response(Communication &communication, bool enabled = false) {}
 };

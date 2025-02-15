@@ -2,8 +2,8 @@
 #include <string>
 #include <iostream>
 
-#include "interface.h"
-#include "participants/dummy.h"
+#include "interface.hpp"
+#include "participants/dummy.hpp"
 
 
 std::string Dummy::getPayload() {

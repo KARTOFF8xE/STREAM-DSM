@@ -5,14 +5,14 @@
 
 #include <babeltrace2/babeltrace.h>
 
-#include "interface.h"
-#include "participantFactory.h"
-#include "participants/node.h"
-#include "participants/publisher.h"
-#include "participants/subscriber.h"
-#include "participants/service.h"
-#include "participants/client.h"
-#include "participants/dummy.h"
+#include "interface.hpp"
+#include "participantFactory.hpp"
+#include "participants/node.hpp"
+#include "participants/publisher.hpp"
+#include "participants/subscriber.hpp"
+#include "participants/service.hpp"
+#include "participants/client.hpp"
+#include "participants/dummy.hpp"
 
 IParticipant *ParticipantFactory::getParticipant(const char *event_name) {
     if (strcmp(

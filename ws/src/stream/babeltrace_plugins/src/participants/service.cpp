@@ -5,9 +5,8 @@
 #include <neo4j/service/service.hpp>
 #include <curl/myCurl.hpp>
 
-#include "interface.h"
-#include "participants/service.h"
-#include "curl.h"
+#include "interface.hpp"
+#include "participants/service.hpp"
 
 
 void Service::extractInfo(const bt_event *event) {

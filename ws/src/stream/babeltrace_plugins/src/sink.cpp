@@ -8,16 +8,15 @@
 
 #include <ipc/ipc-server.hpp>
 
-#include "interface.h"
-#include "sink.h"
-#include "participantFactory.h"
+#include "interface.hpp"
+#include "sink.hpp"
+#include "participantFactory.hpp"
 
 static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink *self_component_sink,
         bt_self_component_sink_configuration *,
         const bt_value *params, void *) {
 
-    // struct publisher *publisher = (struct publisher *)malloc(sizeof(*publisher));
     struct publisher *publisher = new struct publisher();
     new (&publisher->communication.server) IpcServer(2);
 
@@ -27,8 +26,6 @@ static bt_component_class_initialize_method_status publisher_initialize(
 
     bt_self_component_sink_add_input_port(self_component_sink,
         "in", NULL, NULL);
-
-    // publisher->communication.server = IpcServer(2);
 
     return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
 }

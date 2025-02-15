@@ -5,10 +5,9 @@
 #include <neo4j/node/node.hpp>
 #include <curl/myCurl.hpp>
 
-#include "common.h"
-#include "interface.h"
-#include "participants/node.h"
-#include "curl.h"
+#include "common.hpp"
+#include "interface.hpp"
+#include "participants/node.hpp"
 
 
 void Node::extractInfo(const bt_event *event) {
@@ -42,6 +41,9 @@ std::string Node::getFullName() {
 }
 
 void Node::response(Communication &communication, bool enabled) {
+    if (!enabled) {
+        return;
+    }
     ProcSwitchResponse msg {
         .pid = (pid_t) this->pid
     };

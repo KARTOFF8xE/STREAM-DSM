@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interface.h"
+#include "interface.hpp"
 
 class ParticipantFactory {
     public:

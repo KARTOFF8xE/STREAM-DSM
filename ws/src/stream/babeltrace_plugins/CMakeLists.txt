@@ -15,7 +15,6 @@ find_package(neo4j REQUIRED)
 add_library(sink SHARED
     src/sink.cpp
     src/participantFactory.cpp
-    src/curl.cpp
     src/participants/client.cpp
     src/participants/node.cpp
     src/participants/dummy.cpp
@@ -27,7 +26,6 @@ add_library(sink SHARED
 
 target_include_directories(sink PRIVATE include)
 target_link_libraries(sink PRIVATE fmt::fmt)
-target_link_libraries(sink PRIVATE ${curl_LIBRARIES})
 target_link_libraries(sink PRIVATE ${babeltrace2_LIBRARIES})
 target_link_libraries(sink PRIVATE ipc::ipc_lib)
 target_link_libraries(sink PRIVATE neo4j::neo4j_lib)

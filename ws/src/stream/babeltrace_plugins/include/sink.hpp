@@ -1,7 +1,7 @@
 #include <babeltrace2/babeltrace.h>
 
-#include "common.h"
-#include "interface.h"
+#include "common.hpp"
+#include "interface.hpp"
 
 
 struct publisher {

@@ -2,9 +2,8 @@
 
 #include <ipc/ipc-server.hpp>
 
-#include "interface.h"
+#include "interface.hpp"
 
-#include <sink.h>
 
 class Node: public IParticipant {
     private:
@@ -37,14 +36,17 @@ class Node: public IParticipant {
         std::string getPayload() override;
 
         /**
-         * @brief Sends Node to Graph.
-         * 
-         * TODO
+         * @brief Sends a node by a query to a Neo4j database.
+         *
+         * @param payload The query to be sent to the Neo4j database.
          */
         void toGraph(std::string payload) override;
 
         /**
-         * // TODO
+         * @brief Sends a process switch response message.
+         *
+         * @param communication Reference to a Communication object used for sending the response.
+         * @param enabled Enables/Disables if messages are being send.
          */
         void response(Communication &communication, bool enabled);
 };

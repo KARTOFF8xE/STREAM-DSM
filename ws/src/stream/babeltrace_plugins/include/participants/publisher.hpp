@@ -1,11 +1,12 @@
 #pragma once
 
-#include "interface.h"
+#include "interface.hpp"
 
-class Client: public IParticipant {
+class Publisher: public IParticipant {
     private:
         std::string name;
-        u_int64_t node_handle;
+        u_int64_t   pubsub_handle;
+        u_int64_t   node_handle;
 
     public:
         /**
@@ -23,9 +24,9 @@ class Client: public IParticipant {
         std::string getPayload() override;
 
         /**
-         * @brief Sends Client to Graph.
-         * 
-         * TODO
+         * @brief Sends a publisher by a query to a Neo4j database.
+         *
+         * @param payload The query to be sent to the Neo4j database.
          */
         void toGraph(std::string payload) override;
 };
