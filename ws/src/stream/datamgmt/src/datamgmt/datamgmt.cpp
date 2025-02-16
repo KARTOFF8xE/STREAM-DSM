@@ -12,12 +12,12 @@
 
 #include <ipc/ipc-server.hpp>
 #include <ipc/ipc-client.hpp>
+#include <neo4j/node/node.hpp>
+#include <curl/myCurl.hpp>
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
 
-std::mutex m;
-std::condition_variable cv;
 
 void procObserver(int pipe_r, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
@@ -59,6 +59,7 @@ void procObserver(int pipe_r, std::atomic<bool> &running) {
             if (kill(pid, 0) != 0) {
                 std::cout << pid << " died." << std::endl;
                 pids.erase(find(pids.begin(), pids.end(), pid));
+                curl::push(node::getPayloadSetOffline(pid));
             }
         }
 

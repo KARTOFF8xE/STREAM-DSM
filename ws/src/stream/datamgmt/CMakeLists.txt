@@ -8,6 +8,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(ipc REQUIRED)
+find_package(neo4j REQUIRED)
 
 add_executable(datamgmt
   src/datamgmt/datamgmt.cpp
@@ -19,7 +20,9 @@ target_include_directories(datamgmt PRIVATE include/)
 target_link_libraries(datamgmt
   PRIVATE
     ipc::ipc_lib
+    neo4j::neo4j_lib
 )
+# target_link_libraries(sink PRIVATE neo4j::neo4j_lib)
 
 install(TARGETS
   datamgmt
