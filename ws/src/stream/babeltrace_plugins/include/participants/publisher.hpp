@@ -29,4 +29,12 @@ class Publisher: public IParticipant {
          * @param payload The query to be sent to the Neo4j database.
          */
         void toGraph(std::string payload) override;
+
+        /**
+         * @brief Sends a node switch response message.
+         *
+         * @param communication Reference to a Communication object used for sending the response.
+         * @param enabled Enables/Disables if messages are being send.
+         */
+        void response(Communication &communication, bool enabled);
 };

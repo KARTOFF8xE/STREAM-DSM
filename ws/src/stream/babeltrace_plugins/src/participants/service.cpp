@@ -28,3 +28,19 @@ std::string Service::getPayload() {
 void Service::toGraph(std::string payload) {
     curl::push(payload);
 }
+
+void Service::response(Communication &communication, bool enabled) {
+    if (!enabled) {
+        return;
+    }
+    NodeSwitchResponse msg {
+        .type = SERVICE,
+        .primary_key = static_cast<primaryKey_t>(this->node_handle)
+    };
+    strcpy(
+        msg.service,
+        this->name.c_str()
+    );
+
+    communication.server.sendNodeSwitchResponse(msg, communication.pid, false);
+}

@@ -29,3 +29,19 @@ std::string Publisher::getPayload() {
 void Publisher::toGraph(std::string payload) {
     curl::push(payload);
 }
+
+void Publisher::response(Communication &communication, bool enabled) {
+    if (!enabled) {
+        return;
+    }
+    NodeSwitchResponse msg {
+        .type = PUB,
+        .primary_key = static_cast<primaryKey_t>(this->node_handle)
+    };
+    stpcpy(
+        msg.pub,
+        this->name.c_str()
+    );
+
+    communication.server.sendNodeSwitchResponse(msg, communication.pid, false);
+}

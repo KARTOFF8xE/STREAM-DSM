@@ -40,20 +40,25 @@ std::string Node::getFullName() {
     return this->nameSpace + "/" + this->name;
 }
 
-void Node::response(Communication &communication, bool enabled) {
-    if (!enabled) {
-        return;
-    }
-    ProcSwitchResponse msg {
-        .pid = (pid_t) this->pid
-    };
-    communication.server.sendProcSwitchResponse(msg, communication.pid, false);
-}
-
 std::string Node::getPayload() {
     return node::getPayload(this->name, this->handle, this->pid);
 }
 
 void Node::toGraph(std::string payload) {
     curl::push(payload);
+}
+
+void Node::response(Communication &communication, bool enabled) {
+    if (!enabled) {
+        return;
+    }
+    NodeSwitchResponse msg {
+        .type = NODE,
+        .primary_key = static_cast<primaryKey_t>(this->handle),
+        .alive = true,
+        .aliveChangeTime = 0, // TODO
+        .bootCounter = 0, // TODO
+        .pid = (pid_t) this->pid,
+    };
+    communication.server.sendNodeSwitchResponse(msg, communication.pid, false);
 }

@@ -103,7 +103,7 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
 
     participant->extractInfo(event);
     participant->toGraph(participant->getPayload());
-    participant->response(publisher->communication, publisher->sendToProcObserver);
+    participant->response(publisher->communication, publisher->sendToNodeObserver);
 
     return;
 
@@ -142,13 +142,13 @@ bt_component_class_sink_consume_method_status publisher_consume(
             break;
     }
 
-    std::optional<ProcSwitchRequest> request = publisher->communication.server.receiveProcSwitchRequest(
+    std::optional<NodeSwitchRequest> request = publisher->communication.server.receiveNodeSwitchRequest(
         publisher->communication.requestId,
         publisher->communication.pid,
         false
     );
     if (request.has_value()) {
-        publisher->sendToProcObserver = request.value().updates;
+        publisher->sendToNodeObserver = request.value().updates;
     }
 
     for (uint64_t i = 0; i < message_count; i++) {

@@ -26,6 +26,6 @@ struct Module {
 };
 
 enum Module_t {
-    PROCOBSERVER,
-    LASTOPTION  
+    NODEOBSERVER,
+    LASTOPTION
 };

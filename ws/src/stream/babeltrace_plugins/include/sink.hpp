@@ -8,7 +8,7 @@ struct publisher {
     bt_message_iterator *message_iterator;
     Communication communication;
 
-    bool sendToProcObserver = false;
+    bool sendToNodeObserver = false;
     
     publisher() : communication{IpcServer(2), 0, 0} {}
 };

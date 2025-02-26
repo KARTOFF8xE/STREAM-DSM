@@ -67,6 +67,7 @@ RUN pip3 install --break-system-packages -U colcon-common-extensions vcstool
 RUN apt install nano -y
 RUN apt install openssh-client -y
 RUN apt install terminator -y
+RUN apt install tmux -y
 RUN apt install gdb -y
 RUN apt update && apt upgrade -y
 

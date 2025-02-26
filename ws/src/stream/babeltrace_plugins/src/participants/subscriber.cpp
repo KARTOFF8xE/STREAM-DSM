@@ -29,3 +29,19 @@ std::string Subscriber::getPayload() {
 void Subscriber::toGraph(std::string payload) {
     curl::push(payload);
 }
+
+void Subscriber::response(Communication &communication, bool enabled) {
+    if (!enabled) {
+        return;
+    }
+    NodeSwitchResponse msg {
+        .type = SUB,
+        .primary_key = static_cast<primaryKey_t>(this->node_handle)
+    };
+    stpcpy(
+        msg.sub,
+        this->name.c_str()
+    );
+
+    communication.server.sendNodeSwitchResponse(msg, communication.pid, false);
+}

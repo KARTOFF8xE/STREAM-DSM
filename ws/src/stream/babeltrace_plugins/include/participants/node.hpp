@@ -43,7 +43,7 @@ class Node: public IParticipant {
         void toGraph(std::string payload) override;
 
         /**
-         * @brief Sends a process switch response message.
+         * @brief Sends a node switch response message.
          *
          * @param communication Reference to a Communication object used for sending the response.
          * @param enabled Enables/Disables if messages are being send.

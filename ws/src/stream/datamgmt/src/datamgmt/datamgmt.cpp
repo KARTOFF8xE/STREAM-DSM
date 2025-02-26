@@ -19,7 +19,25 @@
 #include "datamgmt/datamgmt.hpp"
 
 
-void procObserver(int pipe_r, std::atomic<bool> &running) {
+/**
+ * Make ProcObserver to NodeObserver
+ * [x] BabelTrace_Plugin sends updates to Node creation
+ * [x] BabelTrace_Plugin sends updates to pub creation
+ * [x] BabelTrace_Plugin sends updates to sub creation
+ * [x] BabelTrace_Plugin sends updates to service creation
+ * [x] BabelTrace_Plugin sends updates to client creation
+ * [x] enable and disable Node updates
+ * 
+ * [ ] make a single-time response (just Query neo4j and return stuff)
+ * [ ] make an update response
+ *      [ ] make list of receivers
+ *          [ ] every receiver has a list of nodes he wants to observe
+ *          [ ] every receiver has a list of stuff (topics, services) he wants to ignore
+ *      [!] receivers (and Node) are send by "main module" and received by module
+ *      [x] if there are no more receivers, the
+ */
+
+void nodeObserver(int pipe_r, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
 
     std::vector<Client> clients;
@@ -28,18 +46,43 @@ void procObserver(int pipe_r, std::atomic<bool> &running) {
     IpcClient ipcClient(2);
     requestId_t requestId;
     {
-        ProcSwitchRequest msg = ProcSwitchRequest{
+        NodeSwitchRequest msg = NodeSwitchRequest{
             .updates = true
         };
-        ipcClient.sendProcSwitchRequest(msg, requestId, false);
+        ipcClient.sendNodeSwitchRequest(msg, requestId, false);
     }
     
     Client client;
     do {
-        std::optional<ProcSwitchResponse> response = ipcClient.receiveProcSwitchResponse(false);
+        std::optional<NodeSwitchResponse> response = ipcClient.receiveNodeSwitchResponse(false);
         if (response.has_value()) {
-            pids.push_back(response.value().pid);
-            std::cout << "Received new Node with PID: " << response.value().pid << std::endl;
+            switch (response.value().type)
+            {
+                case NODE:
+                    pids.push_back(response.value().pid);
+                    std::cout << "Received new Node with PID: " << response.value().pid <<
+                        "\n\talive: " << response.value().alive <<
+                        "\n\talive_changeTime: " << response.value().aliveChangeTime <<
+                    std::endl;
+                    break;
+                case PUB:
+                    std::cout << "New Pub: " << response.value().pub << std::endl;
+                    break;
+                case SUB:
+                    std::cout << "New Sub: " << response.value().sub << std::endl;
+                    break;
+                case SERVICE:
+                    std::cout << "New Service: " << response.value().service << std::endl;
+                    break;
+                case CLIENT:
+                    std::cout << "New Client: " << response.value().client << std::endl;
+                    break;
+                default:
+                    std::cout << "Unknown Type" << std::endl;
+                    break;
+            }
+            
+            
         }
 
         int ret = readT<Client>(pipe_r, client);
@@ -63,7 +106,7 @@ void procObserver(int pipe_r, std::atomic<bool> &running) {
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
     } while(!clients.empty());
     std::cout << "empty now" << std::endl;
 
@@ -75,22 +118,22 @@ void procObserver(int pipe_r, std::atomic<bool> &running) {
 
     // TODO unsubscribe Events
 
-    ProcSwitchRequest msg = ProcSwitchRequest{
+    NodeSwitchRequest msg = NodeSwitchRequest{
         .updates = false
     };
-    ipcClient.sendProcSwitchRequest(msg, requestId, false);
+    ipcClient.sendNodeSwitchRequest(msg, requestId, false);
 
     running.store(false);
 }
 
 void runModule(Module_t module_t, Module &module) {
     switch (module_t) {
-        case PROCOBSERVER:
+        case NODEOBSERVER:
             if (module.thread.has_value() && module.thread.value().joinable()){
                 module.thread.value().join();
             }
             module.running.store(true);
-            module.thread = std::thread(procObserver, module.pipe.read, std::ref(module.running));
+            module.thread = std::thread(nodeObserver, module.pipe.read, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
@@ -102,7 +145,7 @@ int main() {
     IpcServer server(1);
 
     std::map<Module_t, Module> modules;
-    for (int i = PROCOBSERVER; i < LASTOPTION; i++) {
+    for (int i = NODEOBSERVER; i < LASTOPTION; i++) {
         modules[static_cast<Module_t>(i)];
     }
 
@@ -118,10 +161,10 @@ int main() {
                 .requestId = newClient.requestId,
                 .updates = requestPayload.updates,
             };
-            writeT<Client>(modules[PROCOBSERVER].pipe.write, clientInfo);
+            writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
 
-            if (!modules[PROCOBSERVER].running) {
-                runModule(PROCOBSERVER, modules[PROCOBSERVER]);
+            if (!modules[NODEOBSERVER].running) {
+                runModule(NODEOBSERVER, modules[NODEOBSERVER]);
             }
         }
 
