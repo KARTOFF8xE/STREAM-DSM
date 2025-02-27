@@ -18,7 +18,6 @@
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
 
-
 /**
  * Make ProcObserver to NodeObserver
  * [x] BabelTrace_Plugin sends updates to Node creation
@@ -63,6 +62,7 @@ void nodeObserver(int pipe_r, std::atomic<bool> &running) {
                     std::cout << "Received new Node with PID: " << response.value().pid <<
                         "\n\talive: " << response.value().alive <<
                         "\n\talive_changeTime: " << response.value().aliveChangeTime <<
+                        "\n\tid (primaryKey): " << response.value().primary_key <<
                     std::endl;
                     break;
                 case PUB:
@@ -81,8 +81,6 @@ void nodeObserver(int pipe_r, std::atomic<bool> &running) {
                     std::cout << "Unknown Type" << std::endl;
                     break;
             }
-            
-            
         }
 
         int ret = readT<Client>(pipe_r, client);

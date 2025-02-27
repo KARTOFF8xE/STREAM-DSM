@@ -7,11 +7,12 @@
 
 class Node: public IParticipant {
     private:
-        std::string name;
-        std::string nameSpace;
-        u_int64_t   handle;
-        u_int32_t   pid;
-        u_int32_t   bootcounter;
+        primaryKey_t    primaryKey;
+        u_int64_t       handle;
+        std::string     name;
+        std::string     nameSpace;
+        pid_t           pid;
+        u_int32_t       bootcounter;
 
         /**
          * @brief Concats the namespace and the name and inserts a "/" if needed.

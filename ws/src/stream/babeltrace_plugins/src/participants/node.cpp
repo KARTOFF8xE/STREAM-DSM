@@ -9,6 +9,7 @@
 #include "interface.hpp"
 #include "participants/node.hpp"
 
+#include <nlohmann/json.hpp>
 
 void Node::extractInfo(const bt_event *event) {
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
@@ -45,7 +46,11 @@ std::string Node::getPayload() {
 }
 
 void Node::toGraph(std::string payload) {
-    curl::push(payload);
+    std::string response = curl::push(payload);
+    // std::cout << response << std::endl;
+    nlohmann::json data = nlohmann::json::parse(response);
+    // data["results"] for parsing results
+    // this->primaryKey = std::stoi(response);
 }
 
 void Node::response(Communication &communication, bool enabled) {
@@ -54,7 +59,7 @@ void Node::response(Communication &communication, bool enabled) {
     }
     NodeSwitchResponse msg {
         .type = NODE,
-        .primary_key = static_cast<primaryKey_t>(this->handle),
+        .primary_key = this->primaryKey,
         .alive = true,
         .aliveChangeTime = 0, // TODO
         .bootCounter = 0, // TODO

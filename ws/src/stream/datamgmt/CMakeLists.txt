@@ -9,6 +9,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(ipc REQUIRED)
 find_package(neo4j REQUIRED)
+# find_package(daw-json-link REQUIRED)
+find_package(nlohmann_json 3.11.3 REQUIRED)
 
 add_executable(datamgmt
   src/datamgmt/datamgmt.cpp
@@ -21,8 +23,9 @@ target_link_libraries(datamgmt
   PRIVATE
     ipc::ipc_lib
     neo4j::neo4j_lib
+    # daw::daw-json-link
+    nlohmann_json::nlohmann_json
 )
-# target_link_libraries(sink PRIVATE neo4j::neo4j_lib)
 
 install(TARGETS
   datamgmt
