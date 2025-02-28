@@ -63,6 +63,7 @@ void nodeObserver(int pipe_r, std::atomic<bool> &running) {
                         "\n\talive: " << response.value().alive <<
                         "\n\talive_changeTime: " << response.value().aliveChangeTime <<
                         "\n\tid (primaryKey): " << response.value().primary_key <<
+                        "\n\tbootcounter: " << response.value().bootCounter <<
                     std::endl;
                     break;
                 case PUB:
@@ -124,6 +125,11 @@ void nodeObserver(int pipe_r, std::atomic<bool> &running) {
     running.store(false);
 }
 
+void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
+    std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey));
+    std::cout << response << std::endl;
+}
+
 void runModule(Module_t module_t, Module &module) {
     switch (module_t) {
         case NODEOBSERVER:
@@ -149,18 +155,20 @@ int main() {
 
     while (true) {
         Client newClient;
-        std::optional<ProcessRequest> request = server.receiveProcessRequest(newClient.requestId, newClient.pid, false);
+        std::optional<NodeRequest> request = server.receiveNodeRequest(newClient.requestId, newClient.pid, false);
         
         if (request.has_value()) {
             // extract msg and send to thread (write to pipe)
-            ProcessRequest requestPayload = request.value();
+            NodeRequest requestPayload = request.value();
             Client clientInfo {
                 .pid = newClient.pid,
                 .requestId = newClient.requestId,
                 .updates = requestPayload.updates,
             };
             writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
-
+            
+            singleTimeNodeResponse(clientInfo, primaryKey_t(14));
+            // singleTimeNodeResponse(clientInfo, requestPayload.primaryKey);
             if (!modules[NODEOBSERVER].running) {
                 runModule(NODEOBSERVER, modules[NODEOBSERVER]);
             }

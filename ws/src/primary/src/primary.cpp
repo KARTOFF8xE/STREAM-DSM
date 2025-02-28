@@ -10,13 +10,12 @@ int main() {
   IpcClient client(1);
 
   requestId_t requestId;
-  const ProcessRequest request{
+  const NodeRequest request{
     .primaryKey = (pid_t)13,
-    .updates = true,
-    .continuous = false,
+    .updates = true
   };
   std::cout << "Hello Primary 1!" << std::endl;
-  client.sendProcessRequest(request, requestId, true);
+  client.sendNodeRequest(request, requestId, true);
 
   // std::this_thread::sleep_for(std::chrono::milliseconds(500));
   // const ProcessRequest request2{

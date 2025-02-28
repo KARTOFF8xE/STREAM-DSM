@@ -49,8 +49,24 @@ void Node::toGraph(std::string payload) {
     std::string response = curl::push(payload);
     // std::cout << response << std::endl;
     nlohmann::json data = nlohmann::json::parse(response);
-    // data["results"] for parsing results
-    // this->primaryKey = std::stoi(response);
+    std::cout << data["results"][0] << std::endl;
+    if (!data["results"].empty() &&
+        !data["results"][0]["data"].empty() && 
+        !data["results"][0]["data"][0]["meta"].empty())
+        {
+        this->primaryKey = static_cast<primaryKey_t>(data["results"][0]["data"][0]["meta"][0]["id"]);
+    } else {
+        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
+    }
+    if (!data["results"].empty() &&
+        !data["results"][0]["data"].empty() && 
+        !data["results"][0]["data"][0]["row"].empty())
+        {
+        this->bootcounter       = data["results"][0]["data"][0]["row"][0]["bootcounter"];
+        this->stateChangeTime   = data["results"][0]["data"][0]["row"][0]["stateChangeTime"];
+    } else {
+        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
+    }
 }
 
 void Node::response(Communication &communication, bool enabled) {
@@ -61,8 +77,8 @@ void Node::response(Communication &communication, bool enabled) {
         .type = NODE,
         .primary_key = this->primaryKey,
         .alive = true,
-        .aliveChangeTime = 0, // TODO
-        .bootCounter = 0, // TODO
+        .aliveChangeTime = this->stateChangeTime,
+        .bootCounter = this->bootcounter,
         .pid = (pid_t) this->pid,
     };
     communication.server.sendNodeSwitchResponse(msg, communication.pid, false);

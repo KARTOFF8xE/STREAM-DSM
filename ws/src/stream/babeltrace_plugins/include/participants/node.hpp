@@ -13,6 +13,7 @@ class Node: public IParticipant {
         std::string     nameSpace;
         pid_t           pid;
         u_int32_t       bootcounter;
+        u_int32_t       stateChangeTime;
 
         /**
          * @brief Concats the namespace and the name and inserts a "/" if needed.
