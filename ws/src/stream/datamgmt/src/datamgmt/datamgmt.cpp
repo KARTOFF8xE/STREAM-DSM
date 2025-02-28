@@ -10,6 +10,8 @@
 #include <map>
 #include <bits/stdc++.h>
 
+#include <nlohmann/json.hpp>
+
 #include <ipc/ipc-server.hpp>
 #include <ipc/ipc-client.hpp>
 #include <neo4j/node/node.hpp>
@@ -17,6 +19,8 @@
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
+
+using json = nlohmann::json;
 
 /**
  * Make ProcObserver to NodeObserver
@@ -27,7 +31,7 @@
  * [x] BabelTrace_Plugin sends updates to client creation
  * [x] enable and disable Node updates
  * 
- * [ ] make a single-time response (just Query neo4j and return stuff)
+ * [x] make a single-time response (just Query neo4j and return stuff)
  * [ ] make an update response
  *      [ ] make list of receivers
  *          [ ] every receiver has a list of nodes he wants to observe
@@ -128,6 +132,58 @@ void nodeObserver(int pipe_r, std::atomic<bool> &running) {
 void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
     std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey));
     std::cout << response << std::endl;
+
+    json payload = json::parse(response);
+    std::cout << "---------" << std::endl;
+    json row = payload["results"][0]["data"][0]["row"];
+    std::cout << row << std::endl;
+
+    json requestedNode;
+    std::vector<std::string> pubs, subs, clientRequest, serverResponse;
+    for (const json & item: row) {
+        if (item.contains("name")) {
+            std::cout << item["name"] << std::endl;
+            requestedNode = item;
+            continue;
+        }
+
+        if (item[0].contains("relationship")) {
+            std::cout << item[0]["relationship"] << std::endl;
+
+            if (item[0]["relationship"] == "publishes_to") {
+                for (const json & node: item[0]) {
+                    pubs.push_back(node.dump());
+                }
+            }
+            if (item[0]["relationship"] == "subscription") {
+                for (const json & node: item[0]) {
+                    subs.push_back(node.dump());
+                }
+            }
+            if (item[0]["relationship"] == "response") {
+                for (const json & node: item[0]) {
+                    serverResponse.push_back(node.dump());
+                }
+            }
+            if (item[0]["relationship"] == "request") {
+                for (const json & node: item[0]) {
+                    clientRequest.push_back(node.dump());
+                }
+            }
+
+            continue;
+        }
+    }
+
+    /** TODO (hier gehts weiter)
+     * util einbinden (muss erst woanders hin geschoben werden) 
+     * dann mit requested_Node eigentlich fast alles parcebar
+     * für die listen hab ich Vectors gemacht
+    */
+
+    NodeResponse nodeResponse {
+        .primaryKey = primaryKey,
+    };
 }
 
 void runModule(Module_t module_t, Module &module) {
