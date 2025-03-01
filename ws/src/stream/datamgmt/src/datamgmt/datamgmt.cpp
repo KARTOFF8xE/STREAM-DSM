@@ -14,6 +14,7 @@
 
 #include <ipc/ipc-server.hpp>
 #include <ipc/ipc-client.hpp>
+#include <ipc/util.hpp>
 #include <neo4j/node/node.hpp>
 #include <curl/myCurl.hpp>
 
@@ -131,59 +132,106 @@ void nodeObserver(int pipe_r, std::atomic<bool> &running) {
 
 void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
     std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey));
-    std::cout << response << std::endl;
+    // std::cout << response << std::endl;
 
     json payload = json::parse(response);
-    std::cout << "---------" << std::endl;
+    // std::cout << "---------" << std::endl;
     json row = payload["results"][0]["data"][0]["row"];
-    std::cout << row << std::endl;
+    // std::cout << row << std::endl;
 
+    struct Edge {
+        primaryKey_t primaryKey;
+        std::string servername;
+    };
     json requestedNode;
-    std::vector<std::string> pubs, subs, clientRequest, serverResponse;
+    std::vector<NodePublishersToUpdate>     pubs;
+    std::vector<NodeSubscribersToUpdate>     subs;
+    std::vector<NodeIsServerForUpdate>      isServerFor;
+    std::vector<NodeIsClientOfUpdate>       isClientOf;
     for (const json & item: row) {
         if (item.contains("name")) {
-            std::cout << item["name"] << std::endl;
             requestedNode = item;
             continue;
         }
 
-        if (item[0].contains("relationship")) {
-            std::cout << item[0]["relationship"] << std::endl;
+        size_t counter = 0;
+        while (item[counter].contains("relationship")) {
+            if (item[counter].contains("relationship")) {
+                // std::cout << item[counter]["relationship"] << std::endl;
+                // std::cout << item[counter] << std::endl;
 
-            if (item[0]["relationship"] == "publishes_to") {
-                for (const json & node: item[0]) {
-                    pubs.push_back(node.dump());
+                if (item[counter]["relationship"] == "publishes_to") {
+                    for (const json & node: item[counter]["nodes"]) {
+                        pubs.push_back(
+                            NodePublishersToUpdate {
+                                .primaryKey = primaryKey,
+                                .publishesTo = node["id"],
+                            }
+                        );
+                    }
                 }
-            }
-            if (item[0]["relationship"] == "subscription") {
-                for (const json & node: item[0]) {
-                    subs.push_back(node.dump());
+                if (item[counter]["relationship"] == "subscription") {
+                    for (const json & node: item[counter]["nodes"]) {
+                        subs.push_back(
+                            NodeSubscribersToUpdate {
+                                .primaryKey = primaryKey,
+                                .subscribesTo = node["id"],
+                            }
+                        );
+                    }
                 }
-            }
-            if (item[0]["relationship"] == "response") {
-                for (const json & node: item[0]) {
-                    serverResponse.push_back(node.dump());
-                }
-            }
-            if (item[0]["relationship"] == "request") {
-                for (const json & node: item[0]) {
-                    clientRequest.push_back(node.dump());
-                }
-            }
+                if (item[counter]["relationship"] == "response") {
+                    for (const json & node: item[counter]["nodes"]) {
+                        NodeIsClientOfUpdate tmp = NodeIsClientOfUpdate {
+                            .primaryKey = primaryKey,
+                            .serverNodeId = node["id"],
+                        };
+                        util::parseString(tmp.srvName, node["servername"].dump());
 
-            continue;
+                        isClientOf.push_back(tmp);
+                    }
+                }
+                if (item[counter]["relationship"] == "request") {
+                    for (const json & node: item[counter]["nodes"]) {
+                        
+                        NodeIsServerForUpdate tmp = NodeIsServerForUpdate {
+                            .primaryKey = primaryKey,
+                            .clientNodeId = node["id"],
+                        };
+                        util::parseString(tmp.srvName, node["servername"].dump());
+
+                        isServerFor.push_back(tmp);
+                    }
+                }
+            }
+            counter++;
         }
     }
 
+    // std::cout << "requestedNode: " << requestedNode << std::endl;
+
     /** TODO (hier gehts weiter)
-     * util einbinden (muss erst woanders hin geschoben werden) 
-     * dann mit requested_Node eigentlich fast alles parcebar
-     * für die listen hab ich Vectors gemacht
+     * für die listen hab ich Vectors gemacht -> noch auszuwerten
     */
 
     NodeResponse nodeResponse {
         .primaryKey = primaryKey,
+        .alive = requestedNode["state"] > 0,
+        .aliveChangeTime = requestedNode["stateChangeTime"],
+        .bootCount = requestedNode["bootcounter"],
     };
+    util::parseString(nodeResponse.name, requestedNode["name"].dump());
+    util::parseArray(nodeResponse.publisherInitialUpdate, pubs);
+    util::parseArray(nodeResponse.subscriberInitialUpdate, subs);
+
+
+    for (auto client : isClientOf) {
+        std::cout << "primkey: " << client.primaryKey << "\n clients: " << client.serverNodeId << client.srvName << std::endl;
+    }
+    for (auto server : isServerFor) {
+        std::cout << "primkey: " << server.primaryKey << "\n server: " << server.clientNodeId << server.srvName << std::endl;
+    }
+
 }
 
 void runModule(Module_t module_t, Module &module) {
@@ -223,7 +271,7 @@ int main() {
             };
             writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
             
-            singleTimeNodeResponse(clientInfo, primaryKey_t(14));
+            singleTimeNodeResponse(clientInfo, primaryKey_t(5));
             // singleTimeNodeResponse(clientInfo, requestPayload.primaryKey);
             if (!modules[NODEOBSERVER].running) {
                 runModule(NODEOBSERVER, modules[NODEOBSERVER]);

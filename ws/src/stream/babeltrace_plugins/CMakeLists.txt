@@ -7,10 +7,10 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 find_library(curl_LIBRARIES NAMES curl REQUIRED)
-find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
-find_package(fmt REQUIRED)
 find_package(ipc REQUIRED)
+find_package(fmt REQUIRED)
 find_package(neo4j REQUIRED)
+find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
 
 add_library(sink SHARED
     src/sink.cpp
@@ -29,8 +29,8 @@ target_link_libraries(sink
   PRIVATE
     fmt::fmt
     ${babeltrace2_LIBRARIES}
-    ipc::ipc_lib
     neo4j::neo4j_lib
+    ipc::ipc_lib
 )
 
 install(TARGETS sink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
