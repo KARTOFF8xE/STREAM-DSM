@@ -130,7 +130,7 @@ void nodeObserver(int pipe_r, std::atomic<bool> &running) {
     running.store(false);
 }
 
-void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
+void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
     std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey));
     // std::cout << response << std::endl;
 
@@ -140,12 +140,12 @@ void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
     // std::cout << row << std::endl;
 
     struct Edge {
-        primaryKey_t primaryKey;
-        std::string servername;
+        primaryKey_t    primaryKey;
+        std::string     servername;
     };
     json requestedNode;
     std::vector<NodePublishersToUpdate>     pubs;
-    std::vector<NodeSubscribersToUpdate>     subs;
+    std::vector<NodeSubscribersToUpdate>    subs;
     std::vector<NodeIsServerForUpdate>      isServerFor;
     std::vector<NodeIsClientOfUpdate>       isClientOf;
     for (const json & item: row) {
@@ -166,6 +166,7 @@ void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
                             NodePublishersToUpdate {
                                 .primaryKey = primaryKey,
                                 .publishesTo = node["id"],
+                                .isUpdate = false,
                             }
                         );
                     }
@@ -176,6 +177,7 @@ void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
                             NodeSubscribersToUpdate {
                                 .primaryKey = primaryKey,
                                 .subscribesTo = node["id"],
+                                .isUpdate = false,
                             }
                         );
                     }
@@ -185,6 +187,7 @@ void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
                         NodeIsClientOfUpdate tmp = NodeIsClientOfUpdate {
                             .primaryKey = primaryKey,
                             .serverNodeId = node["id"],
+                            .isUpdate = false,
                         };
                         util::parseString(tmp.srvName, node["servername"].dump());
 
@@ -197,6 +200,7 @@ void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
                         NodeIsServerForUpdate tmp = NodeIsServerForUpdate {
                             .primaryKey = primaryKey,
                             .clientNodeId = node["id"],
+                            .isUpdate = false,
                         };
                         util::parseString(tmp.srvName, node["servername"].dump());
 
@@ -207,31 +211,29 @@ void singleTimeNodeResponse(Client client, primaryKey_t primaryKey) {
             counter++;
         }
     }
-
-    // std::cout << "requestedNode: " << requestedNode << std::endl;
-
-    /** TODO (hier gehts weiter)
-     * für die listen hab ich Vectors gemacht -> noch auszuwerten
-    */
-
     NodeResponse nodeResponse {
         .primaryKey = primaryKey,
         .alive = requestedNode["state"] > 0,
         .aliveChangeTime = requestedNode["stateChangeTime"],
         .bootCount = requestedNode["bootcounter"],
+        .pid = requestedNode["pid"],
+        .nrOfInitialUpdates = pubs.size() + subs.size() + isClientOf.size() + isServerFor.size(),
     };
-    util::parseString(nodeResponse.name, requestedNode["name"].dump());
-    util::parseArray(nodeResponse.publisherInitialUpdate, pubs);
-    util::parseArray(nodeResponse.subscriberInitialUpdate, subs);
+    util::parseString(nodeResponse.name, requestedNode["name"].get<std::string>());
+    server.sendNodeResponse(nodeResponse, client.pid);
 
-
-    for (auto client : isClientOf) {
-        std::cout << "primkey: " << client.primaryKey << "\n clients: " << client.serverNodeId << client.srvName << std::endl;
+    for (NodePublishersToUpdate item : pubs) {
+        server.sendNodePublishersToUpdate(item, client.pid);
     }
-    for (auto server : isServerFor) {
-        std::cout << "primkey: " << server.primaryKey << "\n server: " << server.clientNodeId << server.srvName << std::endl;
+    for (NodeSubscribersToUpdate item : subs) {
+        server.sendNodeSubscribersToUpdate(item, client.pid);
     }
-
+    for (NodeIsClientOfUpdate item : isClientOf) {
+        server.sendNodeIsClientOfUpdate(item, client.pid);
+    }
+    for (NodeIsServerForUpdate item : isServerFor) {
+        server.sendNodeIsServerForUpdate(item, client.pid);
+    }
 }
 
 void runModule(Module_t module_t, Module &module) {
@@ -271,8 +273,8 @@ int main() {
             };
             writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
             
-            singleTimeNodeResponse(clientInfo, primaryKey_t(5));
-            // singleTimeNodeResponse(clientInfo, requestPayload.primaryKey);
+            // singleTimeNodeResponse(server, clientInfo, primaryKey_t(5));
+            singleTimeNodeResponse(server, clientInfo, requestPayload.primaryKey);
             if (!modules[NODEOBSERVER].running) {
                 runModule(NODEOBSERVER, modules[NODEOBSERVER]);
             }

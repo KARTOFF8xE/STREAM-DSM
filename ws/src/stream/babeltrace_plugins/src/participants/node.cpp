@@ -42,14 +42,13 @@ std::string Node::getFullName() {
 }
 
 std::string Node::getPayload() {
-    return node::getPayload(this->name, this->handle, this->pid);
+    return node::getPayload(getFullName(), this->handle, this->pid);
 }
 
 void Node::toGraph(std::string payload) {
     std::string response = curl::push(payload);
-    // std::cout << response << std::endl;
+
     nlohmann::json data = nlohmann::json::parse(response);
-    std::cout << data["results"][0] << std::endl;
     if (!data["results"].empty() &&
         !data["results"][0]["data"].empty() && 
         !data["results"][0]["data"][0]["meta"].empty())
