@@ -155,7 +155,7 @@ void nodeObserver(IpcServer &server, int pipe_r, std::atomic<bool> &running) {
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(250));
     } while(!clients.empty());
     std::cout << "empty now" << std::endl;
 
@@ -181,17 +181,6 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
     for (const json & item: row) {
         if (item.contains("name")) {
             requestedNode = item;
-// TODO: wieder runter schieben, wenn keine Kanten, dann ist die Node-Ausgabe leer?!
-            NodeResponse nodeResponse {
-                .primaryKey         = primaryKey,
-                .alive              = requestedNode["state"] > 0,
-                .aliveChangeTime    = requestedNode["stateChangeTime"],
-                .bootCount          = requestedNode["bootcounter"],
-                .pid                = requestedNode["pid"],
-                .nrOfInitialUpdates = pubs.size() + subs.size() + isClientOf.size() + isServerFor.size(),
-            };
-            util::parseString(nodeResponse.name, requestedNode["name"].get<std::string>());
-            server.sendNodeResponse(nodeResponse, client.pid);
             continue;
         }
 
@@ -247,6 +236,17 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
             counter++;
         }
     }
+
+    NodeResponse nodeResponse {
+        .primaryKey         = primaryKey,
+        .alive              = requestedNode["state"] > 0,
+        .aliveChangeTime    = requestedNode["stateChangeTime"],
+        .bootCount          = requestedNode["bootcounter"],
+        .pid                = requestedNode["pid"],
+        .nrOfInitialUpdates = pubs.size() + subs.size() + isClientOf.size() + isServerFor.size(),
+    };
+    util::parseString(nodeResponse.name, requestedNode["name"].get<std::string>());
+    server.sendNodeResponse(nodeResponse, client.pid);
 
     for (NodePublishersToUpdate item : pubs) {
         server.sendNodePublishersToUpdate(item, client.pid);
