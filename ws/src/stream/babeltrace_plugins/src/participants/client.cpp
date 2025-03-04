@@ -2,11 +2,16 @@
 #include <string>
 #include <iostream>
 
+#include <nlohmann/json.hpp>
+
 #include <neo4j/client/client.hpp>
 #include <curl/myCurl.hpp>
+#include <ipc/util.hpp>
 
 #include "interface.hpp"
 #include "participants/client.hpp"
+
+using json = nlohmann::json;
 
 
 void Client::extractInfo(const bt_event *event) {
@@ -26,21 +31,32 @@ std::string Client::getPayload() {
 }
 
 void Client::toGraph(std::string payload) {
-    curl::push(payload);
+    std::string response = curl::push(payload);
+    
+    json data = nlohmann::json::parse(response);
+    json row = data["results"][0]["data"][0]["row"];
+    if (!row.empty() && !row[0].empty() && !row[0][0]["node_id"].empty())   this->primaryKey = row[0][0]["node_id"];
+    
+    size_t counter = 0;
+    while (!row.empty() &&
+        !row[0].empty() &&
+        !row[0][counter].empty() &&
+        !row[0][counter]["server_id"].empty()
+        ) {
+        this->server_primaryKeys.push_back(row[0][counter]["server_id"]);
+        counter++;
+    }
 }
 
-void Client::response(Communication &communication, bool enabled) {
-    if (!enabled) {
-        return;
+void Client::response(Communication &communication) {
+    for (primaryKey_t item : this->server_primaryKeys) {
+        NodeIsClientOfUpdate msg {
+            .primaryKey     = this->primaryKey,
+            .serverNodeId   = item,
+            .isUpdate       = true,
+        };
+        util::parseString(msg.srvName, this->name);
+        
+        communication.server.sendNodeIsClientOfUpdate(msg, communication.pid, false);
     }
-    NodeSwitchResponse msg {
-        .type = CLIENT,
-        .primary_key = static_cast<primaryKey_t>(this->node_handle)
-    };
-    strcpy(
-        msg.client,
-        this->name.c_str()
-    );
-    
-    communication.server.sendNodeSwitchResponse(msg, communication.pid, false);
 }

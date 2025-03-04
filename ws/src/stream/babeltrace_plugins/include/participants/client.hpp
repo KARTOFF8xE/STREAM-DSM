@@ -1,11 +1,18 @@
 #pragma once
 
+#include <vector>
+
+#include <ipc/common.hpp>
+
 #include "interface.hpp"
+
 
 class Client: public IParticipant {
     private:
-        std::string name;
-        u_int64_t node_handle;
+        std::string                 name;
+        u_int64_t                   node_handle;
+        primaryKey_t                primaryKey;
+        std::vector<primaryKey_t>   server_primaryKeys;
 
     public:
         /**
@@ -35,5 +42,5 @@ class Client: public IParticipant {
          * @param communication Reference to a Communication object used for sending the response.
          * @param enabled Enables/Disables if messages are being send.
          */
-        void response(Communication &communication, bool enabled);
+        void response(Communication &communication);
 };

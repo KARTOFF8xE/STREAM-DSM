@@ -103,7 +103,8 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
 
     participant->extractInfo(event);
     participant->toGraph(participant->getPayload());
-    participant->response(publisher->communication, publisher->sendToNodeObserver);
+
+    if (publisher->sendToNodeObserver) participant->response(publisher->communication);
 
     return;
 

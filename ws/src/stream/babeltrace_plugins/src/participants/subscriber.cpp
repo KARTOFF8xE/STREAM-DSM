@@ -2,11 +2,15 @@
 #include <string>
 #include <iostream>
 
+#include <nlohmann/json.hpp>
+
 #include <neo4j/subscriber/subscriber.hpp>
 #include <curl/myCurl.hpp>
 
 #include "interface.hpp"
 #include "participants/subscriber.hpp"
+
+using json = nlohmann::json;
 
 
 void Subscriber::extractInfo(const bt_event *event) {
@@ -18,30 +22,28 @@ void Subscriber::extractInfo(const bt_event *event) {
             field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "node_handle");
             this->node_handle = bt_field_integer_unsigned_get_value(field);
             field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "subscription_handle");
-            this->pubsub_handle = bt_field_integer_unsigned_get_value(field);
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 }
 
 std::string Subscriber::getPayload() {
-    return subscriber::getPayload(this->name, this->pubsub_handle, this->node_handle);
+    return subscriber::getPayload(this->name, this->node_handle);
 }
 
 void Subscriber::toGraph(std::string payload) {
-    curl::push(payload);
+    std::string response = curl::push(payload);
+
+    json data = nlohmann::json::parse(response);
+    json row = data["results"][0]["data"][0]["row"];
+    if (!row.empty() && !row[0]["node_id"].empty())     this->node_primaryKey = row[0]["node_id"];
+    if (!row.empty() && !row[0]["topic_id"].empty())    this->primaryKey = row[0]["topic_id"];
 }
 
-void Subscriber::response(Communication &communication, bool enabled) {
-    if (!enabled) {
-        return;
-    }
-    NodeSwitchResponse msg {
-        .type = SUB,
-        .primary_key = static_cast<primaryKey_t>(this->node_handle)
+void Subscriber::response(Communication &communication) {
+    NodeSubscribersToUpdate msg {
+        .primaryKey     = this->node_primaryKey,
+        .subscribesTo   = this->primaryKey,
+        .isUpdate       = true,
     };
-    stpcpy(
-        msg.sub,
-        this->name.c_str()
-    );
 
-    communication.server.sendNodeSwitchResponse(msg, communication.pid, false);
+    communication.server.sendNodeSubscribersToUpdate(msg, communication.pid, false);
 }

@@ -2,14 +2,17 @@
 #include <string>
 #include <iostream>
 
+#include <nlohmann/json.hpp>
+
 #include <neo4j/node/node.hpp>
 #include <curl/myCurl.hpp>
+#include <ipc/common.hpp>
+#include <ipc/util.hpp>
 
 #include "common.hpp"
 #include "interface.hpp"
 #include "participants/node.hpp"
 
-#include <nlohmann/json.hpp>
 
 void Node::extractInfo(const bt_event *event) {
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
@@ -68,17 +71,15 @@ void Node::toGraph(std::string payload) {
     }
 }
 
-void Node::response(Communication &communication, bool enabled) {
-    if (!enabled) {
-        return;
-    }
-    NodeSwitchResponse msg {
-        .type = NODE,
-        .primary_key = this->primaryKey,
+void Node::response(Communication &communication) {
+    NodeResponse msg {
+        .primaryKey = this->primaryKey,
         .alive = true,
         .aliveChangeTime = this->stateChangeTime,
-        .bootCounter = this->bootcounter,
+        .bootCount = this->bootcounter,
         .pid = (pid_t) this->pid,
     };
-    communication.server.sendNodeSwitchResponse(msg, communication.pid, false);
+    util::parseString(msg.name, this->getFullName());
+
+    communication.server.sendNodeResponse(msg, communication.pid, false);
 }

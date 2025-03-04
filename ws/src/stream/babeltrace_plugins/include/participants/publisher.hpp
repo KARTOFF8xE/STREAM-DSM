@@ -1,12 +1,17 @@
 #pragma once
 
+#include <ipc/common.hpp>
+
 #include "interface.hpp"
+
 
 class Publisher: public IParticipant {
     private:
-        std::string name;
-        u_int64_t   pubsub_handle;
-        u_int64_t   node_handle;
+        std::string     name;
+        u_int64_t       node_handle;
+        primaryKey_t    node_primaryKey;
+        primaryKey_t    primaryKey;
+
 
     public:
         /**
@@ -36,5 +41,5 @@ class Publisher: public IParticipant {
          * @param communication Reference to a Communication object used for sending the response.
          * @param enabled Enables/Disables if messages are being send.
          */
-        void response(Communication &communication, bool enabled);
+        void response(Communication &communication);
 };

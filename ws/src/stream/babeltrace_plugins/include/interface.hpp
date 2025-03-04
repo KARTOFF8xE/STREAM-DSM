@@ -43,5 +43,5 @@ public:
    * @param communication Reference to a Communication object used for sending the response.
    * @param enabled Enables/Disables if messages are being send.
    */
-  virtual void response(Communication &communication, bool enabled = false) {}
+  virtual void response(Communication &communication) {}
 };
