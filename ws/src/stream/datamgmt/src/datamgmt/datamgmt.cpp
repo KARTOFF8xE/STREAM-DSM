@@ -23,7 +23,7 @@
 
 using json = nlohmann::json;
 
-void nodeObserver(IpcServer &server, int pipe_r, std::atomic<bool> &running) {
+void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
 
     std::vector<Client> clients;
@@ -269,7 +269,7 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
                 module.thread.value().join();
             }
             module.running.store(true);
-            module.thread = std::thread(nodeObserver, std::ref(server), module.pipe.read, std::ref(module.running));
+            module.thread = std::thread(nodeObserver, std::cref(server), module.pipe.read, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
