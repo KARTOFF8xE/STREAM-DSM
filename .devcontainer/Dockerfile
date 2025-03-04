@@ -55,13 +55,21 @@ RUN cd babeltrace2-2.0.6 && \
   make && \
   make install
 
-
 # install requirements for Fast-DDS with statistics Module
 RUN apt update && apt upgrade -y
 RUN apt install cmake g++ python3-pip \
  libasio-dev libtinyxml2-dev libssl-dev libp11-dev libengine-pkcs11-openssl \
  softhsm2 pip -y
 RUN pip3 install --break-system-packages -U colcon-common-extensions vcstool
+
+# nlohmann/json.git
+RUN apt update && apt upgrade -y
+RUN git clone https://github.com/nlohmann/json.git /home/$USERNAME/json && \
+  cd /home/$USERNAME/json && \
+  mkdir -p build && \
+  cd build && \
+  cmake .. && \
+  make install
 
 # other stuff
 RUN apt install nano -y
