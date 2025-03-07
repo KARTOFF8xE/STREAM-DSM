@@ -3,14 +3,8 @@
     "tasks": [
         {
             "label": "build all",
-            "command": "colcon",
-            "type": "cppbuild",
-            "args": [
-                "build",
-                "--cmake-args", "-DFASTDDS_STATISTICS=ON", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
-                "--packages-ignore", "fastdds", "discovery_statistics",
-                "--symlink-install",
-            ],
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-ignore fastdds discovery_statistics --symlink-install",
+            "type": "shell",
             "problemMatcher": [],
             "presentation": {
                 "reveal": "always",
@@ -23,5 +17,45 @@
             },
             "group": "build",
         },
+        {
+            "label": "build selected",
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ${input:packages}",
+            "type": "shell",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true,
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/ws",
+                "shell": "zsh",
+            },
+            "group": "build",
+        },
+        {
+            "label": "build stream",
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-select ipc neo4j tracer babeltrace_plugins datamgmt",
+            "type": "shell",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true,
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/ws",
+                "shell": "zsh",
+            },
+            "group": "build",
+        },
+    ],
+    "inputs": [
+        {
+            "id": "packages",
+            "type": "promptString",
+            "description": "packages to select",
+            "default": ""
+        }
     ]
 }

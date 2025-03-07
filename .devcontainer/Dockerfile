@@ -55,7 +55,6 @@ RUN cd babeltrace2-2.0.6 && \
   make && \
   make install
 
-
 # install requirements for Fast-DDS with statistics Module
 RUN apt update && apt upgrade -y
 RUN apt install cmake g++ python3-pip \
@@ -63,9 +62,21 @@ RUN apt install cmake g++ python3-pip \
  softhsm2 pip -y
 RUN pip3 install --break-system-packages -U colcon-common-extensions vcstool
 
+# nlohmann/json.git
+RUN apt update && apt upgrade -y
+RUN git clone https://github.com/nlohmann/json.git /home/$USERNAME/json && \
+  cd /home/$USERNAME/json && \
+  mkdir -p build && \
+  cd build && \
+  cmake .. && \
+  make install
+
 # other stuff
 RUN apt install nano -y
 RUN apt install openssh-client -y
+RUN apt install terminator -y
+RUN apt install tmux -y
+RUN apt install gdb -y
 RUN apt update && apt upgrade -y
 
 # # set user

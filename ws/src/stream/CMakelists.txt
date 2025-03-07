@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(stream)
+
+add_subdirectory(babeltrace_plugins)
+add_subdirectory(tracer)
+add_subdirectory(datamgmt)

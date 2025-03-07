@@ -4,7 +4,7 @@
         "name": "(gdb) Launch",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/ws/install/ipc/bin/primary",
+        "program": "${workspaceFolder}/ws/install/datamgmt/lib/datamgmt/datamgmt",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
@@ -22,7 +22,9 @@
                 "text": "-gdb-set disassembly-flavor intel",
                 "ignoreFailures": true
             }
-        ]
+        ],
+        "preLaunchTask": "build selected"
+
     }
     ]
 }

@@ -89,6 +89,14 @@
         "format": "cpp",
         "span": "cpp",
         "filesystem": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "stacktrace": "cpp",
+        "csetjmp": "cpp",
+        "barrier": "cpp",
+        "cuchar": "cpp",
+        "latch": "cpp",
+        "spanstream": "cpp",
+        "stdfloat": "cpp",
+        "syncstream": "cpp"
     }
 }
