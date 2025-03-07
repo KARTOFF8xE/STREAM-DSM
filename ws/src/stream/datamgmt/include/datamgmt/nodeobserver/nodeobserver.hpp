@@ -4,7 +4,33 @@
 #include "datamgmt/common.hpp"
 
 
+/**
+ * @brief Retrieves and sends a one-time node response to a client.
+ *
+ * This function fetches node-related information from an external source using a primary key.
+ * It parses the response, extracts relevant node data, and determines the node's relationships,
+ * including publishers, subscribers, client-server relationships.
+ * The collected information is then sent to the client via the IPC server.
+ *
+ * @param server Reference to the IPC server used for sending messages.
+ * @param client The client requesting the node response.
+ * @param primaryKey The unique identifier of the node to retrieve information for.
+ */
 void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t primaryKey);
+
+/**
+ * @brief Retrieves and sends a one-time topic response to a client.
+ *
+ * This function fetches topic-related information from an external source using a primary key.
+ * It parses the response, extracts relevant topic data, and determines the topic's relationships,
+ * including publishers and subscribers.
+ * The collected information is then sent to the client via the IPC server.
+ *
+ * @param server Reference to the IPC server used for sending messages.
+ * @param client The client requesting the topic response.
+ * @param primaryKey The unique identifier of the topic to retrieve information for.
+ */
+void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey);
 
 void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running);
 
@@ -58,7 +84,29 @@ void receiveNodeSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &c
  */
 void receiveNodePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
-
+/**
+ * @brief Receives and processes a NodeResponse message.
+ *
+ * This function listens for a NodeResponse message from the IPC client. If a valid response is received,
+ * it forwards the message to the relevant client based on the primary key.
+ *
+ * @param ipcClient Reference to the IPC client used for receiving messages.
+ * @param clients Vector of Client objects representing the connected clients.
+ * @param server Reference to the IPC server used for sending the NodeResponse.
+ */
 void receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
-void handleClient(int ret, Client &client, std::vector<Client> &clients);
+/**
+ * @brief Handles client requests by adding or removing the client from the list of clients.
+ *
+ * This function processes client updates by either adding or removing a client from the
+ * vector of clients. It checks if the client exists in the list based on the `pid` and 
+ * `requestId`. If the client has updates, the client is added to the list if it doesn't 
+ * already exist. Otherwise, the client is removed from the list.
+ *
+ * @param client A reference to the client whose details are processed.
+ * @param clients A reference to a vector of clients that will be modified (client added or removed).
+ *
+ * @return void This function does not return any value.
+ */
+void handleClient(Client &client, std::vector<Client> &clients);

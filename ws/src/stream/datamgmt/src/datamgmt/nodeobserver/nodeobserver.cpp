@@ -6,6 +6,7 @@
 #include <ipc/util.hpp>
 #include <curl/myCurl.hpp>
 #include <neo4j/node/node.hpp>
+#include <neo4j/topic/topic.hpp>
 
 #include "datamgmt/nodeobserver/nodeobserver.hpp"
 #include "pipe/pipe.hpp"
@@ -106,6 +107,50 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
     }
 }
 
+void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
+    std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey));
+
+    json payload = json::parse(response);
+    json row = payload["results"][0]["data"][0]["row"];
+
+    std::vector<TopicPublishersUpdate>  pubs;
+    std::vector<TopicSubscribersUpdate> subs;
+
+    for (const primaryKey_t item : row[0]["publishers"]) {
+        pubs.push_back(
+            TopicPublishersUpdate {
+                .primaryKey = primaryKey,
+                .publisher = item,
+                .isUpdate = false
+            }
+        );
+    }
+    for (const primaryKey_t item : row[0]["subscribers"]) {
+        subs.push_back(
+            TopicSubscribersUpdate {
+                .primaryKey = primaryKey,
+                .subscriber = item,
+                .isUpdate = false
+            }
+        );
+    }
+
+    TopicResponse topicResponse {
+        .primaryKey         = primaryKey,
+        .nrOfInitialUpdates = pubs.size() + subs.size(),
+    };
+    util::parseString(topicResponse.name, row[0]["name"].get<std::string>());
+
+    server.sendTopicResponse(topicResponse, client.pid);
+
+    for (TopicPublishersUpdate item : pubs) {
+        server.sendTopicPublishersUpdate(item, client.pid);
+    }
+    for (TopicSubscribersUpdate item : subs) {
+        server.sendTopicSubscribersUpdate(item, client.pid);
+    }
+}
+
 void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
 
@@ -127,7 +172,7 @@ void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &runnin
 
         ret = readT<Client>(pipe_r, client);
         while (ret != -1) {
-            handleClient(ret, client, clients);
+            handleClient(client, clients);
             ret = readT<Client>(pipe_r, client);
         };
 
@@ -255,9 +300,11 @@ void receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
     }
 }
 
-void handleClient(int ret, Client &client, std::vector<Client> &clients) {
+void handleClient(Client &client, std::vector<Client> &clients) {
     std::cout << "pid:   " << client.pid
-    << "\n\trequestId:  " << client.requestId << "\n\tprimaryKey: " << client.primaryKey << "\n\tupdates:    " << client.updates << std::endl;
+    << "\n\trequestId:  " << client.requestId <<
+        "\n\tprimaryKey: " << client.primaryKey <<
+        "\n\tupdates:    " << client.updates << std::endl;
 
     if (client.updates)
     {
@@ -279,7 +326,7 @@ void handleClient(int ret, Client &client, std::vector<Client> &clients) {
         for (size_t i = 0; i < clients.size(); i++)
         {
             if (clients[i].pid == client.pid &&
-                clients[i].requestId == client.pid)
+                clients[i].requestId == client.requestId)
             {
                 clients.erase(clients.begin() + i * sizeof(Client));
                 break;

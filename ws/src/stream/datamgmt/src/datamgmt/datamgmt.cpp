@@ -46,23 +46,38 @@ int main() {
     }
 
     while (true) {
-        Client newClient;
-        std::optional<NodeRequest> request = server.receiveNodeRequest(newClient.requestId, newClient.pid, false);
-        
-        if (request.has_value()) {
-            // extract msg and send to thread (write to pipe)
-            NodeRequest requestPayload = request.value();
-            Client clientInfo {
-                .pid        = newClient.pid,
-                .requestId  = newClient.requestId,
-                .primaryKey = requestPayload.primaryKey,
-                .updates    = requestPayload.updates,
-            };
-            writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
-            
-            singleTimeNodeResponse(server, clientInfo, requestPayload.primaryKey);
-            if (!modules[NODEOBSERVER].running) {
-                runModule(server, NODEOBSERVER, modules[NODEOBSERVER]);
+        {
+            Client newClient;
+            std::optional<NodeRequest> request = server.receiveNodeRequest(newClient.requestId, newClient.pid, false);
+            if (request.has_value()) {
+                // extract msg and send to thread (write to pipe)
+                NodeRequest payload = request.value();
+                Client clientInfo {
+                    .pid        = newClient.pid,
+                    .requestId  = newClient.requestId,
+                    .primaryKey = payload.primaryKey,
+                    .updates    = payload.updates,
+                };
+                writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
+                
+                singleTimeNodeResponse(server, clientInfo, payload.primaryKey);
+                if (!modules[NODEOBSERVER].running) {
+                    runModule(server, NODEOBSERVER, modules[NODEOBSERVER]);
+                }
+            }
+        }
+        {
+            Client newClient;
+            std::optional<TopicRequest> request = server.receiveTopicRequest(newClient.requestId, newClient.pid, false);
+            if (request.has_value()) {
+                TopicRequest payload = request.value();
+                Client clientInfo {
+                    .pid        = newClient.pid,
+                    .requestId  = newClient.requestId,
+                    .primaryKey = payload.primaryKey,
+                    .updates    = payload.updates,
+                };
+                singleTimeTopicResponse(server, clientInfo, payload.primaryKey);
             }
         }
 
