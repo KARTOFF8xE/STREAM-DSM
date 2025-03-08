@@ -72,6 +72,34 @@ void receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clie
 void receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
 /**
+ * @brief Receives and processes a NodeIsActionClientOfUpdate message.
+ *
+ * This function listens for an update message indicating that a node is an action client of another node.
+ * If a valid update is received, it sends the update to the relevant clients.
+ * Additionally, it constructs and sends a corresponding NodeIsActionServerForUpdate message
+ * to notify the action server node of the relationship.
+ *
+ * @param ipcClient Reference to the IPC client used for receiving messages.
+ * @param clients Vector of Client objects representing the connected clients.
+ * @param server Reference to the IPC server used for sending updates.
+ */
+void receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+
+/**
+ * @brief Receives and processes a NodeIsActionServerForUpdate message.
+ *
+ * This function listens for an update message indicating that a node is an action server for another node.
+ * If a valid update is received, it sends the update to the relevant clients.
+ * Additionally, it constructs and sends a corresponding NodeIsActionClientOfUpdate message
+ * to notify the action client node of the relationship.
+ *
+ * @param ipcClient Reference to the IPC client used for receiving messages.
+ * @param clients Vector of Client objects representing the connected clients.
+ * @param server Reference to the IPC server used for sending updates.
+ */
+void receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+
+/**
  * @brief Receives and processes a NodeSubscribersToUpdate message.
  *
  * This function listens for an update message indicating that a node has new subscribers.
