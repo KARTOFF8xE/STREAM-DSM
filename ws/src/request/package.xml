@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>primary</name>
+  <name>request</name>
   <version>0.0.0</version>
-  <description>Simple Primary for testing reasons</description>
+  <description>Simple request for testing reasons</description>
   <maintainer email="georgmuck1@gmail.com">Georg</maintainer>
   <license>Apache-2.0</license>
 

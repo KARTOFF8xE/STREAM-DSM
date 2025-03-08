@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "build all",
-            "command": "source /opt/ros/rolling/setup.zsh && colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --packages-ignore fastdds discovery_statistics --symlink-install",
+            "command": "source /opt/ros/rolling/setup.zsh && colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --symlink-install",
             "type": "shell",
             "problemMatcher": [],
             "presentation": {

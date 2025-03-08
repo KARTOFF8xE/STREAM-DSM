@@ -6,9 +6,11 @@
 #include <ipc/util.hpp>
 #include <curl/myCurl.hpp>
 #include <neo4j/node/node.hpp>
+#include <neo4j/topic/topic.hpp>
 
-#include "datamgmt/nodeobserver/nodeobserver.hpp"
+#include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
 #include "pipe/pipe.hpp"
+
 
 using json = nlohmann::json;
 
@@ -106,7 +108,51 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
     }
 }
 
-void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running) {
+void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
+    std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey));
+
+    json payload = json::parse(response);
+    json row = payload["results"][0]["data"][0]["row"];
+
+    std::vector<TopicPublishersUpdate>  pubs;
+    std::vector<TopicSubscribersUpdate> subs;
+
+    for (const primaryKey_t item : row[0]["publishers"]) {
+        pubs.push_back(
+            TopicPublishersUpdate {
+                .primaryKey = primaryKey,
+                .publisher = item,
+                .isUpdate = false
+            }
+        );
+    }
+    for (const primaryKey_t item : row[0]["subscribers"]) {
+        subs.push_back(
+            TopicSubscribersUpdate {
+                .primaryKey = primaryKey,
+                .subscriber = item,
+                .isUpdate = false
+            }
+        );
+    }
+
+    TopicResponse topicResponse {
+        .primaryKey         = primaryKey,
+        .nrOfInitialUpdates = pubs.size() + subs.size(),
+    };
+    util::parseString(topicResponse.name, row[0]["name"].get<std::string>());
+
+    server.sendTopicResponse(topicResponse, client.pid);
+
+    for (TopicPublishersUpdate item : pubs) {
+        server.sendTopicPublishersUpdate(item, client.pid);
+    }
+    for (TopicSubscribersUpdate item : subs) {
+        server.sendTopicSubscribersUpdate(item, client.pid);
+    }
+}
+
+void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
 
     std::vector<Client> clients;
@@ -127,7 +173,7 @@ void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &runnin
 
         ret = readT<Client>(pipe_r, client);
         while (ret != -1) {
-            handleClient(ret, client, clients);
+            handleClient(client, clients);
             ret = readT<Client>(pipe_r, client);
         };
 
@@ -142,8 +188,8 @@ void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &runnin
         */
 
         receiveNodeResponse(ipcClient, clients, server);
-        receiveNodeSubscribersToUpdate(ipcClient, clients, server);
-        receiveNodePublishersToUpdate(ipcClient, clients, server);
+        receiveSubscribersToUpdate(ipcClient, clients, server);
+        receivePublishersToUpdate(ipcClient, clients, server);
         receiveNodeIsServerForUpdate(ipcClient, clients, server);
         receiveNodeIsClientOfUpdate(ipcClient, clients, server);
 
@@ -210,31 +256,57 @@ void receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &cli
     }
 }
 
-void receiveNodeSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+void receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodeSubscribersToUpdate> response = ipcClient.receiveNodeSubscribersToUpdate(false);
     if (response.has_value())
     {
-        NodeSubscribersToUpdate payload = response.value();
+        NodeSubscribersToUpdate payloadNode = response.value();
         for (Client client : clients)
         {
-            if (client.primaryKey == payload.primaryKey)
+            if (client.primaryKey == payloadNode.primaryKey)
             {
-                server.sendNodeSubscribersToUpdate(payload, client.pid, false);
+                server.sendNodeSubscribersToUpdate(payloadNode, client.pid, false);
+            }
+        }
+
+        TopicSubscribersUpdate payloadTopic {
+            .primaryKey = payloadNode.subscribesTo,
+            .subscriber = payloadNode.primaryKey,
+            .isUpdate = true
+        };
+        for (Client client : clients)
+        {
+            if (client.primaryKey == payloadTopic.primaryKey)
+            {
+                server.sendTopicSubscribersUpdate(payloadTopic, client.pid, false);
             }
         }
     }
 }
 
-void receiveNodePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+void receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodePublishersToUpdate> response = ipcClient.receiveNodePublishersToUpdate(false);
     if (response.has_value())
     {
-        NodePublishersToUpdate payload = response.value();
+        NodePublishersToUpdate payloadNode = response.value();
         for (Client client : clients)
         {
-            if (client.primaryKey == payload.primaryKey)
+            if (client.primaryKey == payloadNode.primaryKey)
             {
-                server.sendNodePublishersToUpdate(payload, client.pid, false);
+                server.sendNodePublishersToUpdate(payloadNode, client.pid, false);
+            }
+        }
+
+        TopicPublishersUpdate payloadTopic {
+            .primaryKey = payloadNode.publishesTo,
+            .publisher = payloadNode.primaryKey,
+            .isUpdate = true
+        };
+        for (Client client : clients)
+        {
+            if (client.primaryKey == payloadTopic.primaryKey)
+            {
+                server.sendTopicPublishersUpdate(payloadTopic, client.pid, false);
             }
         }
     }
@@ -255,9 +327,11 @@ void receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
     }
 }
 
-void handleClient(int ret, Client &client, std::vector<Client> &clients) {
+void handleClient(Client &client, std::vector<Client> &clients) {
     std::cout << "pid:   " << client.pid
-    << "\n\trequestId:  " << client.requestId << "\n\tprimaryKey: " << client.primaryKey << "\n\tupdates:    " << client.updates << std::endl;
+    << "\n\trequestId:  " << client.requestId <<
+        "\n\tprimaryKey: " << client.primaryKey <<
+        "\n\tupdates:    " << client.updates << std::endl;
 
     if (client.updates)
     {
@@ -279,7 +353,7 @@ void handleClient(int ret, Client &client, std::vector<Client> &clients) {
         for (size_t i = 0; i < clients.size(); i++)
         {
             if (clients[i].pid == client.pid &&
-                clients[i].requestId == client.pid)
+                clients[i].requestId == client.requestId)
             {
                 clients.erase(clients.begin() + i * sizeof(Client));
                 break;

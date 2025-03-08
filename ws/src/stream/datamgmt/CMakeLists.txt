@@ -13,7 +13,7 @@ find_package(nlohmann_json 3.11.3 REQUIRED)
 
 add_executable(datamgmt
   src/datamgmt/datamgmt.cpp
-  src/datamgmt/nodeobserver/nodeobserver.cpp
+  src/datamgmt/nodeandtopicobserver/nodeandtopicobserver.cpp
   src/util.cpp
   src/pipe/pipe.cpp
 )
