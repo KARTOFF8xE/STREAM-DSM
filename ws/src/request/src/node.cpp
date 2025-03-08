@@ -83,6 +83,30 @@ int main() {
           std::endl;
       }
     }
+    {
+     std::optional<NodeIsActionClientOfUpdate> optResp = client.receiveNodeIsActionClientOfUpdate(false);
+      if (optResp.has_value()) {
+        NodeIsActionClientOfUpdate resp = optResp.value();
+        std::cout << "Received isActionClientToUpdate" <<
+          "\n\tprimaryKey: " << resp.primaryKey <<
+          "\n\tsrvName: " << resp.srvName <<
+          "\n\tactionserverNodeId: " << resp.actionserverNodeId <<
+          "\n\tisUpdate: " << resp.isUpdate <<
+          std::endl;
+      }
+    }
+    {
+     std::optional<NodeIsActionServerForUpdate> optResp = client.receiveNodeIsActionServerForUpdate(false);
+      if (optResp.has_value()) {
+        NodeIsActionServerForUpdate resp = optResp.value();
+        std::cout << "Received isActionServerForUpdate" <<
+          "\n\tprimaryKey: " << resp.primaryKey <<
+          "\n\tsrvName: " << resp.srvName <<
+          "\n\tactionclientNodeId: " << resp.actionclientNodeId <<
+          "\n\tisUpdate: " << resp.isUpdate <<
+          std::endl;
+      }
+    }
   }
 
   // std::this_thread::sleep_for(std::chrono::milliseconds(500));

@@ -26,10 +26,14 @@ void Publisher::extractInfo(const bt_event *event) {
 }
 
 std::string Publisher::getPayload() {
+    if (this->name.find("/_action/") != std::string::npos) return "";
+
     return publisher::getPayload(this->name, this->node_handle);
 }
 
 void Publisher::toGraph(std::string payload) {
+    if (this->name.find("/_action/") != std::string::npos) return;
+
     std::string response = curl::push(payload);
 
     json data = nlohmann::json::parse(response);
@@ -39,6 +43,8 @@ void Publisher::toGraph(std::string payload) {
 }
 
 void Publisher::response(Communication &communication) {
+    if (this->name.find("/_action/") != std::string::npos) return;
+    
     NodePublishersToUpdate msg {
         .primaryKey     = this->node_primaryKey,
         .publishesTo    = this->primaryKey,

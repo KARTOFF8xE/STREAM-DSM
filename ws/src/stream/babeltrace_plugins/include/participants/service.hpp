@@ -13,6 +13,7 @@ class Service: public IParticipant {
         u_int64_t                   node_handle;
         primaryKey_t                primaryKey;
         std::vector<primaryKey_t>   client_primaryKeys;
+        bool                        isAction = false;
 
     public:
         /**

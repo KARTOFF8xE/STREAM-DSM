@@ -22,10 +22,12 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
     json row = payload["results"][0]["data"][0]["row"];
 
     json requestedNode;
-    std::vector<NodePublishersToUpdate>     pubs;
-    std::vector<NodeSubscribersToUpdate>    subs;
-    std::vector<NodeIsServerForUpdate>      isServerFor;
-    std::vector<NodeIsClientOfUpdate>       isClientOf;
+    std::vector<NodePublishersToUpdate>         pubs;
+    std::vector<NodeSubscribersToUpdate>        subs;
+    std::vector<NodeIsServerForUpdate>          isServerFor;
+    std::vector<NodeIsClientOfUpdate>           isClientOf;
+    std::vector<NodeIsActionServerForUpdate>    isActionServerFor;
+    std::vector<NodeIsActionClientOfUpdate>     isActionClientOf;
     for (const json & item: row) {
         if (item.contains("name")) {
             requestedNode = item;
@@ -59,23 +61,46 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
             if (item[counter]["relationship"] == "service_for") {
                 for (const json & node: item[counter]["nodes"]) {
                     if (node["direction"] == "outgoing") {
-                        NodeIsServerForUpdate tmp = NodeIsServerForUpdate {
+                        NodeIsServerForUpdate tmp {
                         .primaryKey     = primaryKey,
                         .clientNodeId   = node["id"],
                         .isUpdate       = false,
                         };
-                        util::parseString(tmp.srvName, node["servername"].get<std::string>());
+                        util::parseString(tmp.srvName, node["name"].get<std::string>());
 
                         isServerFor.push_back(tmp);
                     } else {
-                        NodeIsClientOfUpdate tmp = NodeIsClientOfUpdate {
+                        NodeIsClientOfUpdate tmp {
                             .primaryKey     = primaryKey,
                             .serverNodeId   = node["id"],
                             .isUpdate       = false,
                         };
-                        util::parseString(tmp.srvName, node["servername"].get<std::string>());
+                        util::parseString(tmp.srvName, node["name"].get<std::string>());
 
                         isClientOf.push_back(tmp);
+                    }
+                }
+            }
+            if (item[counter]["relationship"] == "action_for") {
+                for (const json & node: item[counter]["nodes"]) {
+                    if (node["direction"] == "outgoing") {
+                        NodeIsActionServerForUpdate tmp {
+                        .primaryKey         = primaryKey,
+                        .actionclientNodeId = node["id"],
+                        .isUpdate           = false,
+                        };
+                        util::parseString(tmp.srvName, node["name"].get<std::string>());
+
+                        isActionServerFor.push_back(tmp);
+                    } else {
+                        NodeIsActionClientOfUpdate tmp {
+                            .primaryKey         = primaryKey,
+                            .actionserverNodeId = node["id"],
+                            .isUpdate           = false,
+                        };
+                        util::parseString(tmp.srvName, node["name"].get<std::string>());
+
+                        isActionClientOf.push_back(tmp);
                     }
                 }
             }
@@ -89,7 +114,9 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
         .aliveChangeTime    = requestedNode["stateChangeTime"],
         .bootCount          = requestedNode["bootcounter"],
         .pid                = requestedNode["pid"],
-        .nrOfInitialUpdates = pubs.size() + subs.size() + isClientOf.size() + isServerFor.size(),
+        .nrOfInitialUpdates = pubs.size() + subs.size() +
+            isClientOf.size() + isServerFor.size() +
+            isActionClientOf.size() + isActionServerFor.size(),
     };
     util::parseString(nodeResponse.name, requestedNode["name"].get<std::string>());
     server.sendNodeResponse(nodeResponse, client.pid);
@@ -105,6 +132,12 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
     }
     for (NodeIsServerForUpdate item : isServerFor) {
         server.sendNodeIsServerForUpdate(item, client.pid);
+    }
+    for (NodeIsActionClientOfUpdate item : isActionClientOf) {
+        server.sendNodeIsActionClientOfUpdate(item, client.pid);
+    }
+    for (NodeIsActionServerForUpdate item : isActionServerFor) {
+        server.sendNodeIsActionServerForUpdate(item, client.pid);
     }
 }
 
@@ -192,6 +225,8 @@ void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool>
         receivePublishersToUpdate(ipcClient, clients, server);
         receiveNodeIsServerForUpdate(ipcClient, clients, server);
         receiveNodeIsClientOfUpdate(ipcClient, clients, server);
+        receiveNodeIsActionServerForUpdate(ipcClient, clients, server);
+        receiveNodeIsActionClientOfUpdate(ipcClient, clients, server);
 
     } while(!clients.empty());
     std::cout << "empty now" << std::endl;
@@ -218,9 +253,9 @@ void receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clie
             if (client.primaryKey == payload.serverNodeId)
             {
                 NodeIsServerForUpdate msg{
-                    .primaryKey = payload.serverNodeId,
-                    .clientNodeId = payload.primaryKey,
-                    .isUpdate = true,
+                    .primaryKey     = payload.serverNodeId,
+                    .clientNodeId   = payload.primaryKey,
+                    .isUpdate       = true,
                 };
                 util::parseString(msg.srvName, payload.srvName);
 
@@ -244,13 +279,65 @@ void receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &cli
             if (client.primaryKey == payload.clientNodeId)
             {
                 NodeIsClientOfUpdate msg{
-                    .primaryKey = payload.clientNodeId,
-                    .serverNodeId = payload.primaryKey,
-                    .isUpdate = true,
+                    .primaryKey     = payload.clientNodeId,
+                    .serverNodeId   = payload.primaryKey,
+                    .isUpdate       = true,
                 };
                 util::parseString(msg.srvName, payload.srvName);
 
                 server.sendNodeIsClientOfUpdate(msg, client.pid, false);
+            }
+        }
+    }
+}
+
+void receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+    std::optional<NodeIsActionClientOfUpdate> response = ipcClient.receiveNodeIsActionClientOfUpdate(false);
+    if (response.has_value())
+    {
+        NodeIsActionClientOfUpdate payload = response.value();
+        for (Client client : clients)
+        {
+            if (client.primaryKey == payload.primaryKey)
+            {
+                server.sendNodeIsActionClientOfUpdate(payload, client.pid, false);
+            }
+            if (client.primaryKey == payload.actionserverNodeId)
+            {
+                NodeIsActionServerForUpdate msg{
+                    .primaryKey         = payload.actionserverNodeId,
+                    .actionclientNodeId = payload.primaryKey,
+                    .isUpdate           = true,
+                };
+                util::parseString(msg.srvName, payload.srvName);
+
+                server.sendNodeIsActionServerForUpdate(msg, client.pid, false);
+            }
+        }
+    }
+}
+
+void receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+    std::optional<NodeIsActionServerForUpdate> response = ipcClient.receiveNodeIsActionServerForUpdate(false);
+    if (response.has_value())
+    {
+        NodeIsActionServerForUpdate payload = response.value();
+        for (Client client : clients)
+        {
+            if (client.primaryKey == payload.primaryKey)
+            {
+                server.sendNodeIsActionServerForUpdate(payload, client.pid, false);
+            }
+            if (client.primaryKey == payload.actionclientNodeId)
+            {
+                NodeIsActionClientOfUpdate msg{
+                    .primaryKey         = payload.actionclientNodeId,
+                    .actionserverNodeId = payload.primaryKey,
+                    .isUpdate           = true,
+                };
+                util::parseString(msg.srvName, payload.srvName);
+
+                server.sendNodeIsActionClientOfUpdate(msg, client.pid, false);
             }
         }
     }

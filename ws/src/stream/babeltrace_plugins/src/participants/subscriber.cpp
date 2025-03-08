@@ -26,10 +26,14 @@ void Subscriber::extractInfo(const bt_event *event) {
 }
 
 std::string Subscriber::getPayload() {
+    if (this->name.find("/_action/") != std::string::npos) return "";
+
     return subscriber::getPayload(this->name, this->node_handle);
 }
 
 void Subscriber::toGraph(std::string payload) {
+    if (this->name.find("/_action/") != std::string::npos) return;
+
     std::string response = curl::push(payload);
 
     json data = nlohmann::json::parse(response);
@@ -39,6 +43,8 @@ void Subscriber::toGraph(std::string payload) {
 }
 
 void Subscriber::response(Communication &communication) {
+    if (this->name.find("/_action/") != std::string::npos) return;
+
     NodeSubscribersToUpdate msg {
         .primaryKey     = this->node_primaryKey,
         .subscribesTo   = this->primaryKey,
