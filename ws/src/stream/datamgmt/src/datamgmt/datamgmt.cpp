@@ -18,8 +18,7 @@
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
-#include "datamgmt/nodeobserver/nodeobserver.hpp"
-
+#include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
 
 
 void runModule(IpcServer &server, Module_t module_t, Module &module) {
@@ -29,7 +28,7 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
                 module.thread.value().join();
             }
             module.running.store(true);
-            module.thread = std::thread(nodeObserver, std::cref(server), module.pipe.read, std::ref(module.running));
+            module.thread = std::thread(nodeAndTopicObserver, std::cref(server), module.pipe.read, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
@@ -77,7 +76,12 @@ int main() {
                     .primaryKey = payload.primaryKey,
                     .updates    = payload.updates,
                 };
+                writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
+
                 singleTimeTopicResponse(server, clientInfo, payload.primaryKey);
+                if (!modules[NODEOBSERVER].running) {
+                    runModule(server, NODEOBSERVER, modules[NODEOBSERVER]);
+                }
             }
         }
 

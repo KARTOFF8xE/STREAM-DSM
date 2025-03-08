@@ -8,8 +8,9 @@
 #include <neo4j/node/node.hpp>
 #include <neo4j/topic/topic.hpp>
 
-#include "datamgmt/nodeobserver/nodeobserver.hpp"
+#include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
 #include "pipe/pipe.hpp"
+
 
 using json = nlohmann::json;
 
@@ -151,7 +152,7 @@ void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t prim
     }
 }
 
-void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running) {
+void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
 
     std::vector<Client> clients;
@@ -187,8 +188,8 @@ void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &runnin
         */
 
         receiveNodeResponse(ipcClient, clients, server);
-        receiveNodeSubscribersToUpdate(ipcClient, clients, server);
-        receiveNodePublishersToUpdate(ipcClient, clients, server);
+        receiveSubscribersToUpdate(ipcClient, clients, server);
+        receivePublishersToUpdate(ipcClient, clients, server);
         receiveNodeIsServerForUpdate(ipcClient, clients, server);
         receiveNodeIsClientOfUpdate(ipcClient, clients, server);
 
@@ -255,31 +256,57 @@ void receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &cli
     }
 }
 
-void receiveNodeSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+void receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodeSubscribersToUpdate> response = ipcClient.receiveNodeSubscribersToUpdate(false);
     if (response.has_value())
     {
-        NodeSubscribersToUpdate payload = response.value();
+        NodeSubscribersToUpdate payloadNode = response.value();
         for (Client client : clients)
         {
-            if (client.primaryKey == payload.primaryKey)
+            if (client.primaryKey == payloadNode.primaryKey)
             {
-                server.sendNodeSubscribersToUpdate(payload, client.pid, false);
+                server.sendNodeSubscribersToUpdate(payloadNode, client.pid, false);
+            }
+        }
+
+        TopicSubscribersUpdate payloadTopic {
+            .primaryKey = payloadNode.subscribesTo,
+            .subscriber = payloadNode.primaryKey,
+            .isUpdate = true
+        };
+        for (Client client : clients)
+        {
+            if (client.primaryKey == payloadTopic.primaryKey)
+            {
+                server.sendTopicSubscribersUpdate(payloadTopic, client.pid, false);
             }
         }
     }
 }
 
-void receiveNodePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+void receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodePublishersToUpdate> response = ipcClient.receiveNodePublishersToUpdate(false);
     if (response.has_value())
     {
-        NodePublishersToUpdate payload = response.value();
+        NodePublishersToUpdate payloadNode = response.value();
         for (Client client : clients)
         {
-            if (client.primaryKey == payload.primaryKey)
+            if (client.primaryKey == payloadNode.primaryKey)
             {
-                server.sendNodePublishersToUpdate(payload, client.pid, false);
+                server.sendNodePublishersToUpdate(payloadNode, client.pid, false);
+            }
+        }
+
+        TopicPublishersUpdate payloadTopic {
+            .primaryKey = payloadNode.publishesTo,
+            .publisher = payloadNode.primaryKey,
+            .isUpdate = true
+        };
+        for (Client client : clients)
+        {
+            if (client.primaryKey == payloadTopic.primaryKey)
+            {
+                server.sendTopicPublishersUpdate(payloadTopic, client.pid, false);
             }
         }
     }

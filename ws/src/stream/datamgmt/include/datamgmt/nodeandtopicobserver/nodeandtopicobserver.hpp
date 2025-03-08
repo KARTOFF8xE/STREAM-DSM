@@ -32,7 +32,18 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
  */
 void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey);
 
-void nodeObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running);
+/**
+ * @brief Monitors nodes and topics, handling client updates.
+ *
+ * This function continuously listens for client connections, processes incoming updates.
+ * It receives various update messages, such as node, subscriber and publisher and client-server
+ * relationships updates. The function runs until no clients remain connected.
+ *
+ * @param server Reference to the IPC server used for sending updates.
+ * @param pipe_r File descriptor for reading client data.
+ * @param running Atomic flag indicating whether the observer should continue running.
+ */
+void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running);
 
 /**
  * @brief Receives and processes a NodeIsClientOfUpdate message.
@@ -70,7 +81,7 @@ void receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &cli
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  */
-void receiveNodeSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+void receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
 /**
  * @brief Receives and processes a NodePublishersToUpdate message.
@@ -82,7 +93,7 @@ void receiveNodeSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &c
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  */
-void receiveNodePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+void receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
 /**
  * @brief Receives and processes a NodeResponse message.
