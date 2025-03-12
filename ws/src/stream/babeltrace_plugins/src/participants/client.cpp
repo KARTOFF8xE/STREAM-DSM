@@ -35,9 +35,9 @@ void Client::extractInfo(const bt_event *event) {
 }
 
 std::string Client::getPayload() {
-    if (this->isAction) return actionclient::getPayload(this->name, this->node_handle);
-
     if (this->name.find("/_action/") != std::string::npos) return "";
+
+    if (this->isAction) return actionclient::getPayload(this->name, this->node_handle);
 
     return client::getPayload(this->name, this->node_handle);
 }

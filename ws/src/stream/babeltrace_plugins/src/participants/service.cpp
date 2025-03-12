@@ -35,9 +35,9 @@ void Service::extractInfo(const bt_event *event) {
 }
 
 std::string Service::getPayload() {
-    if (this->isAction) return actionservice::getPayload(this->name, this->node_handle);
-
     if (this->name.find("/_action/") != std::string::npos) return "";
+
+    if (this->isAction) return actionservice::getPayload(this->name, this->node_handle);
 
     return service::getPayload(this->name, this->node_handle);
 }
