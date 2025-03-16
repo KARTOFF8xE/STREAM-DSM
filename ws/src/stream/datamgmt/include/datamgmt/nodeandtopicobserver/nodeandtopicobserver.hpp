@@ -2,6 +2,7 @@
 #include <ipc/ipc-server.hpp>
 
 #include "datamgmt/common.hpp"
+#include "datamgmt/datamgmt.hpp"
 
 
 /**
@@ -38,12 +39,13 @@ void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t prim
  * This function continuously listens for client connections, processes incoming updates.
  * It receives various update messages, such as node, subscriber and publisher and client-server
  * relationships updates. The function runs until no clients remain connected.
+ * If a Node is added the relation-Mgmt is called to bring it into the trees.
  *
  * @param server Reference to the IPC server used for sending updates.
- * @param pipe_r File descriptor for reading client data.
+ * @param pipes File descriptor for reading client data.
  * @param running Atomic flag indicating whether the observer should continue running.
  */
-void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running);
+void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running);
 
 /**
  * @brief Receives and processes a NodeIsClientOfUpdate message.

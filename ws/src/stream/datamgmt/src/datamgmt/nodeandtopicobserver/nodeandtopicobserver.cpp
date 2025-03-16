@@ -9,6 +9,8 @@
 #include <neo4j/topic/topic.hpp>
 
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
+#include "datamgmt/relationmgmt/relationmgmt.hpp"
+#include "datamgmt/datamgmt.hpp"
 #include "pipe/pipe.hpp"
 
 
@@ -185,8 +187,10 @@ void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t prim
     }
 }
 
-void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool> &running) {
+void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started procObserver" << std::endl;
+    int pipe_r = pipes[MAIN].read;
+    // int pipe_writeToRelationMgmt = pipes[RELATIONMGMT].write;
 
     std::vector<Client> clients;
     std::vector<pid_t> pids;
@@ -199,9 +203,9 @@ void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool>
         };
         ipcClient.sendNodeSwitchRequest(msg, requestId, false);
     }
-    
+
     Client client;
-    do {
+    while (true) {
         ssize_t ret = -1;
 
         ret = readT<Client>(pipe_r, client);
@@ -227,9 +231,8 @@ void nodeAndTopicObserver(const IpcServer &server, int pipe_r, std::atomic<bool>
         receiveNodeIsClientOfUpdate(ipcClient, clients, server);
         receiveNodeIsActionServerForUpdate(ipcClient, clients, server);
         receiveNodeIsActionClientOfUpdate(ipcClient, clients, server);
-
-    } while(!clients.empty());
-    std::cout << "empty now" << std::endl;
+    }
+    std::cout << "shutting down NodeTopicObserver" << std::endl;
 
     NodeSwitchRequest msg = NodeSwitchRequest{
         .updates = false
@@ -411,6 +414,8 @@ void receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
                 server.sendNodeResponse(payload, client.pid, false);
             }
         }
+
+        relationMgmt::relationMgmt(payload);
     }
 }
 
