@@ -19,16 +19,17 @@
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
+#include "datamgmt/relationmgmt/relationmgmt.hpp"
 
 
 void runModule(IpcServer &server, Module_t module_t, Module &module) {
     switch (module_t) {
-        case NODEOBSERVER:
+        case NODEANDTOPICOBSERVER:
             if (module.thread.has_value() && module.thread.value().joinable()){
                 module.thread.value().join();
             }
             module.running.store(true);
-            module.thread = std::thread(nodeAndTopicObserver, std::cref(server), module.pipe.read, std::ref(module.running));
+            module.thread = std::thread(nodeAndTopicObserver, std::cref(server), module.pipes, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
@@ -37,19 +38,22 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
 }
 
 int main() {
-    IpcServer server(1);
+    IpcServer nodeAndTopicObsServer(1);
+    IpcServer relationMgmtServer(3);
 
     std::map<Module_t, Module> modules;
-    for (int i = NODEOBSERVER; i < LASTOPTION; i++) {
+    for (int i = NODEANDTOPICOBSERVER; i < LASTOPTION; i++) {
         modules[static_cast<Module_t>(i)];
     }
+
+    runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
+    sleep(1);
 
     while (true) {
         {
             Client newClient;
-            std::optional<NodeRequest> request = server.receiveNodeRequest(newClient.requestId, newClient.pid, false);
+            std::optional<NodeRequest> request = nodeAndTopicObsServer.receiveNodeRequest(newClient.requestId, newClient.pid, false);
             if (request.has_value()) {
-                // extract msg and send to thread (write to pipe)
                 NodeRequest payload = request.value();
                 Client clientInfo {
                     .pid        = newClient.pid,
@@ -57,17 +61,17 @@ int main() {
                     .primaryKey = payload.primaryKey,
                     .updates    = payload.updates,
                 };
-                writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
+                writeT<Client>(modules[NODEANDTOPICOBSERVER].pipes[MAIN].write, clientInfo);
                 
-                singleTimeNodeResponse(server, clientInfo, payload.primaryKey);
-                if (!modules[NODEOBSERVER].running) {
-                    runModule(server, NODEOBSERVER, modules[NODEOBSERVER]);
+                singleTimeNodeResponse(nodeAndTopicObsServer, clientInfo, payload.primaryKey);
+                if (!modules[NODEANDTOPICOBSERVER].running) {
+                    runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
                 }
             }
         }
         {
             Client newClient;
-            std::optional<TopicRequest> request = server.receiveTopicRequest(newClient.requestId, newClient.pid, false);
+            std::optional<TopicRequest> request = nodeAndTopicObsServer.receiveTopicRequest(newClient.requestId, newClient.pid, false);
             if (request.has_value()) {
                 TopicRequest payload = request.value();
                 Client clientInfo {
@@ -76,11 +80,11 @@ int main() {
                     .primaryKey = payload.primaryKey,
                     .updates    = payload.updates,
                 };
-                writeT<Client>(modules[NODEOBSERVER].pipe.write, clientInfo);
+                writeT<Client>(modules[NODEANDTOPICOBSERVER].pipes[MAIN].write, clientInfo);
 
-                singleTimeTopicResponse(server, clientInfo, payload.primaryKey);
-                if (!modules[NODEOBSERVER].running) {
-                    runModule(server, NODEOBSERVER, modules[NODEOBSERVER]);
+                singleTimeTopicResponse(nodeAndTopicObsServer, clientInfo, payload.primaryKey);
+                if (!modules[NODEANDTOPICOBSERVER].running) {
+                    runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
                 }
             }
         }

@@ -1,5 +1,6 @@
 #include "util.hpp"
 #include "datamgmt/common.hpp"
+#include "ipc/ipc-server.hpp"
 
 #include <cstring>
 #include <fcntl.h>
@@ -11,6 +12,7 @@ char* serialize(const T &structure) {
     return buffer;
 }
 template char* serialize(const Client &);
+template char* serialize(const NodeResponse &);
 
 template<typename T>
 T deserialize(char *buffer) {
@@ -19,3 +21,4 @@ T deserialize(char *buffer) {
     return d;
 }
 template Client deserialize(char *);
+template NodeResponse deserialize(char *);

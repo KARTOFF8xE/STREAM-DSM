@@ -3,8 +3,10 @@
 #include <fcntl.h>
 
 #include "pipe/pipe.hpp"
+#include "datamgmt/datamgmt.hpp"
 #include "datamgmt/common.hpp"
 #include "util.hpp"
+
 
 int getPipe(int p[2], bool blocking) {
     if (int ret = pipe(p); ret != 0) {
@@ -34,7 +36,8 @@ ssize_t writeT(int __fd, const T payload, size_t __n) {
     
     return ret;
 }
-template ssize_t writeT<Client>(int, const Client, size_t);
+template ssize_t writeT<Client>(int, const Client, size_t Client);
+template ssize_t writeT<NodeResponse>(int, const NodeResponse, size_t NodeResponse);
 
 template<typename T>
 ssize_t readT(int __fd, T &payload, size_t __n) {
@@ -44,7 +47,7 @@ ssize_t readT(int __fd, T &payload, size_t __n) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return -1;
         } else {
-            std::cerr << "\e[31mError: Failed to read pipe.\e[0m" << std::endl;
+            std::cerr << "\e[31mError: Failed to read pipe.\e[0m" << errno << std::endl;
             return -1;
         }
     }
@@ -57,4 +60,5 @@ ssize_t readT(int __fd, T &payload, size_t __n) {
 
     return 0;
 }
-template ssize_t readT<Client>(int, Client &, size_t);
+template ssize_t readT<Client>(int, Client &, size_t Client);
+template ssize_t readT<NodeResponse>(int, NodeResponse &, size_t NodeResponse);
