@@ -415,7 +415,7 @@ void receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
             }
         }
 
-        relationMgmt::relationMgmt(payload.name);
+        relationMgmt::relationMgmt(payload);
     }
 }
 

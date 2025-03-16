@@ -3,6 +3,6 @@
 
 namespace relationMgmt {
 // TODO
-void relationMgmt(std::string name);
+void relationMgmt(NodeResponse response);
 
 }
