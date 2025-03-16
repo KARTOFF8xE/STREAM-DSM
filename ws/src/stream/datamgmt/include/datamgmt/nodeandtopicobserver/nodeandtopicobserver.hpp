@@ -33,12 +33,13 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
  */
 void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey);
 
-/** // TODO update
+/**
  * @brief Monitors nodes and topics, handling client updates.
  *
  * This function continuously listens for client connections, processes incoming updates.
  * It receives various update messages, such as node, subscriber and publisher and client-server
  * relationships updates. The function runs until no clients remain connected.
+ * If a Node is added the relation-Mgmt is called to bring it into the trees.
  *
  * @param server Reference to the IPC server used for sending updates.
  * @param pipes File descriptor for reading client data.
