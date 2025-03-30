@@ -77,6 +77,7 @@ RUN apt install openssh-client -y
 RUN apt install terminator -y
 RUN apt install tmux -y
 RUN apt install gdb -y
+RUN apt install python3-requests -y
 RUN apt update && apt upgrade -y
 
 # # set user

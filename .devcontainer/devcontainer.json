@@ -12,7 +12,7 @@
 	"workspaceMount": "source=${localWorkspaceFolder}/,target=/home/ubuntu/stream/,type=bind",
 	"workspaceFolder": "/home/ubuntu/stream/",
 
-	"forwardPorts": [7474],
+	"forwardPorts": [7474, 8086],
 	
     "build": {
         "dockerfile": "Dockerfile"
