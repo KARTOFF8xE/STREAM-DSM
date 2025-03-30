@@ -8,7 +8,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(ipc REQUIRED)
-find_package(neo4j REQUIRED)
+find_package(dbs REQUIRED)
 find_package(nlohmann_json 3.11.3 REQUIRED)
 
 add_executable(datamgmt
@@ -23,7 +23,7 @@ target_include_directories(datamgmt PRIVATE include/)
 target_link_libraries(datamgmt
   PRIVATE
     ipc::ipc_lib
-    neo4j::neo4j_lib
+    dbs::dbs_lib
     nlohmann_json::nlohmann_json
 )
 

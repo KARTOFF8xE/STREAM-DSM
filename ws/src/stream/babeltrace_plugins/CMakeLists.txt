@@ -9,7 +9,7 @@ endif()
 find_library(curl_LIBRARIES NAMES curl REQUIRED)
 find_package(ipc REQUIRED)
 find_package(fmt REQUIRED)
-find_package(neo4j REQUIRED)
+find_package(dbs REQUIRED)
 find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
 
 add_library(sink SHARED
@@ -29,7 +29,7 @@ target_link_libraries(sink
   PRIVATE
     fmt::fmt
     ${babeltrace2_LIBRARIES}
-    neo4j::neo4j_lib
+    dbs::dbs_lib
     ipc::ipc_lib
 )
 
