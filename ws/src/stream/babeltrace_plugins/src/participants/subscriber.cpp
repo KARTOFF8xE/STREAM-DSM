@@ -44,7 +44,7 @@ void Subscriber::toGraph(std::string payload) {
 }
 
 std::string Subscriber::getTimeSeriesPayload() {
-    return influxDB::createPayload(influxDB::SUBSCRIBER, this->primaryKey, 1);
+    return influxDB::createPayloadSingleVal(influxDB::SUBSCRIBER, this->primaryKey, 1);
 }
 
 void Subscriber::toTimeSeries(std::string payload) {

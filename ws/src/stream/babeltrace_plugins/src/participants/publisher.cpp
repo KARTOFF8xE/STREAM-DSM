@@ -44,7 +44,7 @@ void Publisher::toGraph(std::string payload) {
 }
 
 std::string Publisher::getTimeSeriesPayload() {
-    return influxDB::createPayload(influxDB::PUBLISHER, this->primaryKey, 1);    
+    return influxDB::createPayloadSingleVal(influxDB::PUBLISHER, this->primaryKey, 1);    
 }
 
 void Publisher::toTimeSeries(std::string payload) {

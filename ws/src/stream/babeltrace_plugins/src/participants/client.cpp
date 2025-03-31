@@ -66,9 +66,9 @@ void Client::toGraph(std::string payload) {
 std::string Client::getTimeSeriesPayload() {
     if (this->name.find("/_action/") != std::string::npos) return "";
 
-    if (this->isAction) return influxDB::createPayload(influxDB::ACTIONCLIENT, this->primaryKey, 1);
+    if (this->isAction) return influxDB::createPayloadSingleVal(influxDB::ACTIONCLIENT, this->primaryKey, 1);
 
-    return influxDB::createPayload(influxDB::CLIENT, this->primaryKey, 1);
+    return influxDB::createPayloadSingleVal(influxDB::CLIENT, this->primaryKey, 1);
 }
 
 void Client::toTimeSeries(std::string payload) {

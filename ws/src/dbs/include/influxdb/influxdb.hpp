@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <string>
+#include <vector>
 
 #include <ipc/common.hpp>
 
@@ -18,7 +19,16 @@ namespace influxDB {
         PUBLISHER,
         SUBSCRIBER,
     };
-    
-    std::string createPayload(ValueT valueType, primaryKey_t primaryKey, size_t value, std::chrono::nanoseconds = std::chrono::high_resolution_clock::now().time_since_epoch());
+
+    struct ValuePairs {
+        primaryKey_t primaryKey;
+        size_t value;    
+    };
+
+    // TODO
+    std::string createPayloadSingleVal(ValueT valueType, primaryKey_t primaryKey, size_t value, std::chrono::nanoseconds = std::chrono::high_resolution_clock::now().time_since_epoch());
+
+    // TODO
+    std::string createPayloadMultipleValSameTime(ValueT valueType, std::vector<ValuePairs> pairs, std::chrono::nanoseconds timestamp);
 
 }

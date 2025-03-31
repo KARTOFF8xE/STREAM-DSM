@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     int pid = std::stoi(argv[1]);
     std::cout << "pid: " << pid << std::endl;
 
-    char buffer[1024];
+    // char buffer[1024];
     ProcessData process_data;
 
     while (true) {

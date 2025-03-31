@@ -73,7 +73,7 @@ void Node::toGraph(std::string payload) {
 }
 
 std::string Node::getTimeSeriesPayload() {
-    return influxDB::createPayload(influxDB::STATECHANGE, this->primaryKey, 1);
+    return influxDB::createPayloadSingleVal(influxDB::STATECHANGE, this->primaryKey, 1);
 }
 
 void Node::toTimeSeries(std::string payload) {

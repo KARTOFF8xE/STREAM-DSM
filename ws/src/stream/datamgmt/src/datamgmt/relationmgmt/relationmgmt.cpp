@@ -74,7 +74,6 @@ std::string getParameterString(std::vector<ProcessData> pdv) {
     return oss.str();
 }
 
-
 namespace relationMgmt {
 
 void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
@@ -118,12 +117,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     pdv.push_back(pd);
                     pid = pd.ppid;
                 };
-
                 reduceProcessData(pdv);
-                for (auto pd : pdv) {
-                    if (pd.pid == 0) break;
-                    writeT<NodeResponse>(pipeToProcessobserver_w, NodeResponse{.pid = pd.pid});
-                }
 
                 curl::push(
                     createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
@@ -131,6 +125,17 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     ),
                     NEO4J
                 );
+
+                // for (auto pd : pdv) {
+                //     if (pd.pid == 0) break;
+                //     writeT<NodeResponse>(
+                //         pipeToProcessobserver_w,
+                //         NodeResponse{
+                //             .primaryKey = 0, // TODO return primaryKeys while setting relations
+                //             .pid = pd.pid
+                //         }
+                //     );
+                // }
             }
         }
     }
