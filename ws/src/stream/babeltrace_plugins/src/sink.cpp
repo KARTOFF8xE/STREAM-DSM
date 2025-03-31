@@ -102,7 +102,9 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
     participant = ParticipantFactory::getParticipant(bt_event_class_get_name(event_class));
 
     participant->extractInfo(event);
-    participant->toGraph(participant->getPayload());
+    participant->toGraph(participant->getGraphPayload());
+    participant->toTimeSeries(participant->getTimeSeriesPayload());
+
 
     if (publisher->sendToNodeObserver) participant->response(publisher->communication);
 

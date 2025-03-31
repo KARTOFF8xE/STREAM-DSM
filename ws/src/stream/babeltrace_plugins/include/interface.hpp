@@ -28,7 +28,7 @@ public:
    *
    * @return The payload.
    */
-  virtual std::string getPayload() = 0;
+  virtual std::string getGraphPayload() = 0;
   
   /**
    * @brief Sends a request by a query to a Neo4j database.
@@ -36,6 +36,12 @@ public:
    * @param payload The query to be sent to the Neo4j database.
    */
   virtual void toGraph(std::string payload) = 0;
+
+  // TODO
+  virtual std::string getTimeSeriesPayload() = 0;
+
+  // TODO
+  virtual void toTimeSeries(std::string payload) = 0;
 
   /**
    * @brief Sends a response message.

@@ -4,11 +4,17 @@
 namespace influxDB {
 
     std::string createPayload(ValueT valueType, primaryKey_t primaryKey, size_t value, std::chrono::nanoseconds timestamp) {
-        // return "temperature,sensor=room1 value=" + std::to_string(count) + " " + std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count());
         std::string type;
         switch (valueType) {
-            case cpuUtilization: type = "cpuUtilization"; break;
-            default: type = "misc";
+            case CPU_UTILIZATION:   type = "CPU_UTILIZATION"; break;
+            case STATECHANGE:       type = "STATECHANGE"; break;
+            case CLIENT:            type = "CLIENT"; break;
+            case ACTIONCLIENT:      type = "ACTIONCLIENT"; break;
+            case SERVICE:           type = "SERVICE"; break;
+            case ACTIONSERVICE:     type = "ACTIONSERVICE"; break;
+            case PUBLISHER:         type = "PUBLISHER"; break;
+            case SUBSCRIBER:        type = "SUBSCRIBER"; break;
+            default:                type = "misc";
         }
 
         return type + "," +

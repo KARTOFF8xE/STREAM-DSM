@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include <neo4j/node/node.hpp>
+#include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
 #include <ipc/common.hpp>
 #include <ipc/util.hpp>
@@ -44,12 +45,12 @@ std::string Node::getFullName() {
     return this->nameSpace + "/" + this->name;
 }
 
-std::string Node::getPayload() {
+std::string Node::getGraphPayload() {
     return node::getPayload(getFullName(), this->handle, this->pid);
 }
 
 void Node::toGraph(std::string payload) {
-    std::string response = curl::push(payload, curl::neo4j);
+    std::string response = curl::push(payload, NEO4J);
 
     nlohmann::json data = nlohmann::json::parse(response);
     if (!data["results"].empty() &&
@@ -69,6 +70,14 @@ void Node::toGraph(std::string payload) {
     } else {
         std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
     }
+}
+
+std::string Node::getTimeSeriesPayload() {
+    return influxDB::createPayload(influxDB::STATECHANGE, this->primaryKey, 1);
+}
+
+void Node::toTimeSeries(std::string payload) {
+    std::string response = curl::push(payload, INFLUXDB);
 }
 
 void Node::response(Communication &communication) {

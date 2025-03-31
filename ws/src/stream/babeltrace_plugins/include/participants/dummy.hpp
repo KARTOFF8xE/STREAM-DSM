@@ -16,7 +16,13 @@ class Dummy: public IParticipant {
          *
          * @return The payload.
          */
-        std::string getPayload() override;
+        std::string getGraphPayload() override;
+
+        // TODO
+        virtual std::string getTimeSeriesPayload() override;
+
+        // TODO
+        virtual void toTimeSeries(std::string payload) override;
 
         /**
          * @brief Sends a dummy by a query to a Neo4j database.

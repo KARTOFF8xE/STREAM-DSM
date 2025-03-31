@@ -28,7 +28,7 @@ class Service: public IParticipant {
          *
          * @return The payload.
          */
-        std::string getPayload() override;
+        std::string getGraphPayload() override;
 
         /**
          * @brief Sends a service by a query to a Neo4j database.
@@ -36,6 +36,12 @@ class Service: public IParticipant {
          * @param payload The query to be sent to the Neo4j database.
          */
         void toGraph(std::string payload) override;
+
+        // TODO
+        virtual std::string getTimeSeriesPayload() override;
+
+        // TODO
+        virtual void toTimeSeries(std::string payload) override;
 
         /**
          * @brief Sends a node switch response message.

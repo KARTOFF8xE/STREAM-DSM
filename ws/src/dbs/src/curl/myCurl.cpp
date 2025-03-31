@@ -22,7 +22,11 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
 }
 
 
-CURL *getCurl(Request *request) {
+CURL *getCurlNeo4j(Request *request) {
+    request->username   = "neo4j";
+    request->password   = "123456789";
+    request->url        = "http://172.17.0.1:7474/db/neo4j/tx/commit";
+
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
@@ -47,18 +51,37 @@ CURL *getCurl(Request *request) {
 }
 
 
-std::string push(std::string payload, const Property property) {
+CURL *getCurlInfluxDB(Request *request) {
+    request->url = "http://172.17.0.1:8086/api/v2/write?org=TUBAF&bucket=STREAM&precision=ns";
+    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
+        return NULL;
+    }
+
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: text/plain");
+    headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_URL, request->url.c_str());
+
+    return curl;
+}
+
+
+std::string push(std::string payload, const Destination destination) {
     struct Request *request = new Request;
 
-    request->username = property.username;
-    request->password = property.password;
-    request->url = property.url;
+    CURL *curl = ((destination == NEO4J) ? getCurlNeo4j(request) : getCurlInfluxDB(request));
 
-    request->query_request = payload;
-    CURL *curl = getCurl(request);
-
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
+        std::cout << payload << std::endl;
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
     } else {
         // std::cout << "Antwort von Neo4j:" << std::endl;

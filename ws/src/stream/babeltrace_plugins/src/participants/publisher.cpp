@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include <neo4j/publisher/publisher.hpp>
+#include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
 
 #include "interface.hpp"
@@ -25,7 +26,7 @@ void Publisher::extractInfo(const bt_event *event) {
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 }
 
-std::string Publisher::getPayload() {
+std::string Publisher::getGraphPayload() {
     if (this->name.find("/_action/") != std::string::npos) return "";
 
     return publisher::getPayload(this->name, this->node_handle);
@@ -34,12 +35,20 @@ std::string Publisher::getPayload() {
 void Publisher::toGraph(std::string payload) {
     if (this->name.find("/_action/") != std::string::npos) return;
 
-    std::string response = curl::push(payload, curl::neo4j);
+    std::string response = curl::push(payload, NEO4J);
 
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
     if (!row.empty() && !row[0]["node_id"].empty())     this->node_primaryKey = row[0]["node_id"];
     if (!row.empty() && !row[0]["topic_id"].empty())    this->primaryKey = row[0]["topic_id"];
+}
+
+std::string Publisher::getTimeSeriesPayload() {
+    return influxDB::createPayload(influxDB::PUBLISHER, this->primaryKey, 1);    
+}
+
+void Publisher::toTimeSeries(std::string payload) {
+    std::string response = curl::push(payload, INFLUXDB);
 }
 
 void Publisher::response(Communication &communication) {
