@@ -19,23 +19,24 @@ using namespace std::chrono_literals;
 #include "pipe/pipe.hpp"
 
 
-struct ExtendedProcessData{
-    primaryKey_t    primaryKey;
-    pid_t           pid;
-    pid_t           ppid;
-    std::string     exe_filename;
-    std::string     process_state;
-    long            usr_cpu_clocks;
-    long            krnl_cpu_clocks;
-    long            logged_clock_time;
-    float           cpu_utilisation;
-    int             process_priority;
-    long            v_mem_size;
-    int             last_cpu;
+struct FullProcessData{
+    pid_t pid;
+    pid_t ppid;
+    primaryKey_t primaryKey;
+    std::string exe_filename;
+    std::string process_state;
+    long usr_cpu_clocks;
+    long krnl_cpu_clocks;
+    long logged_clock_time;
+    float cpu_utilisation;
+    int process_priority;
+    long v_mem_size;
+    int last_cpu;
 };
 typedef struct _IO_FILE FILE;
 
 
+// Open the pid stats file
 FILE* open_pid_stats(int pid) {
     char cmd_line_path[256];
     FILE *fp;
@@ -49,32 +50,7 @@ FILE* open_pid_stats(int pid) {
     return fp;
 }
 
-long get_process_cpu_time(int pid) {
-    FILE* fp;
-    char buffer[512], *token;
-    long total;
-    int entry;
-    if ((fp=open_pid_stats(pid))==NULL) { return -1; }
-    fgets(buffer, 512, fp);
-    token=strtok(buffer, " ");
-    total=entry=0;
-    while (token!=NULL) { 
-        if (entry==13||entry==14) { total+=atol(token);}
-        token=strtok(NULL, " "); 
-        entry++;
-    }
-    fclose(fp);
-    return total;
-}
-
-long get_process_delta_time(ExtendedProcessData *pd) {
-    long previous_process_time, current_process_time, delta_process_time;
-    previous_process_time   = pd->usr_cpu_clocks + pd->krnl_cpu_clocks; // Find logged clock time of process
-    current_process_time    = get_process_cpu_time(pd->pid); // Get the new clock time of the process
-    delta_process_time      = current_process_time - previous_process_time; // Find the delta process time
-    return delta_process_time;
-}
-
+// Read the proc stat to get total cpu time
 long get_cpu_time() {
     char cmd_line_path[256], buffer[512], *token;
     long total;
@@ -96,7 +72,52 @@ long get_cpu_time() {
     return total;
 }
 
-long get_cpu_delta_time(ExtendedProcessData *pd) {
+FullProcessData getProcDataByPID(int pid) {
+    std::ifstream fp(
+        std::string("/proc/") +
+        std::to_string(pid) + 
+        std::string("/stat")
+    );
+    std::string payload;
+    std::getline(fp, payload);
+
+    FullProcessData pd {
+        .logged_clock_time = get_cpu_time(),
+    };
+
+    int i = payload.find(" (");
+    pd.pid = std::atoi(payload.substr(0, i).c_str());
+    payload = payload.substr(i + 2 * sizeof(char));
+    i = payload.find(") ");
+    pd.exe_filename = payload.substr(0, i);
+    payload = payload.substr(i + 2*sizeof(char));
+    
+    sscanf(payload.c_str(), "%*c %d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld %*d %*d %*d %*d %*d %*d %*d %ld %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %d",
+        &pd.ppid, &pd.usr_cpu_clocks, &pd.krnl_cpu_clocks, &pd.v_mem_size, &pd.last_cpu);
+
+    pd.v_mem_size = pd.v_mem_size / 1048576;
+
+
+    fp.close();
+    return pd;
+}
+
+// Strip the filename to 10 characters with + at the end
+const char* format_filename(const char *exe_filename) {
+    int exe_filename_length, max_filename_length;
+    char *new_filename;
+    exe_filename_length=strlen(exe_filename);
+    max_filename_length=10;
+    if (exe_filename_length<=max_filename_length) return exe_filename;
+    new_filename = (char*)malloc(max_filename_length+1);
+    for (int i=0; i<max_filename_length-1; i++) { new_filename[i]=exe_filename[i];}
+    new_filename[max_filename_length-1]='+';
+    new_filename[max_filename_length]='\0';
+    return new_filename;
+}
+
+// Get the cpu delta time
+long get_cpu_delta_time(FullProcessData *pd) {
     long logged_cpu_time, current_cpu_time, delta_cpu_time;
     logged_cpu_time=pd->logged_clock_time; // Get the logged cpu time of the process
     current_cpu_time=get_cpu_time(); // Get the current cpu time
@@ -104,20 +125,64 @@ long get_cpu_delta_time(ExtendedProcessData *pd) {
     return delta_cpu_time;
 }
 
-void calculate_cpu_utilisation(ExtendedProcessData &pd) {
-    float cpu_utilisation   = (float)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);
-    pd.cpu_utilisation      = 100 * cpu_utilisation;
+long get_process_cpu_time(int pid) {
+    FILE* fp;
+    char buffer[512], *token;
+    long total;
+    int entry;
+    if ((fp=open_pid_stats(pid))==NULL) { return -1; }
+    fgets(buffer, 512, fp);
+    token=strtok(buffer, " ");
+    total=entry=0;
+    while (token!=NULL) { 
+        if (entry==13||entry==14) { total+=atol(token);}
+        token=strtok(NULL, " "); 
+        entry++;
+    }
+    fclose(fp);
+    return total;
 }
+
+// Get the process delta time
+long get_process_delta_time(FullProcessData *pd) {
+    long previous_process_time, current_process_time, delta_process_time;
+    previous_process_time   = pd->usr_cpu_clocks + pd->krnl_cpu_clocks; // Find logged clock time of process
+    current_process_time    = get_process_cpu_time(pd->pid); // Get the new clock time of the process
+    delta_process_time      = current_process_time - previous_process_time; // Find the delta process time
+    return delta_process_time;
+}
+
+// Calculate the cpu utilisation of each process
+double get_cpu_utilisation(FullProcessData &pd) {
+    // double cpu_utilisation   = (double)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);
+    // pd.cpu_utilisation      = 100 * cpu_utilisation;
+    return 100 * (double)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);;
+}
+
 
 namespace processObserver {
 
 void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started processObserver" << std::endl;
     
-    std::vector<ExtendedProcessData> processVec;
+    std::vector<FullProcessData> processVec;
 
     auto then = std::chrono::steady_clock::now();
     while (true) {
+        std::vector<influxDB::ValuePairs> pairs;
+        for (auto &process : processVec) {
+            pairs.push_back(influxDB::ValuePairs{
+                .primaryKey = (primaryKey_t)process.pid,
+                .value      = get_cpu_utilisation(process)
+            });
+
+            process = getProcDataByPID(process.pid);
+        }
+
+        curl::push(
+            influxDB::createPayloadMultipleValSameTime(influxDB::CPU_UTILIZATION, pairs),
+            INFLUXDB
+        );
 
         NodeResponse response;
         ssize_t ret = -1;
@@ -134,18 +199,10 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
             continue;
         }
 
-        // processVec.push_back(ExtendedProcessData{
-        //     .primaryKey = response.primaryKey,
-        //     .pid = response.pid
-        // });
-
-        // for (auto process : processVec) {
-        //     calculate_cpu_utilisation(process);
-        // }
-
-        // std::vector<influxDB::ValuePairs> pairs;
-        // TODO: hier gehts weiter
-
+        processVec.push_back(FullProcessData{
+            .pid        = response.pid,
+            .primaryKey = response.primaryKey
+        });
     }
 
     running.store(false);

@@ -38,7 +38,6 @@ namespace influxDB {
         }
 
         std::string payload = "";
-
         for (auto pair : pairs) {
             payload += type + "," + "primaryKey=" + std::to_string(pair.primaryKey) + " value=" + std::to_string(pair.value) + "\n";
         }

@@ -13,7 +13,7 @@ struct ProcessData{
     long usr_cpu_clocks;
     long krnl_cpu_clocks;
     long logged_clock_time;
-    float cpu_utilisation;
+    double cpu_utilisation;
     int process_priority;
     long v_mem_size;
     int last_cpu;
@@ -147,7 +147,7 @@ long get_process_delta_time(ProcessData *pd) {
 
 // Calculate the cpu utilisation of each process
 void calculate_cpu_utilisation(ProcessData &pd) {
-    float cpu_utilisation   = (float)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);
+    double cpu_utilisation   = (double)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);
     pd.cpu_utilisation      = 100 * cpu_utilisation;
 }
 

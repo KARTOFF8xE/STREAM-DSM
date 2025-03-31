@@ -127,16 +127,16 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     NEO4J
                 );
 
-                // for (auto pd : pdv) {
-                //     if (pd.pid == 0) break;
-                //     writeT<NodeResponse>(
-                //         pipeToProcessobserver_w,
-                //         NodeResponse{
-                //             .primaryKey = 0, // TODO return primaryKeys while setting relations
-                //             .pid = pd.pid
-                //         }
-                //     );
-                // }
+                for (auto pd : pdv) {
+                    if (pd.pid == 0) break;
+                    writeT<NodeResponse>(
+                        pipeToProcessobserver_w,
+                        NodeResponse{
+                            .primaryKey = 0, // TODO return primaryKeys while setting relations
+                            .pid = pd.pid
+                        }
+                    );
+                }
             }
         }
     }
