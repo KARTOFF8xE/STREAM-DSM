@@ -18,7 +18,6 @@ static bt_component_class_initialize_method_status publisher_initialize(
         const bt_value *params, void *) {
 
     struct publisher *publisher = new struct publisher();
-    new (&publisher->communication.server) IpcServer(2);
 
     bt_self_component_set_data(
         bt_self_component_sink_as_self_component(self_component_sink),

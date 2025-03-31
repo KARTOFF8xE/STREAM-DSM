@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 #include <chrono>
+using namespace std::chrono_literals;
+
 #include <dirent.h>
 #include <string.h>
 #include <unistd.h>
@@ -122,10 +124,10 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
         ret = readT<NodeResponse>(pipes[RELATIONMGMT].read, response);
         if (ret == -1) {
             auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then).count();
-            auto sleepTime = 1000000 - elapsed;
-            if (sleepTime > 0) {
-                std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
+            auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
+            auto sleepTime = 1s - elapsed;
+            if (sleepTime > 0s) {
+                std::this_thread::sleep_for(sleepTime);
             }
             then = std::chrono::steady_clock::now();
 

@@ -2,6 +2,7 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 #include <chrono>
+using namespace std::chrono_literals;
 
 #include <ipc/ipc-client.hpp>
 #include <ipc/util.hpp>
@@ -227,22 +228,22 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
         }
         */
 
-        receiveNodeResponse(ipcClient, clients, server, pipes[RELATIONMGMT].write);
-        receiveSubscribersToUpdate(ipcClient, clients, server);
-        receivePublishersToUpdate(ipcClient, clients, server);
-        receiveNodeIsServerForUpdate(ipcClient, clients, server);
-        receiveNodeIsClientOfUpdate(ipcClient, clients, server);
-        receiveNodeIsActionServerForUpdate(ipcClient, clients, server);
-        receiveNodeIsActionClientOfUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeResponse(ipcClient, clients, server, pipes[RELATIONMGMT].write);
+        receivedMessage |= receiveSubscribersToUpdate(ipcClient, clients, server);
+        receivedMessage |= receivePublishersToUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsServerForUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsClientOfUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsActionServerForUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsActionClientOfUpdate(ipcClient, clients, server);
 
         if (receivedMessage) continue;
 
 
         auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then).count();
-        auto sleepTime = 1000000 - elapsed;
-        if (sleepTime > 0) {
-            std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
+        auto sleepTime = 1s - elapsed;
+        if (sleepTime > 0s) {
+            std::this_thread::sleep_for(sleepTime);
         }
         then = std::chrono::steady_clock::now();
     }
