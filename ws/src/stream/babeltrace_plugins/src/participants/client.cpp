@@ -45,7 +45,7 @@ std::string Client::getPayload() {
 void Client::toGraph(std::string payload) {
     if (payload == "") return;
 
-    std::string response = curl::push(payload);
+    std::string response = curl::push(payload, curl::neo4j);
     
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];

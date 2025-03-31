@@ -34,7 +34,7 @@ std::string Publisher::getPayload() {
 void Publisher::toGraph(std::string payload) {
     if (this->name.find("/_action/") != std::string::npos) return;
 
-    std::string response = curl::push(payload);
+    std::string response = curl::push(payload, curl::neo4j);
 
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];

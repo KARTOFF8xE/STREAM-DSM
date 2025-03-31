@@ -49,7 +49,7 @@ std::string Node::getPayload() {
 }
 
 void Node::toGraph(std::string payload) {
-    std::string response = curl::push(payload);
+    std::string response = curl::push(payload, curl::neo4j);
 
     nlohmann::json data = nlohmann::json::parse(response);
     if (!data["results"].empty() &&

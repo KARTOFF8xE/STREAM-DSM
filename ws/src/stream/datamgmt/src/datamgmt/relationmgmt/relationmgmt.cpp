@@ -79,7 +79,8 @@ void relationMgmt(NodeResponse response) {
     {
         /*** Namespace-Tree ***/
         curl::push(
-            createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name)
+            createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name),
+            curl::neo4j
         );
     }
     {
@@ -100,7 +101,8 @@ void relationMgmt(NodeResponse response) {
             curl::push(
                 createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
                     getParameterString(pdv)
-                )
+                ),
+                curl::neo4j
             );
         }
     }

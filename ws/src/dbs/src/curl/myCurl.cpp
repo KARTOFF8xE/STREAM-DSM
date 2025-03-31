@@ -47,12 +47,12 @@ CURL *getCurl(Request *request) {
 }
 
 
-std::string push(std::string payload) {
+std::string push(std::string payload, const Property property) {
     struct Request *request = new Request;
 
-    request->username = "neo4j";
-    request->password = "123456789";
-    request->url = "http://172.17.0.1:7474/db/neo4j/tx/commit";
+    request->username = property.username;
+    request->password = property.password;
+    request->url = property.url;
 
     request->query_request = payload;
     CURL *curl = getCurl(request);

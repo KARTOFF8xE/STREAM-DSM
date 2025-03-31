@@ -8,6 +8,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(CURL REQUIRED)
 find_package(fmt REQUIRED)
+find_package(ipc REQUIRED)
 
 add_library(dbs_lib SHARED
     src/curl/myCurl.cpp
@@ -20,6 +21,7 @@ add_library(dbs_lib SHARED
     src/neo4j/actionclient/actionclient.cpp
     src/neo4j/topic/topic.cpp
     src/neo4j/roots/roots.cpp
+    src/influxdb/influxdb.cpp
 )
 
 target_include_directories(dbs_lib PRIVATE include)
@@ -28,6 +30,7 @@ target_link_libraries(dbs_lib
   PRIVATE
     CURL::libcurl
     fmt::fmt
+    ipc::ipc_lib
 )
 
 ament_export_targets(dbs_lib HAS_LIBRARY_TARGET)
@@ -37,9 +40,14 @@ install(
   DESTINATION include
 )
 install(
+  DIRECTORY include/influxdb
+  DESTINATION include
+)
+install(
   DIRECTORY include/curl
   DESTINATION include
 )
+
 install(
   TARGETS dbs_lib
   EXPORT dbs_lib
