@@ -20,18 +20,18 @@ using namespace std::chrono_literals;
 
 
 struct FullProcessData{
-    pid_t pid;
-    pid_t ppid;
-    primaryKey_t primaryKey;
-    std::string exe_filename;
-    std::string process_state;
-    long usr_cpu_clocks;
-    long krnl_cpu_clocks;
-    long logged_clock_time;
-    float cpu_utilisation;
-    int process_priority;
-    long v_mem_size;
-    int last_cpu;
+    primaryKey_t    primaryKey;
+    pid_t           pid;
+    pid_t           ppid;
+    std::string     exe_filename;
+    std::string     process_state;
+    long            usr_cpu_clocks;
+    long            krnl_cpu_clocks;
+    long            logged_clock_time;
+    float           cpu_utilisation;
+    int             process_priority;
+    long            v_mem_size;
+    int             last_cpu;
 };
 typedef struct _IO_FILE FILE;
 
@@ -170,13 +170,24 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
     auto then = std::chrono::steady_clock::now();
     while (true) {
         std::vector<influxDB::ValuePairs> pairs;
-        for (auto &process : processVec) {
+        for (auto it = processVec.begin(); it != processVec.end(); ++it) {
+            int index = std::distance(processVec.begin(), it);
+        // }
+        // for (auto &process : processVec) {
+            double cpuUtilization = get_cpu_utilisation(processVec.at(index));
+            if (cpuUtilization < 0) {
+                std::cout << "removed Process " << processVec.at(index).exe_filename << " with pid " << processVec.at(index).pid << std::endl;
+                processVec.erase(it);
+                if (processVec.size() == 0) break;
+                continue;
+            }
+
             pairs.push_back(influxDB::ValuePairs{
-                .primaryKey = (primaryKey_t)process.pid,
-                .value      = get_cpu_utilisation(process)
+                .primaryKey = (primaryKey_t)processVec.at(index).pid,
+                .value      = cpuUtilization
             });
 
-            process = getProcDataByPID(process.pid);
+            processVec.at(index) = getProcDataByPID(processVec.at(index).pid);
         }
 
         curl::push(
@@ -199,9 +210,10 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
             continue;
         }
 
+        std::cout << "Added process with pid " << response.pid << " and primaryKey: " << response.primaryKey << std::endl;
         processVec.push_back(FullProcessData{
-            .pid        = response.pid,
-            .primaryKey = response.primaryKey
+            .primaryKey = response.primaryKey,
+            .pid        = response.pid
         });
     }
 

@@ -26,7 +26,7 @@ namespace createRoot {
             {{
                 "statements":
                     [
-                        {{ "statement": "UNWIND $pids AS pidName MERGE (n:Node {{pid: pidName.pid}}) ON CREATE SET n.name = pidName.name WITH collect(n) AS nodes UNWIND range(0, size(nodes)-2) AS i WITH nodes[i] AS child, nodes[i+1] AS parent MERGE (parent)-[:process]->(child) ",
+                        {{ "statement": "UNWIND $pids AS pidName MERGE (n:Node {{pid: pidName.pid}}) ON CREATE SET n.name = pidName.name WITH collect(n) AS nodes UNWIND range(0, size(nodes)-2) AS i WITH nodes[i] AS child, nodes[i+1] AS parent, nodes MERGE (parent)-[:process]->(child) WITH nodes UNWIND nodes AS n RETURN DISTINCT n.pid AS pid, last(split(elementId(n), ':')) AS primaryKey ",
                         "parameters": {{
                             "pids": {}
                             }}
@@ -35,5 +35,5 @@ namespace createRoot {
             }}
         )", fullName);
     }
-
+    
 }

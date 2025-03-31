@@ -120,12 +120,12 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                 };
                 reduceProcessData(pdv);
 
-                curl::push(
+                std::cout << curl::push(
                     createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
                         getParameterString(pdv)
                     ),
                     NEO4J
-                );
+                ) << std::endl;
 
                 for (auto pd : pdv) {
                     if (pd.pid == 0) break;
