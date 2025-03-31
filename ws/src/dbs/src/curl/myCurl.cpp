@@ -84,11 +84,10 @@ std::string push(std::string payload, const Destination destination) {
         std::cout << payload << std::endl;
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
     } else {
-        // std::cout << "Antwort von Neo4j:" << std::endl;
+        // std::cout << "Antwort: " << std::endl;
         // std::cout << request->query_response << std::endl;
     }
 
-    delete(request);
     return request->query_response;
 }
 

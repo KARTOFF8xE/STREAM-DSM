@@ -146,10 +146,11 @@ bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &client
  * @param ipcClient Reference to the IPC client used for receiving messages.
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending the NodeResponse.
+ * @param // TODO
  * 
  * @returns If a message had been received
  */
-bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server, int pipeToRelationMgmt_w);
 
 /**
  * @brief Handles client requests by adding or removing the client from the list of clients.

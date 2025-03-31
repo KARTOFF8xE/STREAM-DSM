@@ -25,11 +25,18 @@
 void runModule(IpcServer &server, Module_t module_t, Module &module) {
     switch (module_t) {
         case NODEANDTOPICOBSERVER:
-            if (module.thread.has_value() && module.thread.value().joinable()){
+            if (module.thread.has_value() && module.thread.value().joinable()) {
                 module.thread.value().join();
             }
             module.running.store(true);
             module.thread = std::thread(nodeAndTopicObserver, std::cref(server), module.pipes, std::ref(module.running));
+            return;
+        case RELATIONMGMT:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(relationMgmt::relationMgmt, module.pipes, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
@@ -46,7 +53,21 @@ int main() {
         modules[static_cast<Module_t>(i)];
     }
 
+    {
+        int p[2];
+        getPipe(p);
+        modules[NODEANDTOPICOBSERVER].pipes[RELATIONMGMT] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[RELATIONMGMT].pipes[NODEANDTOPICOBSERVER] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+    }
+
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
+    runModule(relationMgmtServer, RELATIONMGMT, modules[RELATIONMGMT]);
     sleep(1);
 
     auto then = std::chrono::steady_clock::now();

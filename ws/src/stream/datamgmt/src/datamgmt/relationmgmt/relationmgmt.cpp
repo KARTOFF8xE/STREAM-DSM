@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <chrono>
 
 #include <ipc/ipc-client.hpp>
 #include <neo4j/roots/roots.hpp>
@@ -73,39 +74,63 @@ std::string getParameterString(std::vector<ProcessData> pdv) {
     return oss.str();
 }
 
+
 namespace relationMgmt {
 
-void relationMgmt(NodeResponse response) {
-    {
-        /*** Namespace-Tree ***/
-        curl::push(
-            createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name),
-            NEO4J
-        );
-    }
-    {
-        /*** Process-Tree ***/
-        std::vector<ProcessData> pdv;
-        if (response.bootCount == 1) {
-            pid_t pid = response.pid;
-            while (true) {
-                ProcessData pd = getProcessDatabyPID(pid);
-                if (pd.pid == 0) break;
+void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
+    std::cout << "started relationMgmt" << std::endl;
+    
+    auto then = std::chrono::steady_clock::now();
+    while (true) {
 
-                pdv.push_back(pd);
-                pid = pd.ppid;
-            };
+        NodeResponse response;
+        ssize_t ret = -1;
+        ret = readT<NodeResponse>(pipes[NODEANDTOPICOBSERVER].read, response);
+        if (ret == -1) {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then).count();
+            auto sleepTime = 1000000 - elapsed;
+            if (sleepTime > 0) {
+                std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
+            }
+            then = std::chrono::steady_clock::now();
 
-            reduceProcessData(pdv);
+            continue;
+        }
 
+        {
+            /*** Namespace-Tree ***/
             curl::push(
-                createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
-                    getParameterString(pdv)
-                ),
+                createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name),
                 NEO4J
             );
         }
+        {
+            /*** Process-Tree ***/
+            std::vector<ProcessData> pdv;
+            if (response.bootCount == 1) {
+                pid_t pid = response.pid;
+                while (true) {
+                    ProcessData pd = getProcessDatabyPID(pid);
+                    if (pd.pid == 0) break;
+
+                    pdv.push_back(pd);
+                    pid = pd.ppid;
+                };
+
+                reduceProcessData(pdv);
+
+                curl::push(
+                    createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
+                        getParameterString(pdv)
+                    ),
+                    NEO4J
+                );
+            }
+        }
     }
+
+    running.store(false);
 }
 
 } 

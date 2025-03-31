@@ -227,7 +227,7 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
         }
         */
 
-        receiveNodeResponse(ipcClient, clients, server);
+        receiveNodeResponse(ipcClient, clients, server, pipes[RELATIONMGMT].write);
         receiveSubscribersToUpdate(ipcClient, clients, server);
         receivePublishersToUpdate(ipcClient, clients, server);
         receiveNodeIsServerForUpdate(ipcClient, clients, server);
@@ -440,7 +440,7 @@ bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &client
     return false;
 }
 
-bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server, int pipeToRelationMgmt_w) {
     std::optional<NodeResponse> response = ipcClient.receiveNodeResponse(false);
     if (response.has_value())
     {
@@ -453,7 +453,7 @@ bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
             }
         }
 
-        relationMgmt::relationMgmt(payload);
+        writeT<NodeResponse>(pipeToRelationMgmt_w, payload);
 
         return true;
     }
