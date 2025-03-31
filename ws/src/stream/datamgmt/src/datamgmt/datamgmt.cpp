@@ -19,6 +19,7 @@
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
+#include "datamgmt/processobserver/processobserver.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 
 
@@ -38,6 +39,13 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
             module.running.store(true);
             module.thread = std::thread(relationMgmt::relationMgmt, module.pipes, std::ref(module.running));
             return;
+        case PROCESSOBSERVER:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(processObserver::processObserver, module.pipes, std::ref(module.running));
+            return;
         default:
             std::cerr << "No matching function found" << std::endl;
             return;
@@ -46,7 +54,7 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
 
 int main() {
     IpcServer nodeAndTopicObsServer(1);
-    IpcServer relationMgmtServer(3);
+    IpcServer dummyServer(3);
 
     std::map<Module_t, Module> modules;
     for (int i = NODEANDTOPICOBSERVER; i < LASTOPTION; i++) {
@@ -65,9 +73,24 @@ int main() {
             .write  = p[1],
         };
     }
+    {
+        int p[2];
+        getPipe(p);
+        modules[RELATIONMGMT].pipes[PROCESSOBSERVER] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[PROCESSOBSERVER].pipes[RELATIONMGMT] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+    }
 
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
-    runModule(relationMgmtServer, RELATIONMGMT, modules[RELATIONMGMT]);
+    sleep(1);
+    runModule(dummyServer, RELATIONMGMT, modules[RELATIONMGMT]);
+    sleep(1);
+    runModule(dummyServer, PROCESSOBSERVER, modules[PROCESSOBSERVER]);
     sleep(1);
 
     auto then = std::chrono::steady_clock::now();

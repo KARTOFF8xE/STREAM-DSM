@@ -79,6 +79,7 @@ namespace relationMgmt {
 
 void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started relationMgmt" << std::endl;
+    int pipeToProcessobserver_w = pipes[PROCESSOBSERVER].write;
     
     auto then = std::chrono::steady_clock::now();
     while (true) {
@@ -119,6 +120,10 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                 };
 
                 reduceProcessData(pdv);
+                for (auto pd : pdv) {
+                    if (pd.pid == 0) break;
+                    writeT<NodeResponse>(pipeToProcessobserver_w, NodeResponse{.pid = pd.pid});
+                }
 
                 curl::push(
                     createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
