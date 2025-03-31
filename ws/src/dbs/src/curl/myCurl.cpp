@@ -88,6 +88,7 @@ std::string push(std::string payload, const Destination destination) {
         // std::cout << request->query_response << std::endl;
     }
 
+    delete(request);
     return request->query_response;
 }
 

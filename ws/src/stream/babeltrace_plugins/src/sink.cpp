@@ -104,6 +104,7 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
     participant->extractInfo(event);
     participant->toGraph(participant->getGraphPayload());
     participant->toTimeSeries(participant->getTimeSeriesPayload());
+    delete(participant);
 
 
     if (publisher->sendToNodeObserver) participant->response(publisher->communication);

@@ -49,7 +49,9 @@ int main() {
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
     sleep(1);
 
+    auto then = std::chrono::steady_clock::now();
     while (true) {
+        bool receivedMessage = false;
         {
             Client newClient;
             std::optional<NodeRequest> request = nodeAndTopicObsServer.receiveNodeRequest(newClient.requestId, newClient.pid, false);
@@ -67,6 +69,8 @@ int main() {
                 if (!modules[NODEANDTOPICOBSERVER].running) {
                     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
                 }
+
+                receivedMessage = true;
             }
         }
         {
@@ -86,8 +90,21 @@ int main() {
                 if (!modules[NODEANDTOPICOBSERVER].running) {
                     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
                 }
+
+                receivedMessage = true;
             }
         }
+
+        if (receivedMessage) continue;
+
+
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then).count();
+        auto sleepTime = 1000000 - elapsed;
+        if (sleepTime > 0) {
+            std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
+        }
+        then = std::chrono::steady_clock::now();
 
         // TODO receive different messages as a server (subscriptions and unsubscriptions)
         // TODO handle threads that are running
