@@ -186,7 +186,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     pipeToProcessobserver_w,
                     NodeResponse{
                         .primaryKey = pair.primaryKey,
-                        .pid        = pair.pid
+                        .pid        = pair.pid,
                     }
                 );
             }

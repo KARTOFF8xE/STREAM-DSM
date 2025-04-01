@@ -194,7 +194,7 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
             continue;
         }
 
-        std::cout << "Added process with pid " << response.pid << " and primaryKey: " << response.primaryKey << std::endl;
+        std::cout << "Added process with pid: " << response.pid << " and primaryKey: " << response.primaryKey << std::endl;
         processVec.push_back(FullProcessData{
             .primaryKey = response.primaryKey,
             .pid        = response.pid

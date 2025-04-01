@@ -16,11 +16,20 @@ struct Request {
 };
 
 
+// static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userp) {
+//     userp->append((char*)contents, size * nmemb);
+//     return size * nmemb;
+// }
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userp) {
-    userp->append((char*)contents, size * nmemb);
-    return size * nmemb;
+    size_t totalSize = size * nmemb;
+    try {
+        userp->append((char*)contents, totalSize);
+    } catch (const std::bad_alloc&) {
+        std::cerr << "Memory allocation failed." << std::endl;
+        return 0;
+    }
+    return totalSize;
 }
-
 
 CURL *getCurlNeo4j(Request &request) {
     request.username   = "neo4j";
