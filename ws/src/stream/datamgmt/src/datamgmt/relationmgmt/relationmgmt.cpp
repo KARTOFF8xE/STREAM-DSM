@@ -76,6 +76,20 @@ std::string getParameterString(std::vector<ProcessData> pdv) {
     return oss.str();
 }
 
+std::string getParameterString2(std::vector<ProcessData> pdv) {
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < pdv.size(); i++) {
+        oss << "\""
+            << pdv.at(i).pid
+            << "\"";
+
+        if (i < pdv.size() - 1) oss << ", ";
+    }
+    oss << "]";
+    return oss.str();
+}
+
 struct Pair {
     pid_t           pid;
     primaryKey_t    primaryKey;
@@ -134,7 +148,6 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
         {
             /*** Process-Tree ***/
             std::vector<ProcessData> pdv;
-            if (response.bootCount == 1) {
                 pid_t pid = response.pid;
                 while (true) {
                     ProcessData pd = getProcessDatabyPID(pid);
@@ -145,24 +158,42 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                 };
                 reduceProcessData(pdv);
 
-                std::string queryResp = curl::push(
+            std::string queryResp;
+            if (response.bootCount == 1) {
+                queryResp = curl::push(
                     createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
                         getParameterString(pdv)
                     ),
                     curl::NEO4J
                 );
-                std::vector<Pair> pairs = extractPIDandID(queryResp);
+                std::cout << "bootcounter == 0: " << queryResp << std::endl;
+            } else {
+                std::cout << "payload: "
+                    << createRoot::getPayloadCreateProcessAndUpdatePassiveHelpers(
+                        response.name,
+                        getParameterString2(pdv)
+                    ) << std::endl;
+                queryResp = curl::push(
+                    createRoot::getPayloadCreateProcessAndUpdatePassiveHelpers(
+                        response.name,
+                        getParameterString2(pdv)
+                    ),
+                    curl::NEO4J
+                );
+                std::cout << "bootcounter > 1: " << queryResp << std::endl;
+            }
 
-                for (auto pair : pairs) {
-                    if (pair.pid == 0) continue;
-                    writeT<NodeResponse>(
-                        pipeToProcessobserver_w,
-                        NodeResponse{
-                            .primaryKey = pair.primaryKey,
-                            .pid        = pair.pid
-                        }
-                    );
-                }
+            std::vector<Pair> pairs = extractPIDandID(queryResp);
+
+            for (auto pair : pairs) {
+                if (pair.pid == 0) continue;
+                writeT<NodeResponse>(
+                    pipeToProcessobserver_w,
+                    NodeResponse{
+                        .primaryKey = pair.primaryKey,
+                        .pid        = pair.pid
+                    }
+                );
             }
         }
     }

@@ -21,7 +21,7 @@ namespace createRoot {
         )", fullName);
     }
 
-    std::string getPayloadCreateProcessAndLinkPassiveHelpers(std::string fullName) {
+    std::string getPayloadCreateProcessAndLinkPassiveHelpers(std::string pids) {
         return fmt::format(R"(
             {{
                 "statements":
@@ -33,7 +33,22 @@ namespace createRoot {
                         }}
                     ]
             }}
-        )", fullName);
+        )", pids);
     }
     
+    std::string getPayloadCreateProcessAndUpdatePassiveHelpers(std::string fullName, std::string pids) {
+        return fmt::format(R"(
+            {{
+                "statements":
+                    [
+                        {{ "statement": "MATCH (targetNode:Node {{name: $name}}) WITH targetNode, $pids AS values SET targetNode.pid = values[0] WITH targetNode, values UNWIND range(0, size(values)-2) AS i MATCH (targetNode:Node {{pid: values[i]}}) OPTIONAL MATCH (parent)-[:process]->(targetNode) SET parent.pid = values[i+1] WITH parent, targetNode, values, i UNWIND [targetNode, parent] AS n RETURN DISTINCT toInteger(n.pid) AS pid, toInteger(last(split(elementId(n), ':'))) AS primaryKey ",
+                        "parameters": {{
+                            "name": "{}",
+                            "pids": {}
+                            }}
+                        }}
+                    ]
+            }}
+        )", fullName, pids);
+    }
 }
