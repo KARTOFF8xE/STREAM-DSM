@@ -26,10 +26,10 @@ namespace createRoot {
             {{
                 "statements":
                     [
-                        {{ "statement": "UNWIND $pids AS pidName MERGE (n:Node {{pid: pidName.pid}}) ON CREATE SET n.name = pidName.name WITH collect(n) AS nodes UNWIND range(0, size(nodes)-2) AS i WITH nodes[i] AS child, nodes[i+1] AS parent, nodes MERGE (parent)-[:process]->(child) WITH nodes UNWIND nodes AS n RETURN DISTINCT toInteger(n.pid) AS pid, toInteger(last(split(elementId(n), ':'))) AS primaryKey ",
+                        {{ "statement": "UNWIND $pids AS pidName MERGE (n:Node {{pid: pidName.pid}}) ON CREATE SET n.name = pidName.name WITH collect(n) AS nodes UNWIND range(0, size(nodes)-2) AS i WITH nodes[i] AS child, nodes[i+1] AS parent, nodes MERGE (parent)-[:process]->(child) WITH nodes UNWIND nodes AS n RETURN DISTINCT {{ pid: toInteger(n.pid), id: toInteger(last(split(elementId(n), ':'))) }} AS result ",
                         "parameters": {{
                             "pids": {}
-                            }}
+                        }}
                         }}
                     ]
             }}
@@ -41,7 +41,7 @@ namespace createRoot {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (targetNode:Node {{name: $name}}) WITH targetNode, $pids AS values SET targetNode.pid = values[0] WITH targetNode, values UNWIND range(0, size(values)-2) AS i MATCH (targetNode:Node {{pid: values[i]}}) OPTIONAL MATCH (parent)-[:process]->(targetNode) SET parent.pid = values[i+1] WITH parent, targetNode, values, i UNWIND [targetNode, parent] AS n RETURN DISTINCT toInteger(n.pid) AS pid, toInteger(last(split(elementId(n), ':'))) AS primaryKey ",
+                        {{ "statement": "MATCH (targetNode:Node {{name: $name}}) WITH targetNode, $pids AS values SET targetNode.pid = values[0] WITH targetNode, values UNWIND range(0, size(values)-2) AS i MATCH (targetNode:Node {{pid: values[i]}}) OPTIONAL MATCH (parent)-[:process]->(targetNode) SET parent.pid = values[i+1] WITH parent, targetNode, values, i UNWIND [targetNode, parent] AS n RETURN DISTINCT {{ pid: toInteger(n.pid), id: toInteger(last(split(elementId(n), ':'))) }} AS result ",
                         "parameters": {{
                             "name": "{}",
                             "pids": {}

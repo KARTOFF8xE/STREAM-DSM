@@ -101,14 +101,16 @@ std::vector<Pair> extractPIDandID(const std::string& payload) {
     std::vector<Pair> result;
 
     for (const auto& item : j["results"][0]["data"]) {
-        result.push_back(
-            Pair {
-                .pid        = item["row"][0].get<pid_t>(),
-                .primaryKey = item["row"][1].get<primaryKey_t>()
-            }
-        );
+        if (item.contains("row") && !item["row"].empty()) {           
+            result.push_back(
+                Pair {
+                    .pid        = item["row"][0]["pid"].get<pid_t>(),
+                    .primaryKey = item["row"][0]["id"].get<primaryKey_t>()
+                }
+            );
+        }
     }
-
+    
     return result;
 }
 
@@ -166,13 +168,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     ),
                     curl::NEO4J
                 );
-                std::cout << "bootcounter == 0: " << queryResp << std::endl;
             } else {
-                std::cout << "payload: "
-                    << createRoot::getPayloadCreateProcessAndUpdatePassiveHelpers(
-                        response.name,
-                        getParameterString2(pdv)
-                    ) << std::endl;
                 queryResp = curl::push(
                     createRoot::getPayloadCreateProcessAndUpdatePassiveHelpers(
                         response.name,
@@ -180,7 +176,6 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     ),
                     curl::NEO4J
                 );
-                std::cout << "bootcounter > 1: " << queryResp << std::endl;
             }
 
             std::vector<Pair> pairs = extractPIDandID(queryResp);
