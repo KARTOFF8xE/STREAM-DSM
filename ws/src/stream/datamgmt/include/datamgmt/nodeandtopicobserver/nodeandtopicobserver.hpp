@@ -58,7 +58,7 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  * 
- * @returns If a message had been received
+ * @returns If a message had been received.
  */
 bool receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
@@ -73,7 +73,7 @@ bool receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clie
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  * 
- * @returns If a message had been received
+ * @returns If a message had been received.
  */
 bool receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
@@ -89,7 +89,7 @@ bool receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &cli
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  * 
- * @returns If a message had been received
+ * @returns If a message had been received.
  */
 bool receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
@@ -105,7 +105,7 @@ bool receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client>
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  * 
- * @returns If a message had been received
+ * @returns If a message had been received.
  */
 bool receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
@@ -119,7 +119,7 @@ bool receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  * 
- * @returns If a message had been received
+ * @returns If a message had been received.
  */
 bool receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
@@ -133,22 +133,24 @@ bool receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clien
  * @param clients Vector of Client objects representing the connected clients.
  * @param server Reference to the IPC server used for sending updates.
  * 
- * @returns If a message had been received
+ * @returns If a message had been received.
  */
 bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
 /**
- * @brief Receives and processes a NodeResponse message.
+ * @brief Receives a response from a node and processes it.
  *
- * This function listens for a NodeResponse message from the IPC client. If a valid response is received,
- * it forwards the message to the relevant client based on the primary key.
+ * This function listens for a response from a node via the IPC client. If a valid response 
+ * is received, it searches for a matching client in the client list based on the `primaryKey`
+ * and sends the response to that client via the server. The response is then written to a 
+ * communication pipe.
  *
- * @param ipcClient Reference to the IPC client used for receiving messages.
- * @param clients Vector of Client objects representing the connected clients.
- * @param server Reference to the IPC server used for sending the NodeResponse.
- * @param // TODO
- * 
- * @returns If a message had been received
+ * @param ipcClient Reference to the IPC client used to receive the response.
+ * @param clients Reference to a vector of clients to be checked for the matching `primaryKey`.
+ * @param server Reference to the IPC server used to send the response to the client.
+ * @param pipeToRelationMgmt_w The write pipe descriptor used to send the node response to the relation management.
+ *
+ * @return If a message had been received.
  */
 bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server, int pipeToRelationMgmt_w);
 
