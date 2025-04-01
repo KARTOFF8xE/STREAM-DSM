@@ -3,13 +3,13 @@
 #include <string>
 
 
-enum Destination {
-    NEO4J,
-    INFLUXDB
-};
-
 namespace curl {
 
+    enum Destination {
+        NEO4J,
+        INFLUXDB
+    };
+    
 // const Destination neo4j {
 //     .username = "neo4j",
 //     .password = "123456789",

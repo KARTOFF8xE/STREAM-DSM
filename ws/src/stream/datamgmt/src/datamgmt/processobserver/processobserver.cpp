@@ -81,9 +81,6 @@ void getProcDataByPID(int pid, FullProcessData &pd) {
     std::string payload;
     std::getline(fp, payload);
 
-    // FullProcessData pd {
-    //     .logged_clock_time = get_cpu_time(),
-    // };
     pd.logged_clock_time = get_cpu_time();
 
     int i = payload.find(" (");
@@ -103,25 +100,20 @@ void getProcDataByPID(int pid, FullProcessData &pd) {
 
 // Strip the filename to 10 characters with + at the end
 const char* format_filename(const char *exe_filename) {
-    int exe_filename_length, max_filename_length;
+    int max_filename_length = 10;
     char *new_filename;
-    exe_filename_length=strlen(exe_filename);
-    max_filename_length=10;
-    if (exe_filename_length<=max_filename_length) return exe_filename;
+    if (strlen(exe_filename)<=max_filename_length) return exe_filename;
     new_filename = (char*)malloc(max_filename_length+1);
     for (int i=0; i<max_filename_length-1; i++) { new_filename[i]=exe_filename[i];}
     new_filename[max_filename_length-1]='+';
     new_filename[max_filename_length]='\0';
+
     return new_filename;
 }
 
 // Get the cpu delta time
 long get_cpu_delta_time(FullProcessData *pd) {
-    long logged_cpu_time, current_cpu_time, delta_cpu_time;
-    logged_cpu_time=pd->logged_clock_time; // Get the logged cpu time of the process
-    current_cpu_time=get_cpu_time(); // Get the current cpu time
-    delta_cpu_time=current_cpu_time-logged_cpu_time; // Find the delta time
-    return delta_cpu_time;
+    return get_cpu_time() - pd->logged_clock_time; // Find the delta time
 }
 
 long get_process_cpu_time(int pid) {
@@ -144,17 +136,11 @@ long get_process_cpu_time(int pid) {
 
 // Get the process delta time
 long get_process_delta_time(FullProcessData *pd) {
-    long previous_process_time, current_process_time, delta_process_time;
-    previous_process_time   = pd->usr_cpu_clocks + pd->krnl_cpu_clocks; // Find logged clock time of process
-    current_process_time    = get_process_cpu_time(pd->pid); // Get the new clock time of the process
-    delta_process_time      = current_process_time - previous_process_time; // Find the delta process time
-    return delta_process_time;
+    return get_process_cpu_time(pd->pid) - (pd->usr_cpu_clocks + pd->krnl_cpu_clocks); // Find the delta process time
 }
 
 // Calculate the cpu utilisation of each process
 double get_cpu_utilisation(FullProcessData &pd) {
-    // double cpu_utilisation   = (double)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);
-    // pd.cpu_utilisation      = 100 * cpu_utilisation;
     return 100 * (double)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);;
 }
 
@@ -190,7 +176,7 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
 
         curl::push(
             influxDB::createPayloadMultipleValSameTime(influxDB::CPU_UTILIZATION, pairs),
-            INFLUXDB
+            curl::INFLUXDB
         );
 
         NodeResponse response;

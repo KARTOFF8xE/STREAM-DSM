@@ -35,7 +35,7 @@ std::string Subscriber::getGraphPayload() {
 void Subscriber::toGraph(std::string payload) {
     if (this->name.find("/_action/") != std::string::npos) return;
 
-    std::string response = curl::push(payload, NEO4J);
+    std::string response = curl::push(payload, curl::NEO4J);
 
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
@@ -48,7 +48,7 @@ std::string Subscriber::getTimeSeriesPayload() {
 }
 
 void Subscriber::toTimeSeries(std::string payload) {
-    std::string response = curl::push(payload, INFLUXDB);
+    std::string response = curl::push(payload, curl::INFLUXDB);
 }
 
 void Subscriber::response(Communication &communication) {

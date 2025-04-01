@@ -128,7 +128,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
             /*** Namespace-Tree ***/
             curl::push(
                 createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name),
-                NEO4J
+                curl::NEO4J
             );
         }
         {
@@ -149,7 +149,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
                         getParameterString(pdv)
                     ),
-                    NEO4J
+                    curl::NEO4J
                 );
                 std::vector<Pair> pairs = extractPIDandID(queryResp);
 
@@ -158,7 +158,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                     writeT<NodeResponse>(
                         pipeToProcessobserver_w,
                         NodeResponse{
-                            .primaryKey = pair.primaryKey, // TODO return primaryKeys while setting relations
+                            .primaryKey = pair.primaryKey,
                             .pid        = pair.pid
                         }
                     );

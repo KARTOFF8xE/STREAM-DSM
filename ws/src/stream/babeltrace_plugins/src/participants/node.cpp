@@ -50,7 +50,7 @@ std::string Node::getGraphPayload() {
 }
 
 void Node::toGraph(std::string payload) {
-    std::string response = curl::push(payload, NEO4J);
+    std::string response = curl::push(payload, curl::NEO4J);
 
     nlohmann::json data = nlohmann::json::parse(response);
     if (!data["results"].empty() &&
@@ -77,7 +77,7 @@ std::string Node::getTimeSeriesPayload() {
 }
 
 void Node::toTimeSeries(std::string payload) {
-    std::string response = curl::push(payload, INFLUXDB);
+    std::string response = curl::push(payload, curl::INFLUXDB);
 }
 
 void Node::response(Communication &communication) {

@@ -20,7 +20,7 @@ using json = nlohmann::json;
 
 
 void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
-    std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey), NEO4J);
+    std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
     json row = payload["results"][0]["data"][0]["row"];
@@ -146,7 +146,7 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
 }
 
 void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
-    std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey), NEO4J);
+    std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
     json row = payload["results"][0]["data"][0]["row"];

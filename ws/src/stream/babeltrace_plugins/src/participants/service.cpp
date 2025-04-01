@@ -46,7 +46,7 @@ std::string Service::getGraphPayload() {
 void Service::toGraph(std::string payload) {
     if (payload == "") return;
 
-    std::string response = curl::push(payload, NEO4J);
+    std::string response = curl::push(payload, curl::NEO4J);
 
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
@@ -73,7 +73,7 @@ std::string Service::getTimeSeriesPayload() {
 }
 
 void Service::toTimeSeries(std::string payload) {
-    curl::push(payload, INFLUXDB);
+    curl::push(payload, curl::INFLUXDB);
 }
 
 void Service::response(Communication &communication) {
