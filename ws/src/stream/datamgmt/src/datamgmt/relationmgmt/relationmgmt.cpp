@@ -4,6 +4,7 @@
 #include <map>
 #include <chrono>
 using namespace std::chrono_literals;
+#include <nlohmann/json.hpp>
 
 #include <ipc/ipc-client.hpp>
 #include <neo4j/roots/roots.hpp>
@@ -75,6 +76,30 @@ std::string getParameterString(std::vector<ProcessData> pdv) {
     return oss.str();
 }
 
+struct Pair {
+    pid_t           pid;
+    primaryKey_t    primaryKey;
+};
+
+std::vector<Pair> extractPIDandID(const std::string& payload) {
+    nlohmann::json j = nlohmann::json::parse(payload);
+
+    std::vector<Pair> result;
+
+    for (const auto& item : j["results"][0]["data"]) {
+        result.push_back(
+            Pair {
+                .pid        = item["row"][0].get<pid_t>(),
+                .primaryKey = item["row"][1].get<primaryKey_t>()
+            }
+        );
+    }
+
+    return result;
+}
+
+
+
 namespace relationMgmt {
 
 void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
@@ -120,20 +145,21 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
                 };
                 reduceProcessData(pdv);
 
-                std::cout << curl::push(
+                std::string queryResp = curl::push(
                     createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
                         getParameterString(pdv)
                     ),
                     NEO4J
-                ) << std::endl;
+                );
+                std::vector<Pair> pairs = extractPIDandID(queryResp);
 
-                for (auto pd : pdv) {
-                    if (pd.pid == 0) break;
+                for (auto pair : pairs) {
+                    if (pair.pid == 0) continue;
                     writeT<NodeResponse>(
                         pipeToProcessobserver_w,
                         NodeResponse{
-                            .primaryKey = 0, // TODO return primaryKeys while setting relations
-                            .pid = pd.pid
+                            .primaryKey = pair.primaryKey, // TODO return primaryKeys while setting relations
+                            .pid        = pair.pid
                         }
                     );
                 }

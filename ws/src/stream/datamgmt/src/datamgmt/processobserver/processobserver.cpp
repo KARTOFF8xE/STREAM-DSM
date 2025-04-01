@@ -72,7 +72,7 @@ long get_cpu_time() {
     return total;
 }
 
-FullProcessData getProcDataByPID(int pid) {
+void getProcDataByPID(int pid, FullProcessData &pd) {
     std::ifstream fp(
         std::string("/proc/") +
         std::to_string(pid) + 
@@ -81,9 +81,10 @@ FullProcessData getProcDataByPID(int pid) {
     std::string payload;
     std::getline(fp, payload);
 
-    FullProcessData pd {
-        .logged_clock_time = get_cpu_time(),
-    };
+    // FullProcessData pd {
+    //     .logged_clock_time = get_cpu_time(),
+    // };
+    pd.logged_clock_time = get_cpu_time();
 
     int i = payload.find(" (");
     pd.pid = std::atoi(payload.substr(0, i).c_str());
@@ -97,9 +98,7 @@ FullProcessData getProcDataByPID(int pid) {
 
     pd.v_mem_size = pd.v_mem_size / 1048576;
 
-
     fp.close();
-    return pd;
 }
 
 // Strip the filename to 10 characters with + at the end
@@ -172,10 +171,9 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
         std::vector<influxDB::ValuePairs> pairs;
         for (auto it = processVec.begin(); it != processVec.end(); ++it) {
             int index = std::distance(processVec.begin(), it);
-        // }
-        // for (auto &process : processVec) {
-            double cpuUtilization = get_cpu_utilisation(processVec.at(index));
-            if (cpuUtilization < 0) {
+
+            processVec.at(index).cpu_utilisation = get_cpu_utilisation(processVec.at(index));
+            if (processVec.at(index).cpu_utilisation < 0) {
                 std::cout << "removed Process " << processVec.at(index).exe_filename << " with pid " << processVec.at(index).pid << std::endl;
                 processVec.erase(it);
                 if (processVec.size() == 0) break;
@@ -183,11 +181,11 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
             }
 
             pairs.push_back(influxDB::ValuePairs{
-                .primaryKey = (primaryKey_t)processVec.at(index).pid,
-                .value      = cpuUtilization
+                .primaryKey = processVec.at(index).primaryKey,
+                .value      = processVec.at(index).cpu_utilisation
             });
 
-            processVec.at(index) = getProcDataByPID(processVec.at(index).pid);
+            getProcDataByPID(processVec.at(index).pid, processVec.at(index));
         }
 
         curl::push(
