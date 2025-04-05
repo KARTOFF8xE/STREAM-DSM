@@ -163,6 +163,7 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
                 std::cout << "removed Process " << processVec.at(index).exe_filename << " with pid " << processVec.at(index).pid << std::endl;
                 processVec.erase(it);
                 if (processVec.size() == 0) break;
+                it--;
                 continue;
             }
 
