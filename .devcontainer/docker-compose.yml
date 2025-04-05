@@ -1,0 +1,32 @@
+services:
+  devcontainer:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/home/ubuntu/stream:cached
+    command: sleep infinity
+    depends_on:
+      - neo4j
+      - influxdb
+
+  neo4j:
+    image: neo4j:5.26.1
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/123456789
+
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: KARTOFF8xE
+      DOCKER_INFLUXDB_INIT_PASSWORD: 123456789
+      DOCKER_INFLUXDB_INIT_ORG: TUBAF
+      DOCKER_INFLUXDB_INIT_BUCKET: STREAM
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==
