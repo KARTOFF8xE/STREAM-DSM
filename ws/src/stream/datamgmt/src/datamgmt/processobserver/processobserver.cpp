@@ -34,7 +34,7 @@ struct FullProcessData {
     long            usr_cpu_clocks;
     long            krnl_cpu_clocks;
     long            logged_clock_time;
-    float           cpu_utilisation;
+    double          cpu_utilisation;
     int             process_priority;
     long            v_mem_size;
     int             last_cpu;
