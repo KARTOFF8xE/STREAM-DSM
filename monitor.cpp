@@ -151,6 +151,88 @@ void calculate_cpu_utilisation(ProcessData &pd) {
     pd.cpu_utilisation      = 100 * cpu_utilisation;
 }
 
+///////////////////// CPU UTIL /////////////////////
+struct CPUData {
+    long    totalJiffiesThen;
+    long    totalJiffiesNow;
+    long    workJiffiesThen;
+    long    workJiffiesNow;
+    long double  cpuUtilization;
+};
+
+
+void readCPUUtil(CPUData &cd) {
+    std::ifstream fp(
+        std::string("/proc/stat")
+    );
+    std::string payload;
+    std::getline(fp, payload);
+    cd.totalJiffiesThen = cd.totalJiffiesNow;
+    cd.workJiffiesThen = cd.workJiffiesNow;
+
+    long user, nice, system, idle, iowait, irq, softirq;
+    sscanf(payload.c_str(), "%*s %ld %ld %ld %ld %ld %ld %ld",
+    &user, &nice, &system, &idle, &iowait, &irq, &softirq);
+
+
+    cd.workJiffiesNow = user + nice + system;
+    cd.totalJiffiesNow = cd.workJiffiesNow + idle + iowait + irq + softirq;
+}
+
+void getCPUUtil(CPUData &cd) {
+    readCPUUtil(cd);
+
+    cd.cpuUtilization = (double)(cd.workJiffiesNow - cd.workJiffiesThen) / (double)(cd.totalJiffiesNow - cd.totalJiffiesThen);
+    std::cout << cd.cpuUtilization * 100 << std::endl;
+
+}
+
+#include <sys/ioctl.h>
+#include <net/if.h> 
+#include <unistd.h>
+#include <netinet/in.h>
+#include <string.h>
+
+std::string getMacAddress() {
+    struct ifreq ifr;
+    struct ifconf ifc;
+    char buf[1024];
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock == -1) return "";
+
+    ifc.ifc_len = sizeof(buf);
+    ifc.ifc_buf = buf;
+    if (ioctl(sock, SIOCGIFCONF, &ifc) == -1) { close(sock); return ""; }
+
+    struct ifreq* it = ifc.ifc_req;
+    const struct ifreq* const end = it + (ifc.ifc_len / sizeof(struct ifreq));
+    for (; it != end; ++it) {
+        strcpy(ifr.ifr_name, it->ifr_name);
+        if (ioctl(sock, SIOCGIFFLAGS, &ifr) == 0 && !(ifr.ifr_flags & IFF_LOOPBACK)) {
+            if (ioctl(sock, SIOCGIFHWADDR, &ifr) == 0) {
+                close(sock);
+                unsigned char* mac = (unsigned char*)ifr.ifr_hwaddr.sa_data;
+                std::ostringstream oss;
+                for (int i = 0; i < 6; ++i) {
+                    oss << (i ? ":" : "") << std::hex << std::uppercase << (int)mac[i];
+                }
+                return oss.str();
+            }
+        }
+    }
+    close(sock);
+    return "";
+}
+
+#include <unistd.h>
+#include <limits.h>
+
+std::string getHostname() {
+    char hostname[HOST_NAME_MAX];
+    gethostname(hostname, HOST_NAME_MAX);
+    return hostname;
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         std::cout << "need PID as argument" << std::endl;
@@ -159,14 +241,19 @@ int main(int argc, char** argv) {
     int pid = std::stoi(argv[1]);
     std::cout << "pid: " << pid << std::endl;
 
-    // char buffer[1024];
     ProcessData process_data;
+    CPUData cd;
+    readCPUUtil(cd);
 
+    std::cout << getMacAddress() << std::endl;
+    std::cout << getHostname() << std::endl;
     while (true) {
-        process_data = getProcDataByPID(pid);
+        // process_data = getProcDataByPID(pid);
 
         sleep(1);
-        calculate_cpu_utilisation(process_data);
-        display_process_data(process_data);
+        // calculate_cpu_utilisation(process_data);
+        // display_process_data(process_data);
+        getCPUUtil(cd);
+        // std::cout << cd.cpuUtilization * 100 << std::endl;
     }
 }

@@ -3,23 +3,29 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <limits.h>
+#include <sys/ioctl.h>
+#include <net/if.h> 
+#include <netinet/in.h>
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
 #include <chrono>
 using namespace std::chrono_literals;
 
-#include <dirent.h>
-#include <string.h>
-#include <unistd.h>
+#include <nlohmann/json.hpp>
 
 #include <ipc/ipc-client.hpp>
 #include <neo4j/roots/roots.hpp>
 #include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
 
+#include "datamgmt/utils.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
 
 
-struct FullProcessData{
+struct FullProcessData {
     primaryKey_t    primaryKey;
     pid_t           pid;
     pid_t           ppid;
@@ -35,6 +41,23 @@ struct FullProcessData{
 };
 typedef struct _IO_FILE FILE;
 
+
+struct CPUData;
+void readCPUUtil(CPUData &cd);
+
+struct CPUData {
+    primaryKey_t    primaryKey;
+
+    long            totalJiffiesThen;
+    long            totalJiffiesNow;
+    long            workJiffiesThen;
+    long            workJiffiesNow;
+    double          utilization;
+
+    CPUData() {
+        readCPUUtil(*this);
+    };
+};
 
 // Open the pid stats file
 FILE* open_pid_stats(int pid) {
@@ -113,7 +136,7 @@ const char* format_filename(const char *exe_filename) {
 
 // Get the cpu delta time
 long get_cpu_delta_time(FullProcessData *pd) {
-    return get_cpu_time() - pd->logged_clock_time; // Find the delta time
+    return get_cpu_time() - pd->logged_clock_time;
 }
 
 long get_process_cpu_time(int pid) {
@@ -141,9 +164,65 @@ long get_process_delta_time(FullProcessData *pd) {
 
 // Calculate the cpu utilisation of each process
 double get_cpu_utilisation(FullProcessData &pd) {
-    return 100 * (double)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);;
+    return (double)get_process_delta_time(&pd)/get_cpu_delta_time(&pd);;
 }
 
+void readCPUUtil(CPUData &cd) {
+    std::ifstream fp(
+        std::string("/proc/stat")
+    );
+    std::string payload;
+    std::getline(fp, payload);
+
+    long user, nice, system, idle, iowait, irq, softirq;
+    sscanf(payload.c_str(), "%*s %ld %ld %ld %ld %ld %ld %ld",
+    &user, &nice, &system, &idle, &iowait, &irq, &softirq);
+
+
+    cd.workJiffiesNow = user + nice + system;
+    cd.totalJiffiesNow = cd.workJiffiesNow + idle + iowait + irq + softirq;
+}
+
+void calcCPUUtil(CPUData &cd) {
+    cd.totalJiffiesThen = cd.totalJiffiesNow;
+    cd.workJiffiesThen = cd.workJiffiesNow;
+
+    readCPUUtil(cd);
+
+    cd.utilization = (double)(cd.workJiffiesNow - cd.workJiffiesThen) / (double)(cd.totalJiffiesNow - cd.totalJiffiesThen);
+}
+
+std::string getMacAddress() {
+    struct ifreq ifr;
+    struct ifconf ifc;
+    char buf[1024];
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock == -1) return "";
+
+    ifc.ifc_len = sizeof(buf);
+    ifc.ifc_buf = buf;
+    if (ioctl(sock, SIOCGIFCONF, &ifc) == -1) { close(sock); return ""; }
+
+    struct ifreq* it = ifc.ifc_req;
+    const struct ifreq* const end = it + (ifc.ifc_len / sizeof(struct ifreq));
+    for (; it != end; ++it) {
+        strcpy(ifr.ifr_name, it->ifr_name);
+        if (ioctl(sock, SIOCGIFFLAGS, &ifr) == 0 && !(ifr.ifr_flags & IFF_LOOPBACK)) {
+            if (ioctl(sock, SIOCGIFHWADDR, &ifr) == 0) {
+                close(sock);
+                unsigned char* mac = (unsigned char*)ifr.ifr_hwaddr.sa_data;
+                std::ostringstream oss;
+                for (int i = 0; i < 6; ++i) {
+                    oss << (i ? ":" : "") << std::hex << std::uppercase << (int)mac[i];
+                }
+                return oss.str();
+            }
+        }
+    }
+    close(sock);
+    
+    return "";
+}
 
 namespace processObserver {
 
@@ -151,6 +230,26 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
     std::cout << "started processObserver" << std::endl;
     
     std::vector<FullProcessData> processVec;
+
+    CPUData cpuData;
+    {
+        std::string payload = curl::push(
+            createRoot::createRoot(getHostname(), getMacAddress()),
+            curl::NEO4J
+        );
+        nlohmann::json j = nlohmann::json::parse(payload);
+
+        if (j.contains("results") && !j["results"].empty() &&
+            j["results"][0].contains("data") && !j["results"][0]["data"].empty() &&
+            j["results"][0]["data"][0].contains("row") && !j["results"][0]["data"][0]["row"].empty() &&
+            j["results"][0]["data"][0]["row"][0].contains("id"))
+            {
+            cpuData.primaryKey = j["results"][0]["data"][0]["row"][0]["id"];
+        } else {
+            std::cerr << "Error: Failed to find primaryKey ('id') in the expected structure." << std::endl;
+        }
+    }
+
 
     auto then = std::chrono::steady_clock::now();
     while (true) {
@@ -173,10 +272,16 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
             });
 
             getProcDataByPID(processVec.at(index).pid, processVec.at(index));
-        }
 
+        }
         curl::push(
             influxDB::createPayloadMultipleValSameTime(influxDB::CPU_UTILIZATION, pairs),
+            curl::INFLUXDB
+        );
+        
+        calcCPUUtil(cpuData);
+        curl::push(
+            influxDB::createPayloadSingleVal(influxDB::CPU_UTILIZATION, cpuData.primaryKey, cpuData.utilization),
             curl::INFLUXDB
         );
 
@@ -192,6 +297,11 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
             }
             then = std::chrono::steady_clock::now();
 
+            continue;
+        }
+
+        if (response.pid == 0) {
+            cpuData.primaryKey = response.primaryKey;
             continue;
         }
 

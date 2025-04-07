@@ -35,7 +35,7 @@ namespace influxDB {
      * 
      * @returns The payload for the Query.
      */
-    std::string createPayloadSingleVal(ValueT valueType, primaryKey_t primaryKey, size_t value, std::chrono::nanoseconds timestamp = std::chrono::high_resolution_clock::now().time_since_epoch());
+    std::string createPayloadSingleVal(ValueT valueType, primaryKey_t primaryKey, long double value, std::chrono::nanoseconds timestamp = std::chrono::high_resolution_clock::now().time_since_epoch());
 
     /**
      * @brief Builds the Payload to query Influx-DB, consisting of a multiple informations.

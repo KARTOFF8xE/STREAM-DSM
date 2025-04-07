@@ -51,4 +51,20 @@ namespace createRoot {
             }}
         )", fullName, pids);
     }
+
+    std::string createRoot(std::string hostName, std::string macAdress) {
+        return fmt::format(R"(
+            {{
+                "statements":
+                    [
+                        {{ "statement": "MERGE (n:Node {{pid: \"0\"}}) SET n.name = $name, n.mac = $mac RETURN DISTINCT {{ id: toInteger(last(split(elementId(n), ':'))) }} ",
+                        "parameters": {{
+                            "name": "{}",
+                            "mac": "{}"
+                            }}
+                        }}
+                    ]
+            }}
+        )", hostName, macAdress);
+    }
 }

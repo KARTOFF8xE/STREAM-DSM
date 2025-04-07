@@ -34,4 +34,13 @@ namespace createRoot {
      */
     std::string getPayloadCreateProcessAndUpdatePassiveHelpers(std::string fullName, std::string pids);
 
+    /**
+     * @brief Builds the payload used to query neo4j.
+     * 
+     * @param hostName The name of the PC.
+     * @param macAdress The MAC-Adress of the PC.
+     * 
+     * @returns The Payload for the Query.
+     */
+    std::string createRoot(std::string hostName, std::string macAdress);
 }

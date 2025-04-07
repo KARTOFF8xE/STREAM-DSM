@@ -3,7 +3,7 @@
 
 namespace influxDB {
 
-    std::string createPayloadSingleVal(ValueT valueType, primaryKey_t primaryKey, size_t value, std::chrono::nanoseconds timestamp) {
+    std::string createPayloadSingleVal(ValueT valueType, primaryKey_t primaryKey, long double value, std::chrono::nanoseconds timestamp) {
         std::string type;
         switch (valueType) {
             case CPU_UTILIZATION:   type = "CPU_UTILIZATION"; break;
@@ -14,7 +14,7 @@ namespace influxDB {
             case ACTIONSERVICE:     type = "ACTIONSERVICE"; break;
             case PUBLISHER:         type = "PUBLISHER"; break;
             case SUBSCRIBER:        type = "SUBSCRIBER"; break;
-            default:                type = "misc";
+            default:                type = "MISC";
         }
 
         return type + "," +

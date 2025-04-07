@@ -2,14 +2,18 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <unistd.h>
+#include <limits.h>
 #include <chrono>
 using namespace std::chrono_literals;
+
 #include <nlohmann/json.hpp>
 
 #include <ipc/ipc-client.hpp>
 #include <neo4j/roots/roots.hpp>
 #include <curl/myCurl.hpp>
 
+#include "datamgmt/utils.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
 
@@ -56,7 +60,7 @@ void reduceProcessData(std::vector<ProcessData> &pdv) {
         pdv.pop_back();
     }
 
-    pdv.push_back(ProcessData{ .name = "root" });
+    pdv.push_back(ProcessData{ .name = getHostname() });
 }
 
 std::string getParameterString(std::vector<ProcessData> pdv) {

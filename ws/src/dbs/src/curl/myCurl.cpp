@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fmt/core.h>
 
+#include <nlohmann/json.hpp>
+
 
 namespace curl {
 
@@ -93,8 +95,16 @@ std::string push(std::string payload, const Destination destination) {
         std::cout << payload << std::endl;
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
     } else {
-        // std::cout << "Antwort: " << std::endl;
-        // std::cout << request->query_response << std::endl;
+        if (destination == NEO4J) {
+            nlohmann::json j = request.query_response;
+            if (j.contains("errors") && !j["errors"].empty()) {
+                std::string code = j["errors"][0]["code"];
+                std::string message = j["errors"][0]["message"];
+                std::cout << "Error Code: " << code << std::endl;
+                std::cout << "Error Message: " << message << std::endl;
+            }
+        }
+        // TODO add errorHandling for InfluxDB
     }
 
     return request.query_response;
