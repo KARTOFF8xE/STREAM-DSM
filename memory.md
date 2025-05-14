@@ -90,6 +90,20 @@
 * `ros2 run tracer babel`
 * do whatever needs to be tracked
 
+#### start InfluxDB
+    ```bash
+	docker run -d --name influxdb -p 8086:8086 -v influxdb_data:/var/lib/influxdb2 influxdb:latest
+    ```
+
+#### small example
+    ```bash
+	TIMESTAMP=$(date +%s)
+	curl -X POST "http://localhost:8086/api/v2/write?org=TUBAF&bucket=STREAM&precision=s" \
+     	    -H "Authorization: Token WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==" \
+     	    --data-raw "temperature,sensor=room1 value=23.5 $TIMESTAMP"
+
+    ```
+
 #### possibility for detecting client/server-communication:
 * detect server Node:
     ```log

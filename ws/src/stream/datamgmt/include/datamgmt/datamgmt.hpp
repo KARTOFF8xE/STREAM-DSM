@@ -13,6 +13,8 @@
 
 enum Module_t {
     NODEANDTOPICOBSERVER,
+    RELATIONMGMT,
+    PROCESSOBSERVER,
     LASTOPTION,
     MAIN
 };
@@ -25,7 +27,7 @@ struct Module {
     Module() {
         int p[2];
         getPipe(p);
-        this->pipes[MAIN] = Pipe{
+        this->pipes[MAIN] = Pipe {
             .read   = p[0],
             .write  = p[1],
         };

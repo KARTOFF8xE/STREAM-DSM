@@ -54,6 +54,18 @@ public:
         RCLCPP_ERROR(this->get_logger(), "Goal was rejected by server");
       } else {
         RCLCPP_INFO(this->get_logger(), "Goal accepted by server, waiting for result");
+        this->goal_handle_ = goal_handle;
+
+        // Starte Timer zum Abbrechen des Goals nach 10 Sekunden
+        this->cancel_timer_ = this->create_wall_timer(
+          std::chrono::seconds(4),
+          [this]() {
+            if (this->goal_handle_) {
+              RCLCPP_INFO(this->get_logger(), "Cancelling goal after 10 seconds...");
+              this->client_ptr_->async_cancel_goal(this->goal_handle_);
+            }
+          }
+        );
       }
     };
 
@@ -73,31 +85,37 @@ public:
     {
       switch (result.code) {
         case rclcpp_action::ResultCode::SUCCEEDED:
+          RCLCPP_INFO(this->get_logger(), "Goal succeeded.");
           break;
         case rclcpp_action::ResultCode::ABORTED:
           RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
-          return;
+          break;
         case rclcpp_action::ResultCode::CANCELED:
-          RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
-          return;
+          RCLCPP_WARN(this->get_logger(), "Goal was canceled");
+          break;
         default:
           RCLCPP_ERROR(this->get_logger(), "Unknown result code");
-          return;
+          break;
       }
+
       std::stringstream ss;
       ss << "Result received: ";
       for (auto number : result.result->sequence) {
         ss << number << " ";
       }
       RCLCPP_INFO(this->get_logger(), ss.str().c_str());
+
       rclcpp::shutdown();
     };
+
     this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
   }
 
 private:
   rclcpp_action::Client<Fibonacci>::SharedPtr client_ptr_;
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::TimerBase::SharedPtr cancel_timer_;
+  GoalHandleFibonacci::SharedPtr goal_handle_;
 };  // class FibonacciActionClient
 
 }  // namespace custom_action_cpp

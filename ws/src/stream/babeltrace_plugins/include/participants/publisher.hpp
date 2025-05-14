@@ -26,14 +26,28 @@ class Publisher: public IParticipant {
          *
          * @return The payload.
          */
-        std::string getPayload() override;
+        std::string getGraphPayload() override;
 
         /**
-         * @brief Sends a publisher by a query to a Neo4j database.
+         * @brief Sends a publisher by a query to a Graph-DB.
          *
-         * @param payload The query to be sent to the Neo4j database.
+         * @param payload The query to be sent to the Graph-DB.
          */
         void toGraph(std::string payload) override;
+
+        /**
+         * @brief Builds the payload used to query Timeseries-DB.
+         *
+         * @return The payload.
+         */
+        std::string getTimeSeriesPayload() override;
+
+        /**
+         * @brief Sends a client by a query to a Timeseries-DB.
+         *
+         * @param payload The query to be sent to the Timeseries-DB.
+         */
+        void toTimeSeries(std::string payload) override;
 
         /**
          * @brief Sends a node switch response message.

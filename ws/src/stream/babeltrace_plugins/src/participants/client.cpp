@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+ #include <fmt/core.h>
 #include <string>
 #include <iostream>
 
@@ -7,6 +7,7 @@
 #include <neo4j/client/client.hpp>
 #include <neo4j/actionclient/actionclient.hpp>
 #include <curl/myCurl.hpp>
+#include <influxdb/influxdb.hpp>
 #include <ipc/util.hpp>
 
 #include "interface.hpp"
@@ -34,7 +35,7 @@ void Client::extractInfo(const bt_event *event) {
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 }
 
-std::string Client::getPayload() {
+std::string Client::getGraphPayload() {
     if (this->name.find("/_action/") != std::string::npos) return "";
 
     if (this->isAction) return actionclient::getPayload(this->name, this->node_handle);
@@ -45,7 +46,7 @@ std::string Client::getPayload() {
 void Client::toGraph(std::string payload) {
     if (payload == "") return;
 
-    std::string response = curl::push(payload);
+    std::string response = curl::push(payload, curl::NEO4J);
     
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
@@ -60,6 +61,18 @@ void Client::toGraph(std::string payload) {
         this->server_primaryKeys.push_back(row[0][counter]["server_id"]);
         counter++;
     }
+}
+
+std::string Client::getTimeSeriesPayload() {
+    if (this->name.find("/_action/") != std::string::npos) return "";
+
+    if (this->isAction) return influxDB::createPayloadSingleVal(influxDB::ACTIONCLIENT, this->primaryKey, 1);
+
+    return influxDB::createPayloadSingleVal(influxDB::CLIENT, this->primaryKey, 1);
+}
+
+void Client::toTimeSeries(std::string payload) {
+    curl::push(payload, curl::INFLUXDB);
 }
 
 void Client::response(Communication &communication) {

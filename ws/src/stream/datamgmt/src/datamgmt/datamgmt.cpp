@@ -19,17 +19,32 @@
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
+#include "datamgmt/processobserver/processobserver.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 
 
 void runModule(IpcServer &server, Module_t module_t, Module &module) {
     switch (module_t) {
         case NODEANDTOPICOBSERVER:
-            if (module.thread.has_value() && module.thread.value().joinable()){
+            if (module.thread.has_value() && module.thread.value().joinable()) {
                 module.thread.value().join();
             }
             module.running.store(true);
             module.thread = std::thread(nodeAndTopicObserver, std::cref(server), module.pipes, std::ref(module.running));
+            return;
+        case RELATIONMGMT:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(relationMgmt::relationMgmt, module.pipes, std::ref(module.running));
+            return;
+        case PROCESSOBSERVER:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(processObserver::processObserver, module.pipes, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
@@ -39,17 +54,48 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
 
 int main() {
     IpcServer nodeAndTopicObsServer(1);
-    IpcServer relationMgmtServer(3);
+    IpcServer dummyServer(3);
 
     std::map<Module_t, Module> modules;
     for (int i = NODEANDTOPICOBSERVER; i < LASTOPTION; i++) {
         modules[static_cast<Module_t>(i)];
     }
 
+    {
+        int p[2];
+        getPipe(p);
+        modules[NODEANDTOPICOBSERVER].pipes[RELATIONMGMT] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[RELATIONMGMT].pipes[NODEANDTOPICOBSERVER] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+    }
+    {
+        int p[2];
+        getPipe(p);
+        modules[RELATIONMGMT].pipes[PROCESSOBSERVER] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[PROCESSOBSERVER].pipes[RELATIONMGMT] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+    }
+
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
     sleep(1);
+    runModule(dummyServer, RELATIONMGMT, modules[RELATIONMGMT]);
+    sleep(1);
+    runModule(dummyServer, PROCESSOBSERVER, modules[PROCESSOBSERVER]);
+    sleep(1);
 
+    auto then = std::chrono::steady_clock::now();
     while (true) {
+        bool receivedMessage = false;
         {
             Client newClient;
             std::optional<NodeRequest> request = nodeAndTopicObsServer.receiveNodeRequest(newClient.requestId, newClient.pid, false);
@@ -67,6 +113,8 @@ int main() {
                 if (!modules[NODEANDTOPICOBSERVER].running) {
                     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
                 }
+
+                receivedMessage = true;
             }
         }
         {
@@ -86,8 +134,21 @@ int main() {
                 if (!modules[NODEANDTOPICOBSERVER].running) {
                     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
                 }
+
+                receivedMessage = true;
             }
         }
+
+        if (receivedMessage) continue;
+
+
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then).count();
+        auto sleepTime = 1000000 - elapsed;
+        if (sleepTime > 0) {
+            std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
+        }
+        then = std::chrono::steady_clock::now();
 
         // TODO receive different messages as a server (subscriptions and unsubscriptions)
         // TODO handle threads that are running

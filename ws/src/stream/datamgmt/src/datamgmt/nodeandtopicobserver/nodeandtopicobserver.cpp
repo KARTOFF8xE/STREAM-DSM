@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <nlohmann/json.hpp>
+#include <chrono>
+using namespace std::chrono_literals;
 
 #include <ipc/ipc-client.hpp>
 #include <ipc/util.hpp>
@@ -18,7 +20,7 @@ using json = nlohmann::json;
 
 
 void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
-    std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey));
+    std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
     json row = payload["results"][0]["data"][0]["row"];
@@ -144,7 +146,7 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
 }
 
 void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
-    std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey));
+    std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
     json row = payload["results"][0]["data"][0]["row"];
@@ -205,7 +207,9 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
     }
 
     Client client;
+    auto then = std::chrono::steady_clock::now();
     while (true) {
+        bool receivedMessage = false;
         ssize_t ret = -1;
 
         ret = readT<Client>(pipe_r, client);
@@ -224,13 +228,24 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
         }
         */
 
-        receiveNodeResponse(ipcClient, clients, server);
-        receiveSubscribersToUpdate(ipcClient, clients, server);
-        receivePublishersToUpdate(ipcClient, clients, server);
-        receiveNodeIsServerForUpdate(ipcClient, clients, server);
-        receiveNodeIsClientOfUpdate(ipcClient, clients, server);
-        receiveNodeIsActionServerForUpdate(ipcClient, clients, server);
-        receiveNodeIsActionClientOfUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeResponse(ipcClient, clients, server, pipes[RELATIONMGMT].write);
+        receivedMessage |= receiveSubscribersToUpdate(ipcClient, clients, server);
+        receivedMessage |= receivePublishersToUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsServerForUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsClientOfUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsActionServerForUpdate(ipcClient, clients, server);
+        receivedMessage |= receiveNodeIsActionClientOfUpdate(ipcClient, clients, server);
+
+        if (receivedMessage) continue;
+
+
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
+        auto sleepTime = 1s - elapsed;
+        if (sleepTime > 0s) {
+            std::this_thread::sleep_for(sleepTime);
+        }
+        then = std::chrono::steady_clock::now();
     }
     std::cout << "shutting down NodeTopicObserver" << std::endl;
 
@@ -242,7 +257,7 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
     running.store(false);
 }
 
-void receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodeIsClientOfUpdate> response = ipcClient.receiveNodeIsClientOfUpdate(false);
     if (response.has_value())
     {
@@ -265,10 +280,14 @@ void receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clie
                 server.sendNodeIsServerForUpdate(msg, client.pid, false);
             }
         }
+
+        return true;
     }
+
+    return false;
 }
 
-void receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodeIsServerForUpdate> response = ipcClient.receiveNodeIsServerForUpdate(false);
     if (response.has_value())
     {
@@ -291,10 +310,14 @@ void receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &cli
                 server.sendNodeIsClientOfUpdate(msg, client.pid, false);
             }
         }
+
+        return true;
     }
+
+    return false;
 }
 
-void receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodeIsActionClientOfUpdate> response = ipcClient.receiveNodeIsActionClientOfUpdate(false);
     if (response.has_value())
     {
@@ -317,10 +340,14 @@ void receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client>
                 server.sendNodeIsActionServerForUpdate(msg, client.pid, false);
             }
         }
+
+        return true;
     }
+
+    return false;
 }
 
-void receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodeIsActionServerForUpdate> response = ipcClient.receiveNodeIsActionServerForUpdate(false);
     if (response.has_value())
     {
@@ -343,10 +370,14 @@ void receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client
                 server.sendNodeIsActionClientOfUpdate(msg, client.pid, false);
             }
         }
+
+        return true;
     }
+
+    return false;
 }
 
-void receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodeSubscribersToUpdate> response = ipcClient.receiveNodeSubscribersToUpdate(false);
     if (response.has_value())
     {
@@ -371,10 +402,14 @@ void receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clien
                 server.sendTopicSubscribersUpdate(payloadTopic, client.pid, false);
             }
         }
+
+        return true;
     }
+
+    return false;
 }
 
-void receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
     std::optional<NodePublishersToUpdate> response = ipcClient.receiveNodePublishersToUpdate(false);
     if (response.has_value())
     {
@@ -399,10 +434,14 @@ void receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &client
                 server.sendTopicPublishersUpdate(payloadTopic, client.pid, false);
             }
         }
+
+        return true;
     }
+
+    return false;
 }
 
-void receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server) {
+bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server, int pipeToRelationMgmt_w) {
     std::optional<NodeResponse> response = ipcClient.receiveNodeResponse(false);
     if (response.has_value())
     {
@@ -415,8 +454,12 @@ void receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
             }
         }
 
-        relationMgmt::relationMgmt(payload);
+        writeT<NodeResponse>(pipeToRelationMgmt_w, payload);
+
+        return true;
     }
+
+    return false;
 }
 
 void handleClient(Client &client, std::vector<Client> &clients) {

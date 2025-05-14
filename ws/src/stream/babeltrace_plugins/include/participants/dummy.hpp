@@ -16,7 +16,22 @@ class Dummy: public IParticipant {
          *
          * @return The payload.
          */
-        std::string getPayload() override;
+        std::string getGraphPayload() override;
+
+        /**
+         * @brief Builds the payload used to query Timeseries-DB.
+         *
+         * @return The payload.
+         */
+        std::string getTimeSeriesPayload() override;
+
+        /**
+         * @brief Sends a client by a query to a Timeseries-DB.
+         *
+         * @param payload The query to be sent to the Timeseries-DB.
+         */
+        void toTimeSeries(std::string payload) override;
+
 
         /**
          * @brief Sends a dummy by a query to a Neo4j database.

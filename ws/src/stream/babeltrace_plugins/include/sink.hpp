@@ -10,7 +10,7 @@ struct publisher {
 
     bool sendToNodeObserver = false;
     
-    publisher() : communication{IpcServer(2), 0, 0} {}
+    publisher() : communication{ IpcServer(2), 0, 0 } {}
 };
 
 /**

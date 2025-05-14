@@ -33,7 +33,7 @@ public:
   {
     publisher_ = this->create_publisher<std_msgs::msg::String>("topic", 10);
     timer_ = this->create_wall_timer(
-      500ms, std::bind(&MinimalPublisher::timer_callback, this));
+      1ms, std::bind(&MinimalPublisher::timer_callback, this));
   }
 
 private:
@@ -52,7 +52,13 @@ private:
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MinimalPublisher>());
+  // rclcpp::spin(std::make_shared<MinimalPublisher>());
+    rclcpp::executors::SingleThreadedExecutor executor;
+    rclcpp::Node::SharedPtr node1 = std::make_shared<MinimalPublisher>();
+    executor.add_node(node1);
+    rclcpp::Node::SharedPtr node2 = std::make_shared<MinimalPublisher>();
+    executor.add_node(node2);
+    executor.spin();
   rclcpp::shutdown();
   return 0;
 }

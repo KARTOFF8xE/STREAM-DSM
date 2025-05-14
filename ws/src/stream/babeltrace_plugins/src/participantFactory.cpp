@@ -18,32 +18,27 @@ IParticipant *ParticipantFactory::getParticipant(const char *event_name) {
     if (strcmp(
         "ros2:rcl_node_init",
         event_name) == 0) {
-            Node *node = new Node();
-            return node;
+            return new Node();
     }
     if (strcmp(
         "ros2:rcl_publisher_init",
         event_name) == 0) {
-            Publisher *publisher = new Publisher();
-            return publisher;
+            return new Publisher();
     }
     if (strcmp(
         "ros2:rcl_subscription_init",
         event_name) == 0) {
-            Subscriber *subscriber = new Subscriber();
-            return subscriber;
+            return new Subscriber();
     }
     if (strcmp(
         "ros2:rcl_service_init",
         event_name) == 0) {
-            Service *service = new Service();
-            return service;
+            return new Service();
     }
     if (strcmp(
         "ros2:rcl_client_init",
         event_name) == 0) {
-            Client *client = new Client();
-            return client;
+            return new Client();
     }
     // TODO: add client traffic here
     

@@ -28,14 +28,28 @@ public:
    *
    * @return The payload.
    */
-  virtual std::string getPayload() = 0;
+  virtual std::string getGraphPayload() = 0;
   
   /**
-   * @brief Sends a request by a query to a Neo4j database.
+   * @brief Sends a request by a query to a Graph-DB.
    *
-   * @param payload The query to be sent to the Neo4j database.
+   * @param payload The query to be sent to the Graph-DB.
    */
   virtual void toGraph(std::string payload) = 0;
+
+  /**
+   * @brief Builds the payload used to query Timeseries-DB.
+   *
+   * @return The payload.
+   */
+  virtual std::string getTimeSeriesPayload() = 0;
+
+  /**
+   * @brief Sends a client by a query to a Timeseries-DB.
+   *
+   * @param payload The query to be sent to the Timeseries-DB.
+   */
+  virtual void toTimeSeries(std::string payload) = 0;
 
   /**
    * @brief Sends a response message.

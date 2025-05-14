@@ -1,10 +1,36 @@
 {
     "configurations": [
     {
-        "name": "(gdb) Launch",
+        "name": "(gdb) Launch (DataMgmt)",
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/ws/install/datamgmt/lib/datamgmt/datamgmt",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${fileDirname}",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            },
+            {
+                "description": "Set Disassembly Flavor to Intel",
+                "text": "-gdb-set disassembly-flavor intel",
+                "ignoreFailures": true
+            }
+        ],
+        "preLaunchTask": "build selected"
+
+    },
+    {
+        "name": "(gdb) Launch (Tracer)",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/ws/install/tracer/lib/tracer/babel",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",

@@ -2,11 +2,18 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <unistd.h>
+#include <limits.h>
+#include <chrono>
+using namespace std::chrono_literals;
+
+#include <nlohmann/json.hpp>
 
 #include <ipc/ipc-client.hpp>
 #include <neo4j/roots/roots.hpp>
 #include <curl/myCurl.hpp>
 
+#include "datamgmt/utils.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
 
@@ -53,7 +60,7 @@ void reduceProcessData(std::vector<ProcessData> &pdv) {
         pdv.pop_back();
     }
 
-    pdv.push_back(ProcessData{ .name = "root" });
+    pdv.push_back(ProcessData{ .name = getHostname() });
 }
 
 std::string getParameterString(std::vector<ProcessData> pdv) {
@@ -73,37 +80,124 @@ std::string getParameterString(std::vector<ProcessData> pdv) {
     return oss.str();
 }
 
-namespace relationMgmt {
+std::string getParameterString2(std::vector<ProcessData> pdv) {
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < pdv.size(); i++) {
+        oss << "\""
+            << pdv.at(i).pid
+            << "\"";
 
-void relationMgmt(NodeResponse response) {
-    {
-        /*** Namespace-Tree ***/
-        curl::push(
-            createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name)
-        );
+        if (i < pdv.size() - 1) oss << ", ";
     }
-    {
-        /*** Process-Tree ***/
-        std::vector<ProcessData> pdv;
-        if (response.bootCount == 1) {
-            pid_t pid = response.pid;
-            while (true) {
-                ProcessData pd = getProcessDatabyPID(pid);
-                if (pd.pid == 0) break;
+    oss << "]";
+    return oss.str();
+}
 
-                pdv.push_back(pd);
-                pid = pd.ppid;
-            };
+struct Pair {
+    pid_t           pid;
+    primaryKey_t    primaryKey;
+};
 
-            reduceProcessData(pdv);
+std::vector<Pair> extractPIDandID(const std::string& payload) {
+    nlohmann::json j = nlohmann::json::parse(payload);
 
-            curl::push(
-                createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
-                    getParameterString(pdv)
-                )
+    std::vector<Pair> result;
+
+    for (const auto& item : j["results"][0]["data"]) {
+        if (item.contains("row") && !item["row"].empty()) {           
+            result.push_back(
+                Pair {
+                    .pid        = item["row"][0]["pid"].get<pid_t>(),
+                    .primaryKey = item["row"][0]["id"].get<primaryKey_t>()
+                }
             );
         }
     }
+    
+    return result;
+}
+
+
+
+namespace relationMgmt {
+
+void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
+    std::cout << "started relationMgmt" << std::endl;
+    int pipeToProcessobserver_w = pipes[PROCESSOBSERVER].write;
+    
+    auto then = std::chrono::steady_clock::now();
+    while (true) {
+
+        NodeResponse response;
+        ssize_t ret = -1;
+        ret = readT<NodeResponse>(pipes[NODEANDTOPICOBSERVER].read, response);
+        if (ret == -1) {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
+            auto sleepTime = 1s - elapsed;
+            if (sleepTime > 0s) {
+                std::this_thread::sleep_for(sleepTime);
+            }
+            then = std::chrono::steady_clock::now();
+
+            continue;
+        }
+
+        {
+            /*** Namespace-Tree ***/
+            curl::push(
+                createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name),
+                curl::NEO4J
+            );
+        }
+        {
+            /*** Process-Tree ***/
+            std::vector<ProcessData> pdv;
+                pid_t pid = response.pid;
+                while (true) {
+                    ProcessData pd = getProcessDatabyPID(pid);
+                    if (pd.pid == 0) break;
+
+                    pdv.push_back(pd);
+                    pid = pd.ppid;
+                };
+                reduceProcessData(pdv);
+
+            std::string queryResp;
+            if (response.bootCount == 1) {
+                queryResp = curl::push(
+                    createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
+                        getParameterString(pdv)
+                    ),
+                    curl::NEO4J
+                );
+            } else {
+                queryResp = curl::push(
+                    createRoot::getPayloadCreateProcessAndUpdatePassiveHelpers(
+                        response.name,
+                        getParameterString2(pdv)
+                    ),
+                    curl::NEO4J
+                );
+            }
+
+            std::vector<Pair> pairs = extractPIDandID(queryResp);
+
+            for (auto pair : pairs) {
+                if (pair.pid == 0) continue;
+                writeT<NodeResponse>(
+                    pipeToProcessobserver_w,
+                    NodeResponse{
+                        .primaryKey = pair.primaryKey,
+                        .pid        = pair.pid,
+                    }
+                );
+            }
+        }
+    }
+
+    running.store(false);
 }
 
 } 

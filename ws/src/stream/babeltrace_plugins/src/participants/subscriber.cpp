@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include <neo4j/subscriber/subscriber.hpp>
+#include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
 
 #include "interface.hpp"
@@ -25,7 +26,7 @@ void Subscriber::extractInfo(const bt_event *event) {
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 }
 
-std::string Subscriber::getPayload() {
+std::string Subscriber::getGraphPayload() {
     if (this->name.find("/_action/") != std::string::npos) return "";
 
     return subscriber::getPayload(this->name, this->node_handle);
@@ -34,12 +35,20 @@ std::string Subscriber::getPayload() {
 void Subscriber::toGraph(std::string payload) {
     if (this->name.find("/_action/") != std::string::npos) return;
 
-    std::string response = curl::push(payload);
+    std::string response = curl::push(payload, curl::NEO4J);
 
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
     if (!row.empty() && !row[0]["node_id"].empty())     this->node_primaryKey = row[0]["node_id"];
     if (!row.empty() && !row[0]["topic_id"].empty())    this->primaryKey = row[0]["topic_id"];
+}
+
+std::string Subscriber::getTimeSeriesPayload() {
+    return influxDB::createPayloadSingleVal(influxDB::SUBSCRIBER, this->primaryKey, 1);
+}
+
+void Subscriber::toTimeSeries(std::string payload) {
+    std::string response = curl::push(payload, curl::INFLUXDB);
 }
 
 void Subscriber::response(Communication &communication) {

@@ -1,11 +1,12 @@
 #include <iostream>
 #include <unistd.h>
 #include <fcntl.h>
+#include <memory>
+#include <cstring>
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
 #include "datamgmt/common.hpp"
-#include "util.hpp"
 
 
 int getPipe(int p[2], bool blocking) {
@@ -27,7 +28,8 @@ int getPipe(int p[2], bool blocking) {
 
 template<typename T>
 ssize_t writeT(int __fd, const T payload, size_t __n) {
-    char *msg = serialize<T>(payload);
+    char msg[sizeof(T)];
+    std::memcpy(msg, &payload, sizeof(T));
     
     int ret = write(__fd, msg, __n);
     if (ret == -1) {
@@ -41,8 +43,8 @@ template ssize_t writeT<NodeResponse>(int, const NodeResponse, size_t NodeRespon
 
 template<typename T>
 ssize_t readT(int __fd, T &payload, size_t __n) {
-    char *msg = new char[__n];
-    int ret = read(__fd, msg, __n);
+    std::unique_ptr<char[]> msg = std::make_unique<char[]>(__n);
+    int ret = read(__fd, msg.get(), __n);
     if (ret == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return -1;
@@ -56,7 +58,7 @@ ssize_t readT(int __fd, T &payload, size_t __n) {
     //     return ret;
     // }
     
-    payload = deserialize<T>(msg);
+    std::memcpy(&payload, msg.get(), sizeof(T));
 
     return 0;
 }
