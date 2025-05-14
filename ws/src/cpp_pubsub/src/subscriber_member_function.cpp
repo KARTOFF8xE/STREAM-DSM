@@ -33,7 +33,7 @@ public:
 private:
   void topic_callback(const std_msgs::msg::String & msg) const
   {
-    RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg.data.c_str());
+    RCLCPP_INFO(this->get_logger(), "I heard:!! '%s'", msg.data.c_str());
   }
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
 };
@@ -41,7 +41,11 @@ private:
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MinimalSubscriber>());
+  // rclcpp::spin(std::make_shared<MinimalSubscriber>());
+  rclcpp::executors::SingleThreadedExecutor executor;
+  rclcpp::Node::SharedPtr node = std::make_shared<MinimalSubscriber>();
+  executor.add_node(node);
+  executor.spin();
   rclcpp::shutdown();
   return 0;
 }
