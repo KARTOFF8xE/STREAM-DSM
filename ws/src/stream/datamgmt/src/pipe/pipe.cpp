@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <memory>
 #include <cstring>
+#include "pipe/pipe.hpp"
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
@@ -16,9 +17,9 @@ int getPipe(int p[2], bool blocking) {
     }
 
     if (!blocking) {
-        int ret = fcntl( p[0], F_SETFL, fcntl(p[0], F_GETFL) | O_NONBLOCK);
+        int ret = fcntl(p[0], F_SETFL, fcntl(p[0], F_GETFL) | O_NONBLOCK);
         if (ret != 0) {
-            std::cerr << "\e[31mError: Failed to set pipe not blocking. Code: " << ret << "\e[30m" << std::endl;
+            std::cerr << "\e[31mError: Failed to set pipe non-blocking. Code: " << ret << "\e[0m" << std::endl;
             return ret;
         }
     }
@@ -27,40 +28,50 @@ int getPipe(int p[2], bool blocking) {
 }
 
 template<typename T>
-ssize_t writeT(int __fd, const T payload, size_t __n) {
-    char msg[sizeof(T)];
-    std::memcpy(msg, &payload, sizeof(T));
-    
-    int ret = write(__fd, msg, __n);
+ssize_t writeT(int __fd, const T& payload, MsgType type) {
+    Header header{type, static_cast<uint32_t>(sizeof(T))};
+    size_t totalSize = sizeof(Header) + sizeof(T);
+    std::unique_ptr<char[]> msg = std::make_unique<char[]>(totalSize);
+
+    std::memcpy(msg.get(), &header, sizeof(Header));
+    std::memcpy(msg.get() + sizeof(Header), &payload, sizeof(T));
+
+    int ret = write(__fd, msg.get(), totalSize);
     if (ret == -1) {
         std::cerr << "\e[31mError: Failed to write pipe.\e[0m" << std::endl;
     }
-    
+
     return ret;
 }
-template ssize_t writeT<Client>(int, const Client, size_t Client);
-template ssize_t writeT<NodeResponse>(int, const NodeResponse, size_t NodeResponse);
-template ssize_t writeT<SingleStandardInformationRequest>(int, const SingleStandardInformationRequest, size_t SingleStandardInformationRequest);
-template ssize_t writeT<AggregatedStandardInformationRequest>(int, const AggregatedStandardInformationRequest, size_t AggregatedStandardInformationRequest);
 
 template<typename T>
-ssize_t readT(int __fd, T &payload, size_t __n) {
-    std::unique_ptr<char[]> msg = std::make_unique<char[]>(__n);
-    int ret = read(__fd, msg.get(), __n);
-    if (ret == -1) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return -1;
-        } else {
-            std::cerr << "\e[31mError: Failed to read pipe.\e[0m" << errno << std::endl;
-            return -1;
-        }
-    }
-    
-    std::memcpy(&payload, msg.get(), sizeof(T));
+ssize_t readT(int __fd, T& payload, MsgType* type) {
+    Header header;
+    ssize_t hret = read(__fd, &header, sizeof(Header));
+    if (hret <= 0) return -1;
 
-    return 0;
+    if (type) *type = header.type;
+
+    // if (header.size != sizeof(T)) {
+    //     std::cerr << "\e[31mError: Payload size mismatch.\e[0m" << std::endl;
+    //     return -1;
+    // }
+
+    ssize_t pret = read(__fd, &payload, sizeof(T));
+    if (pret <= 0) return -1;
+
+    return pret;
 }
-template ssize_t readT<Client>(int, Client &, size_t Client);
-template ssize_t readT<NodeResponse>(int, NodeResponse &, size_t NodeResponse);
-template ssize_t readT<SingleStandardInformationRequest>(int, SingleStandardInformationRequest &, size_t SingleStandardInformationRequest);
-template ssize_t readT<AggregatedStandardInformationRequest>(int, AggregatedStandardInformationRequest &, size_t AggregatedStandardInformationRequest);
+
+// Explizite Instanziierungen:
+template ssize_t writeT<Client>(int, const Client&, MsgType);
+template ssize_t writeT<NodeResponse>(int, const NodeResponse&, MsgType);
+template ssize_t writeT<SingleStandardInformationRequest>(int, const SingleStandardInformationRequest&, MsgType);
+template ssize_t writeT<AggregatedStandardInformationRequest>(int, const AggregatedStandardInformationRequest&, MsgType);
+template ssize_t writeT<union_Tasks>(int, const union_Tasks&, MsgType);
+
+template ssize_t readT<Client>(int, Client&, MsgType*);
+template ssize_t readT<NodeResponse>(int, NodeResponse&, MsgType*);
+template ssize_t readT<SingleStandardInformationRequest>(int, SingleStandardInformationRequest&, MsgType*);
+template ssize_t readT<AggregatedStandardInformationRequest>(int, AggregatedStandardInformationRequest&, MsgType*);
+template ssize_t readT<union_Tasks>(int, union_Tasks&, MsgType*);

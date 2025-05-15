@@ -60,11 +60,11 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
         // TODO: Something that happens on pipe read from RELATIONMGMT
 
         if (receiveIPCClientStandardSingleRequest(server, singleStandardInformationRequest)) {
-            writeT<SingleStandardInformationRequest>(pipe_w, singleStandardInformationRequest);
+            writeT<SingleStandardInformationRequest>(pipe_w, singleStandardInformationRequest, STANDARDSINGLE);
             continue;
         }
         if (receiveIPCClientStandardAggregatedRequest(server, aggregatedStandardInformationRequest)) {
-            writeT<AggregatedStandardInformationRequest>(pipe_w, aggregatedStandardInformationRequest);
+            writeT<AggregatedStandardInformationRequest>(pipe_w, aggregatedStandardInformationRequest, STANDARDAGGREGATED);
             continue;
         }
 

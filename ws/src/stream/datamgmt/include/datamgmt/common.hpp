@@ -33,3 +33,8 @@ struct AggregatedStandardInformationRequest {
     pid_t                               pid;
     StandardAggregatedAttributesRequest payload;
 };
+
+union union_Tasks {
+    SingleStandardInformationRequest        standardSingle;
+    AggregatedStandardInformationRequest    standardAggregated;
+};

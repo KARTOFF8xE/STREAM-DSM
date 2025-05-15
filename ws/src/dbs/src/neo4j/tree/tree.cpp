@@ -16,17 +16,18 @@ namespace tree {
         }
 
         return fmt::format(R"(
-            {{ 
-                "statements":
-                    [
-                        {{ "statement": "MATCH (root) WITH root, toInteger(last(SPLIT(elementId(root), \":\"))) AS extractedId WHERE extractedId = $primaryKey MATCH path = (root)-[:{}*0..]->(n) RETURN toInteger(last(SPLIT(elementId(n), \":\"))) AS primaryKey ",
-                        "parameters": {{
-                            "primaryKey": "{}",
-                            }}
-                        }}
-                    ]
-            }}
+        {{
+            "statements": [
+                {{
+                    "statement": "MATCH (root) WITH root, toInteger(last(SPLIT(elementId(root), \":\"))) AS extractedId WHERE extractedId = $primKey MATCH path = (root)-[:{}*0..]->(n) RETURN collect(toInteger(last(SPLIT(elementId(n), \":\")))) AS primaryKeys",
+                    "parameters": {{
+                        "primKey": {}
+                    }}
+                }}
+            ]
+        }}
         )", edge, root);
+
     }
 
 }
