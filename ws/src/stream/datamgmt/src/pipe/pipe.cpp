@@ -40,6 +40,11 @@ ssize_t writeT(int __fd, const T payload, size_t __n) {
 }
 template ssize_t writeT<Client>(int, const Client, size_t Client);
 template ssize_t writeT<NodeResponse>(int, const NodeResponse, size_t NodeResponse);
+template ssize_t writeT<SingleStandardInformationRequest>(
+    int,
+    const SingleStandardInformationRequest,
+    size_t SingleStandardInformationRequest
+);
 
 template<typename T>
 ssize_t readT(int __fd, T &payload, size_t __n) {
@@ -64,3 +69,8 @@ ssize_t readT(int __fd, T &payload, size_t __n) {
 }
 template ssize_t readT<Client>(int, Client &, size_t Client);
 template ssize_t readT<NodeResponse>(int, NodeResponse &, size_t NodeResponse);
+template ssize_t readT<SingleStandardInformationRequest>(
+    int,
+    SingleStandardInformationRequest &,
+    size_t SingleStandardInformationRequest
+);

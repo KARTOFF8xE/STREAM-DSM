@@ -7,7 +7,8 @@ namespace curl {
 
     enum Destination {
         NEO4J,
-        INFLUXDB
+        INFLUXDB_WRITE,
+        INFLUXDB_READ
     };
     
 // const Destination neo4j {
@@ -26,7 +27,7 @@ namespace curl {
  * @brief Sends a payload to the specified destination using a POST request.
  *
  * @param payload A string containing the data to be sent in the POST request.
- * @param destination Specifies the destination server (either NEO4J or INFLUXDB) to send the request to.
+ * @param destination Specifies the destination server (either NEO4J or INFLUXDB_WRITE) to send the request to.
  *
  * @return The response from the server, if the request was successful.
  *         If there was an error, the response is empty.

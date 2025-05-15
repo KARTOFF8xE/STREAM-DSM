@@ -72,7 +72,7 @@ std::string Client::getTimeSeriesPayload() {
 }
 
 void Client::toTimeSeries(std::string payload) {
-    curl::push(payload, curl::INFLUXDB);
+    curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
 void Client::response(Communication &communication) {

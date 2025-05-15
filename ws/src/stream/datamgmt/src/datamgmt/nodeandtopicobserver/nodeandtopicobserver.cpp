@@ -190,13 +190,13 @@ void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t prim
 }
 
 void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
-    std::cout << "started procObserver" << std::endl;
+    std::cout << "started nodeAndTopicObserver" << std::endl;
     int pipe_r = pipes[MAIN].read;
     // int pipe_writeToRelationMgmt = pipes[RELATIONMGMT].write;
 
     std::vector<Client> clients;
     std::vector<pid_t> pids;
-    
+
     IpcClient ipcClient(2);
     requestId_t requestId;
     {

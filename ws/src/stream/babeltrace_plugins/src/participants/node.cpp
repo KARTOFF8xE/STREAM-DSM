@@ -77,7 +77,7 @@ std::string Node::getTimeSeriesPayload() {
 }
 
 void Node::toTimeSeries(std::string payload) {
-    std::string response = curl::push(payload, curl::INFLUXDB);
+    std::string response = curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
 void Node::response(Communication &communication) {

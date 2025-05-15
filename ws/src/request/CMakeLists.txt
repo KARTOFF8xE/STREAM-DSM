@@ -11,6 +11,7 @@ find_package(ipc REQUIRED)
 
 add_executable(node src/node.cpp)
 add_executable(topic src/topic.cpp)
+add_executable(standardSingleAttribute src/standardSingleAttribute.cpp)
 
 target_link_libraries(node
   PRIVATE
@@ -22,9 +23,15 @@ target_link_libraries(topic
     ipc::ipc_lib
 )
 
+target_link_libraries(standardSingleAttribute
+  PRIVATE
+    ipc::ipc_lib
+)
+
 install(TARGETS
   node
   topic
+  standardSingleAttribute
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

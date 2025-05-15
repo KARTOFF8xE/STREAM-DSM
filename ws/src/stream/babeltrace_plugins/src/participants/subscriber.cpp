@@ -48,7 +48,7 @@ std::string Subscriber::getTimeSeriesPayload() {
 }
 
 void Subscriber::toTimeSeries(std::string payload) {
-    std::string response = curl::push(payload, curl::INFLUXDB);
+    std::string response = curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
 void Subscriber::response(Communication &communication) {

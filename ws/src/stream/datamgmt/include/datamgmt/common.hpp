@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ipc/common.hpp>
+#include <ipc/ipc-server.hpp>
 
 #define STRINGSIZE 16
 
@@ -14,4 +15,11 @@ struct Client {
         return this->pid == other.pid;
     }
 };
-#define MSGSIZE sizeof(Client)
+// #define MSGSIZE sizeof(Client)
+
+
+struct SingleStandardInformationRequest {
+    requestId_t                         requestID;
+    pid_t                               pid;
+    StandardSingleAttributesRequest payload;
+};

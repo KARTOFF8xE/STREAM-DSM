@@ -21,6 +21,8 @@
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
 #include "datamgmt/processobserver/processobserver.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
+#include "datamgmt/taskOrchestrator/taskOrchestrator.hpp"
+#include "datamgmt/taskExecutor/taskExecutor.hpp"
 
 
 void runModule(IpcServer &server, Module_t module_t, Module &module) {
@@ -46,6 +48,20 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
             module.running.store(true);
             module.thread = std::thread(processObserver::processObserver, module.pipes, std::ref(module.running));
             return;
+        case TASKORCHESTRATOR:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(taskOrchestrator::taskOrchestrator, std::cref(server), module.pipes, std::ref(module.running));
+            return;        
+        case TASKEXECUTOR:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(taskExecutor::taskExecutor, std::cref(server), module.pipes, std::ref(module.running));
+            return;
         default:
             std::cerr << "No matching function found" << std::endl;
             return;
@@ -55,6 +71,7 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
 int main() {
     IpcServer nodeAndTopicObsServer(1);
     IpcServer dummyServer(3);
+    IpcServer taskServer(4);
 
     std::map<Module_t, Module> modules;
     for (int i = NODEANDTOPICOBSERVER; i < LASTOPTION; i++) {
@@ -85,12 +102,37 @@ int main() {
             .write  = p[1],
         };
     }
+    {
+        int p[2];
+        getPipe(p);
+        modules[TASKORCHESTRATOR].pipes[TASKEXECUTOR] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[TASKEXECUTOR].pipes[TASKORCHESTRATOR] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        getPipe(p);
+        modules[RELATIONMGMT].pipes[TASKORCHESTRATOR] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[TASKORCHESTRATOR].pipes[RELATIONMGMT] = Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+    }
 
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
     sleep(1);
     runModule(dummyServer, RELATIONMGMT, modules[RELATIONMGMT]);
     sleep(1);
     runModule(dummyServer, PROCESSOBSERVER, modules[PROCESSOBSERVER]);
+    sleep(1);
+    runModule(taskServer, TASKORCHESTRATOR, modules[TASKORCHESTRATOR]);
+    sleep(1);
+    runModule(taskServer, TASKEXECUTOR, modules[TASKEXECUTOR]);
     sleep(1);
 
     auto then = std::chrono::steady_clock::now();

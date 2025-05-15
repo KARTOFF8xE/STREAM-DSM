@@ -17,6 +17,8 @@ add_executable(datamgmt
   src/datamgmt/nodeandtopicobserver/nodeandtopicobserver.cpp
   src/datamgmt/processobserver/processobserver.cpp
   src/datamgmt/relationmgmt/relationmgmt.cpp
+  src/datamgmt/taskOrchestrator/taskOrchestrator.cpp
+  src/datamgmt/taskExecutor/taskExecutor.cpp
   src/pipe/pipe.cpp
 )
 target_include_directories(datamgmt PRIVATE include/)
