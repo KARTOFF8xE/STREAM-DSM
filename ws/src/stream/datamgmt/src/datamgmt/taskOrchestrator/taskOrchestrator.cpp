@@ -67,7 +67,7 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
             writeT<AggregatedStandardInformationRequest>(pipe_w, aggregatedStandardInformationRequest);
             continue;
         }
-        
+
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
         auto sleepTime = 1s - elapsed;

@@ -17,7 +17,7 @@ int main() {
   const StandardSingleAttributesRequest request{
     .primaryKey = pKey,
     .attribute = CPU_UTILIZATION,
-    .continuous = false,
+    .continuous = true,
   };
   std::cout << "send request..." << std::flush;
   client.sendStandardSingleAttributesRequest(request, requestId, false);

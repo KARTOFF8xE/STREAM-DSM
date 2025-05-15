@@ -56,7 +56,6 @@ bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleStandardInformati
 
 void querySingleValue(Task task, const IpcServer &server) {
     std::string request = influxDB::createPayloadGetSingleValue("STREAM", task.standardSingle.attribute, task.primaryKeys);
-
     std::string response = curl::push(request, curl::INFLUXDB_READ);
 
     StandardSingleAttributesResponse payload {
@@ -95,6 +94,7 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
             AggregatedStandardInformationRequest aggregatedStandardInformationRequest;
             ssize_t ret = readT<AggregatedStandardInformationRequest>(pipe_r, aggregatedStandardInformationRequest);
             while (ret != -1) {
+                std::cout << "received" << std::endl;
                 if (aggregatedStandardInformationRequest.payload.continuous = true) {
                     tasks.push_back(Task{
                         .pid                = aggregatedStandardInformationRequest.pid,

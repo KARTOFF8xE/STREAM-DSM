@@ -1,9 +1,12 @@
 #pragma once
 
+#include <vector>
+
 #include <ipc/common.hpp>
 #include <ipc/ipc-server.hpp>
 
 #define STRINGSIZE 16
+
 
 struct Client {
     pid_t           pid;
@@ -23,6 +26,7 @@ struct SingleStandardInformationRequest {
     pid_t                               pid;
     StandardSingleAttributesRequest     payload;
 };
+
 
 struct AggregatedStandardInformationRequest {
     requestId_t                         requestID;

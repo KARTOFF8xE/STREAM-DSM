@@ -73,49 +73,38 @@ namespace influxDB {
   |> range(start: -1s)
   |> filter(fn: (r) => r["_measurement"] == "{}")
   |> filter(fn: (r) => r["_field"] == "value")
-  |> filter(fn: (r) => contains(value: r["primaryKey"], set: ["12"]))
+  |> filter(fn: (r) => contains(value: r["primaryKey"], set: {}))
   |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
   |> group()
   |> sum(column: "_value")
-  |> yield(name: "sum_of_means")", bucket, attr, vectorToString(primaryKeys));
+  |> yield(name: "sum_of_means")
+)", bucket, attr, vectorToString(primaryKeys));
     }
 
-//         return fmt::format(R"(from(bucket: "{}")
-//   |> range(start: -1s)
-//   |> filter(fn: (r) => r["_measurement"] == "{}")
-//   |> filter(fn: (r) => r["_field"] == "value")
-//   |> filter(fn: (r) => r["primaryKey"] == "{}")
-//   |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
-//   |> yield(name: "mean"))", bucket, attr, primaryKey);
-//     }
 
     double extractValueFromCSV(const std::string& csv) {
-        std::istringstream ss(csv);
+        std::istringstream stream(csv);
         std::string line;
 
-        std::getline(ss, line);
+        std::getline(stream, line);
 
-        while (std::getline(ss, line)) {
-            if (line.empty() || line[0] == '#') continue;
+        if (std::getline(stream, line)) {
+            std::istringstream linestream(line);
+            std::string cell;
+            int columnIndex = 0;
+            double value = 0.0;
 
-            std::stringstream ls(line);
-            std::string token;
-            std::vector<std::string> tokens;
-
-            while (std::getline(ls, token, ',')) {
-                tokens.push_back(token);
-            }
-
-            if (tokens.size() > 6) {
-                try {
-                    return std::stod(tokens[6]);
-                } catch (...) {
-                    return -1.0;
+            while (std::getline(linestream, cell, ',')) {
+                if (columnIndex == 3) {
+                    value = std::stod(cell);
+                    break;
                 }
+                columnIndex++;
             }
+            return value;
         }
 
-        return -1.0; // Kein Wert gefunden
+        return -1;
     }
 
 }

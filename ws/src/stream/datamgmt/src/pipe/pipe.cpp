@@ -40,16 +40,8 @@ ssize_t writeT(int __fd, const T payload, size_t __n) {
 }
 template ssize_t writeT<Client>(int, const Client, size_t Client);
 template ssize_t writeT<NodeResponse>(int, const NodeResponse, size_t NodeResponse);
-template ssize_t writeT<SingleStandardInformationRequest>(
-    int,
-    const SingleStandardInformationRequest,
-    size_t SingleStandardInformationRequest
-);
-template ssize_t writeT<AggregatedStandardInformationRequest>(
-    int,
-    const AggregatedStandardInformationRequest,
-    size_t AggregatedStandardInformationRequest
-);
+template ssize_t writeT<SingleStandardInformationRequest>(int, const SingleStandardInformationRequest, size_t SingleStandardInformationRequest);
+template ssize_t writeT<AggregatedStandardInformationRequest>(int, const AggregatedStandardInformationRequest, size_t AggregatedStandardInformationRequest);
 
 template<typename T>
 ssize_t readT(int __fd, T &payload, size_t __n) {
@@ -63,10 +55,6 @@ ssize_t readT(int __fd, T &payload, size_t __n) {
             return -1;
         }
     }
-    // if (ret == -1) {
-    //     std::cerr << "\e[31mError: Failed to read pipe.\e[0m" << std::endl;
-    //     return ret;
-    // }
     
     std::memcpy(&payload, msg.get(), sizeof(T));
 
@@ -74,13 +62,5 @@ ssize_t readT(int __fd, T &payload, size_t __n) {
 }
 template ssize_t readT<Client>(int, Client &, size_t Client);
 template ssize_t readT<NodeResponse>(int, NodeResponse &, size_t NodeResponse);
-template ssize_t readT<SingleStandardInformationRequest>(
-    int,
-    SingleStandardInformationRequest &,
-    size_t SingleStandardInformationRequest
-);
-template ssize_t readT<AggregatedStandardInformationRequest>(
-    int,
-    AggregatedStandardInformationRequest &,
-    size_t AggregatedStandardInformationRequest
-);
+template ssize_t readT<SingleStandardInformationRequest>(int, SingleStandardInformationRequest &, size_t SingleStandardInformationRequest);
+template ssize_t readT<AggregatedStandardInformationRequest>(int, AggregatedStandardInformationRequest &, size_t AggregatedStandardInformationRequest);
