@@ -21,5 +21,11 @@ struct Client {
 struct SingleStandardInformationRequest {
     requestId_t                         requestID;
     pid_t                               pid;
-    StandardSingleAttributesRequest payload;
+    StandardSingleAttributesRequest     payload;
+};
+
+struct AggregatedStandardInformationRequest {
+    requestId_t                         requestID;
+    pid_t                               pid;
+    StandardAggregatedAttributesRequest payload;
 };

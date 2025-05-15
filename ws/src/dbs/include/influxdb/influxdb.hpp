@@ -49,7 +49,7 @@ namespace influxDB {
     std::string createPayloadMultipleValSameTime(ValueT valueType, std::vector<ValuePairs> pairs, std::chrono::nanoseconds timestamp = std::chrono::high_resolution_clock::now().time_since_epoch());
 
     // TODO
-    std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, primaryKey_t primaryKey);
+    std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, std::vector<primaryKey_t> primaryKeys);
 
     // TODO
     double extractValueFromCSV(const std::string& csv);

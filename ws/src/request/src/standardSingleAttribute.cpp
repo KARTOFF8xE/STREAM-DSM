@@ -29,11 +29,9 @@ int main() {
         StandardSingleAttributesResponse resp = optResp.value();
         std::cout <<
           "Received Node Reponse" <<
-          "\n\tprimaryKey: " << resp.primaryKey <<
           "\n\tvalue: " << resp.value <<
           std::endl;
       }
-      // std::cout << "..." << std::endl;
     }
   }
 }

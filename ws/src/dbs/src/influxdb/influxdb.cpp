@@ -47,15 +47,25 @@ namespace influxDB {
         return payload;
     }
 
-    std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, primaryKey_t primaryKey) {
+    std::string vectorToString(const std::vector<primaryKey_t>& vec) {
+        std::ostringstream oss;
+        oss << "[";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            oss << "\"" << vec[i] << "\"";
+            if (i != vec.size() - 1) {
+                oss << ",";
+            }
+        }
+        oss << "]";
+        return oss.str();
+    }
+
+    std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, std::vector<primaryKey_t> primaryKeys) {
         std::string attr;
 
         switch (attribute) {
-            case CPU_UTILIZATION:
-                attr = "CPU_UTILIZATION";
-                break;
-            default:
-                break;
+            case CPU_UTILIZATION: attr = "CPU_UTILIZATION"; break;
+            default: break;
         }
 
 
@@ -63,10 +73,21 @@ namespace influxDB {
   |> range(start: -1s)
   |> filter(fn: (r) => r["_measurement"] == "{}")
   |> filter(fn: (r) => r["_field"] == "value")
-  |> filter(fn: (r) => r["primaryKey"] == "{}")
+  |> filter(fn: (r) => contains(value: r["primaryKey"], set: ["12"]))
   |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
-  |> yield(name: "mean"))", bucket, attr, primaryKey);
+  |> group()
+  |> sum(column: "_value")
+  |> yield(name: "sum_of_means")", bucket, attr, vectorToString(primaryKeys));
     }
+
+//         return fmt::format(R"(from(bucket: "{}")
+//   |> range(start: -1s)
+//   |> filter(fn: (r) => r["_measurement"] == "{}")
+//   |> filter(fn: (r) => r["_field"] == "value")
+//   |> filter(fn: (r) => r["primaryKey"] == "{}")
+//   |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
+//   |> yield(name: "mean"))", bucket, attr, primaryKey);
+//     }
 
     double extractValueFromCSV(const std::string& csv) {
         std::istringstream ss(csv);

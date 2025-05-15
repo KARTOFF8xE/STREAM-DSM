@@ -7,8 +7,7 @@ using namespace std::chrono_literals;
 #include <ipc/ipc-client.hpp>
 #include <ipc/util.hpp>
 #include <curl/myCurl.hpp>
-#include <neo4j/node/node.hpp>
-#include <neo4j/topic/topic.hpp>
+#include <neo4j/tree/tree.hpp>
 #include <influxdb/influxdb.hpp>
 
 #include "datamgmt/taskExecutor/taskExecutor.hpp"
@@ -20,14 +19,18 @@ using json = nlohmann::json;
 
 enum RequestType {
     SINGLEVALUE,
+    AGGREGATEDVALUE,
 };
 
 struct Task {
-    pid_t           pid;
-    requestId_t     requestId;
-    primaryKey_t    primaryKey;
-    Attribute       attribute;
-    RequestType     type;
+    pid_t                       pid;
+    requestId_t                 requestId;
+    RequestType                 type;
+    std::vector<primaryKey_t>   primaryKeys;
+    // SingleAttribute
+    StandardSingleAttributesRequest standardSingle;
+    // AggregatedAttribute
+    StandardAggregatedAttributesRequest standardAggregated;
 
     bool operator==(const Task& other) const {
         return this->pid == other.pid;
@@ -52,12 +55,11 @@ bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleStandardInformati
 
 
 void querySingleValue(Task task, const IpcServer &server) {
-    std::string request = influxDB::createPayloadGetSingleValue("STREAM", task.attribute, task.primaryKey);
+    std::string request = influxDB::createPayloadGetSingleValue("STREAM", task.standardSingle.attribute, task.primaryKeys);
 
     std::string response = curl::push(request, curl::INFLUXDB_READ);
 
     StandardSingleAttributesResponse payload {
-        .primaryKey = task.primaryKey,
         .value = influxDB::extractValueFromCSV(response)
     };
     
@@ -72,22 +74,52 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
     std::vector<Task> tasks;
     auto then = std::chrono::steady_clock::now();
     while (true) {
-        SingleStandardInformationRequest singleStandardInformationRequest;
+        {
+            SingleStandardInformationRequest singleStandardInformationRequest;
+            ssize_t ret = readT<SingleStandardInformationRequest>(pipe_r, singleStandardInformationRequest);
+            while (ret != -1) {
+                if (singleStandardInformationRequest.payload.continuous = true) {
+                    tasks.push_back(Task{
+                        .pid            = singleStandardInformationRequest.pid,
+                        .requestId      = singleStandardInformationRequest.requestID,
+                        .type           = SINGLEVALUE,
+                        .standardSingle = singleStandardInformationRequest.payload,
+                    });
+                    tasks.back().primaryKeys.push_back(singleStandardInformationRequest.payload.primaryKey);
+                }
 
-        ssize_t ret = readT<SingleStandardInformationRequest>(pipe_r, singleStandardInformationRequest);
-        while (ret != -1) {
-            if (singleStandardInformationRequest.payload.continuous = true) {
-                tasks.push_back(Task{
-                    .pid        = singleStandardInformationRequest.pid,
-                    .requestId  = singleStandardInformationRequest.requestID,
-                    .primaryKey = singleStandardInformationRequest.payload.primaryKey,
-                    .attribute  = singleStandardInformationRequest.payload.attribute,
-                    .type       = SINGLEVALUE,
-                });
-            }
+                ret = readT<SingleStandardInformationRequest>(pipe_r, singleStandardInformationRequest);
+            };
+        }
+        {
+            AggregatedStandardInformationRequest aggregatedStandardInformationRequest;
+            ssize_t ret = readT<AggregatedStandardInformationRequest>(pipe_r, aggregatedStandardInformationRequest);
+            while (ret != -1) {
+                if (aggregatedStandardInformationRequest.payload.continuous = true) {
+                    tasks.push_back(Task{
+                        .pid                = aggregatedStandardInformationRequest.pid,
+                        .requestId          = aggregatedStandardInformationRequest.requestID,
+                        .type               = AGGREGATEDVALUE,
+                        .standardAggregated = aggregatedStandardInformationRequest.payload,
+                    });
 
-            ret = readT<SingleStandardInformationRequest>(pipe_r, singleStandardInformationRequest);
-        };
+                    // QUERY NEO4J with operation (DIFFERENCE)
+                    std::vector<primaryKey_t> tree1;
+                    std::vector<primaryKey_t> tree2;
+
+                    std::string response = curl::push(tree::getPayloadForTree(
+                            tasks.back().standardAggregated.primaryKey_RootTree1,
+                            tasks.back().standardAggregated.tree1),
+                        curl::NEO4J
+                    );
+
+                    std::cout << "IIIIIIIIIIII: " << response << std::endl;
+                    // STORE in Vector
+                }
+
+                ret = readT<AggregatedStandardInformationRequest>(pipe_r, aggregatedStandardInformationRequest);
+            };
+        }
 
         for (Task task : tasks) {
             switch (task.type)

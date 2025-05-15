@@ -45,6 +45,11 @@ template ssize_t writeT<SingleStandardInformationRequest>(
     const SingleStandardInformationRequest,
     size_t SingleStandardInformationRequest
 );
+template ssize_t writeT<AggregatedStandardInformationRequest>(
+    int,
+    const AggregatedStandardInformationRequest,
+    size_t AggregatedStandardInformationRequest
+);
 
 template<typename T>
 ssize_t readT(int __fd, T &payload, size_t __n) {
@@ -73,4 +78,9 @@ template ssize_t readT<SingleStandardInformationRequest>(
     int,
     SingleStandardInformationRequest &,
     size_t SingleStandardInformationRequest
+);
+template ssize_t readT<AggregatedStandardInformationRequest>(
+    int,
+    AggregatedStandardInformationRequest &,
+    size_t AggregatedStandardInformationRequest
 );

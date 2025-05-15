@@ -20,15 +20,11 @@ using json = nlohmann::json;
 namespace taskOrchestrator {
 
 
-bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleStandardInformationRequest &receivedRequest) {
+bool receiveIPCClientStandardSingleRequest(const IpcServer &ipcServer, SingleStandardInformationRequest &receivedRequest) {
     std::optional<StandardSingleAttributesRequest> response =
         ipcServer.receiveStandardSingleAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
 
     if (response.has_value()) {
-        std::cout << "(1) received Request:" <<
-                    "\treceivedRequest.requestID: " << receivedRequest.requestID <<
-                    "\treceivedRequest.pid: " << receivedRequest.pid <<
-            std::endl;
         receivedRequest.payload = response.value();
 
         return true;
@@ -37,6 +33,18 @@ bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleStandardInformati
     return false;
 }
 
+bool receiveIPCClientStandardAggregatedRequest(const IpcServer &ipcServer, AggregatedStandardInformationRequest &receivedRequest) {
+    std::optional<StandardAggregatedAttributesRequest> response =
+        ipcServer.receiveStandardAggregatedAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
+
+    if (response.has_value()) {
+        receivedRequest.payload = response.value();
+
+        return true;
+    }
+
+    return false;
+}
 
 void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started taskOrchestrator" << std::endl;
@@ -47,23 +55,16 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
     while (true) {
         bool receivedMessage = false;
         SingleStandardInformationRequest singleStandardInformationRequest;
+        AggregatedStandardInformationRequest aggregatedStandardInformationRequest;
 
         // TODO: Something that happens on pipe read from RELATIONMGMT
 
-
-        receivedMessage |= receiveIPCClientRequest(server, singleStandardInformationRequest);
-        
-        // requestId_t requestId;
-        // pid_t pid;
-        // std::optional<NodeRequest> foo = server.receiveNodeRequest(requestId, pid, false);
-        // if (foo.has_value()) {
-        //     NodeRequest foo_val = foo.value();
-        //     server.sendNodeResponse(NodeResponse{.alive=1}, pid);
-        // }
-
-
-        if (receivedMessage) {
+        if (receiveIPCClientStandardSingleRequest(server, singleStandardInformationRequest)) {
             writeT<SingleStandardInformationRequest>(pipe_w, singleStandardInformationRequest);
+            continue;
+        }
+        if (receiveIPCClientStandardAggregatedRequest(server, aggregatedStandardInformationRequest)) {
+            writeT<AggregatedStandardInformationRequest>(pipe_w, aggregatedStandardInformationRequest);
             continue;
         }
         
