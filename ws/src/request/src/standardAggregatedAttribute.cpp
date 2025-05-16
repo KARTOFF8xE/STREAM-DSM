@@ -6,7 +6,7 @@
 #include <thread>
 
 int main() {
-  std::cout << "Make a Standard Single Attribute Request..." << std::endl;
+  std::cout << "Make a Standard Aggregated Attribute Request..." << std::endl;
 
   IpcClient client(4);
 
@@ -33,7 +33,7 @@ int main() {
       if (optResp.has_value()) {
         StandardAggregatedAttributesResponse resp = optResp.value();
         std::cout <<
-          "Received Node Reponse" <<
+          "Received Node Reponse:" <<
           "\n\tvalue: " << resp.value <<
           std::endl;
       }

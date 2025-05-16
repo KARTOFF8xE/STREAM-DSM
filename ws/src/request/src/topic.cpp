@@ -27,7 +27,7 @@ int main() {
       if (optResp.has_value()) {
         TopicResponse resp = optResp.value();
         std::cout <<
-          "Received Node Reponse" <<
+          "Received Node Reponse:" <<
           "\n\tprimaryKey: " << resp.primaryKey <<
           "\n\tname: " << resp.name <<
           "\n\tnrOfNeighours: " << resp.nrOfInitialUpdates <<

@@ -28,7 +28,7 @@ int main() {
       if (optResp.has_value()) {
         StandardSingleAttributesResponse resp = optResp.value();
         std::cout <<
-          "Received Node Reponse" <<
+          "Received Node Reponse:" <<
           "\n\tvalue: " << resp.value <<
           std::endl;
       }

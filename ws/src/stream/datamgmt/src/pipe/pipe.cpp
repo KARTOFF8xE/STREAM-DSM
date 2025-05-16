@@ -68,10 +68,12 @@ template ssize_t writeT<Client>(int, const Client&, MsgType);
 template ssize_t writeT<NodeResponse>(int, const NodeResponse&, MsgType);
 template ssize_t writeT<SingleStandardInformationRequest>(int, const SingleStandardInformationRequest&, MsgType);
 template ssize_t writeT<AggregatedStandardInformationRequest>(int, const AggregatedStandardInformationRequest&, MsgType);
+template ssize_t writeT<CustomInformationRequest>(int, const CustomInformationRequest&, MsgType);
 template ssize_t writeT<union_Tasks>(int, const union_Tasks&, MsgType);
 
 template ssize_t readT<Client>(int, Client&, MsgType*);
 template ssize_t readT<NodeResponse>(int, NodeResponse&, MsgType*);
 template ssize_t readT<SingleStandardInformationRequest>(int, SingleStandardInformationRequest&, MsgType*);
 template ssize_t readT<AggregatedStandardInformationRequest>(int, AggregatedStandardInformationRequest&, MsgType*);
+template ssize_t readT<CustomInformationRequest>(int, CustomInformationRequest&, MsgType*);
 template ssize_t readT<union_Tasks>(int, union_Tasks&, MsgType*);

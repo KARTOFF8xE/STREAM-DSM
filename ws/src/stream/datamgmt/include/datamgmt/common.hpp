@@ -34,7 +34,17 @@ struct AggregatedStandardInformationRequest {
     StandardAggregatedAttributesRequest payload;
 };
 
+struct CustomInformationRequest {
+    requestId_t             requestID;
+    pid_t                   pid;
+    CustomAttributesRequest payload;
+};
+
 union union_Tasks {
     SingleStandardInformationRequest        standardSingle;
     AggregatedStandardInformationRequest    standardAggregated;
+    CustomInformationRequest                custom;
+
+    union_Tasks() {}
+    ~union_Tasks() {}
 };

@@ -17,9 +17,9 @@ tmux select-layout -t $SESSION tiled
 
 
 tmux select-pane -t 0
-tmux send-keys -t $SESSION 'lttng destroy && clear && ./lttng_startsession.sh && ros2 run tracer babel' C-m
+tmux send-keys -t $SESSION 'lttng destroy || clear && ./lttng_startsession.sh && ros2 run tracer babel' C-m
 tmux select-pane -t 1
-tmux send-keys -t $SESSION 'clear && ros2 run datamgmt datamgmt' C-m
+tmux send-keys -t $SESSION 'for i in {5..0}; do clear && echo $i && sleep 1s; done && clear && ros2 run datamgmt datamgmt' C-m
 tmux select-pane -t 2
 tmux send-keys -t $SESSION '' C-m
 tmux select-pane -t 3

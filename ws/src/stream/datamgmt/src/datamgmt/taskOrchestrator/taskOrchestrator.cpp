@@ -46,6 +46,19 @@ bool receiveIPCClientStandardAggregatedRequest(const IpcServer &ipcServer, Aggre
     return false;
 }
 
+bool receiveIPCClientCustomRequest(const IpcServer &ipcServer, CustomInformationRequest &receivedRequest) {
+    std::optional<CustomAttributesRequest> response =
+        ipcServer.receiveCustomAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
+
+    if (response.has_value()) {
+        receivedRequest.payload = response.value();
+
+        return true;
+    }
+
+    return false;
+}
+
 void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started taskOrchestrator" << std::endl;
     int pipe_r = pipes[RELATIONMGMT].read;
@@ -56,6 +69,7 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
         bool receivedMessage = false;
         SingleStandardInformationRequest singleStandardInformationRequest;
         AggregatedStandardInformationRequest aggregatedStandardInformationRequest;
+        CustomInformationRequest customInformationRequest;
 
         // TODO: Something that happens on pipe read from RELATIONMGMT
 
@@ -65,6 +79,10 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
         }
         if (receiveIPCClientStandardAggregatedRequest(server, aggregatedStandardInformationRequest)) {
             writeT<AggregatedStandardInformationRequest>(pipe_w, aggregatedStandardInformationRequest, STANDARDAGGREGATED);
+            continue;
+        }
+        if (receiveIPCClientCustomRequest(server, customInformationRequest)) {
+            writeT<CustomInformationRequest>(pipe_w, customInformationRequest, CUSTOM);
             continue;
         }
 
