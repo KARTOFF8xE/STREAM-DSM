@@ -70,6 +70,7 @@ template ssize_t writeT<SingleStandardInformationRequest>(int, const SingleStand
 template ssize_t writeT<AggregatedStandardInformationRequest>(int, const AggregatedStandardInformationRequest&, MsgType);
 template ssize_t writeT<CustomInformationRequest>(int, const CustomInformationRequest&, MsgType);
 template ssize_t writeT<StandardInformationMemberRequest>(int, const StandardInformationMemberRequest&, MsgType);
+template ssize_t writeT<CustomInformationMemberRequest>(int, const CustomInformationMemberRequest&, MsgType);
 template ssize_t writeT<union_Tasks>(int, const union_Tasks&, MsgType);
 
 template ssize_t readT<Client>(int, Client&, MsgType*);
@@ -78,5 +79,6 @@ template ssize_t readT<SingleStandardInformationRequest>(int, SingleStandardInfo
 template ssize_t readT<AggregatedStandardInformationRequest>(int, AggregatedStandardInformationRequest&, MsgType*);
 template ssize_t readT<CustomInformationRequest>(int, CustomInformationRequest&, MsgType*);
 template ssize_t readT<StandardInformationMemberRequest>(int, StandardInformationMemberRequest&, MsgType*);
+template ssize_t readT<CustomInformationMemberRequest>(int, CustomInformationMemberRequest&, MsgType*);
 template ssize_t readT<union_Tasks>(int, union_Tasks&, MsgType*);
 

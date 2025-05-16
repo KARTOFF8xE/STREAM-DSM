@@ -21,7 +21,7 @@ int main() {
     .tree2 = PROCESSDRIVEN,
     .attribute = CPU_UTILIZATION,
     .binOperation = DIFFERENCE,
-    .continuous = false,
+    .continuous = true,
   };
 
   std::cout << "send request..." << std::flush;

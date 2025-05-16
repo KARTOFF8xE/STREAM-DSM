@@ -24,9 +24,15 @@ enum RequestType {
     AGGREGATEDVALUE,
     CUSTOMVALUE,
     AGGREGATEDMEMBERS,
+    CUSTOMMEMBERS
 };
 
 struct CustomAttributesTask {
+    std::string query;
+    bool        continuous;
+};
+
+struct CustomMemberTask {
     std::string query;
     bool        continuous;
 };
@@ -44,6 +50,8 @@ struct Task {
     CustomAttributesTask custom;
     // AggregateMember
     AggregatedMemberRequest aggregatedMember;
+    // CustomMember
+    CustomMemberTask customMember;
          
 
     bool operator==(const Task& other) const {
@@ -90,6 +98,27 @@ std::vector<std::string> getCustomResponseQueryInfluxDB(Task task) {
     std::string response = curl::push(task.custom.query, curl::INFLUXDB_READ);
     
     return split(response, '\n');
+}
+
+std::vector<std::string> getCustomResponseQueryNeo4J(Task task) {
+    std::string query = R"(
+          {
+              "statements":
+                  [
+                      { "statement": ")";
+    query += task.customMember.query + R"( "
+                      }
+                  ]
+          })";
+    std::string response = curl::push(query, curl::NEO4J);
+
+    std::vector<std::string> responseSplitted;
+
+    for (std::size_t i = 0; i < response.length(); i += MAX_STRING_SIZE-1) {
+        responseSplitted.push_back(response.substr(i, MAX_STRING_SIZE-1));
+    }
+    
+    return responseSplitted;
 }
 
 std::vector<primaryKey_t> parsePrimaryKeys(const std::string& jsonPayload) {
@@ -161,8 +190,8 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
             union_Tasks informationRequest;
             MsgType type;
             ssize_t ret = readT<union_Tasks>(pipe_r, informationRequest, &type);
-            switch (type)
             while (ret != -1) {
+                switch (type)
                 {
                 case STANDARDSINGLEVALUE:
                     {
@@ -229,7 +258,7 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                         });
                         {
                             std::vector<std::string> queryLines = util::parseStringArray(informationRequest.custom.payload.query);
-                            tasks.back().custom.query = std::accumulate(queryLines.begin(), queryLines.end(), std::string(" "));
+                            tasks.back().custom.query = std::accumulate(queryLines.begin(), queryLines.end(), std::string(""));
                         }
                     }
                     break;
@@ -273,6 +302,22 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                             break;
                         }
                         tasks.back().primaryKeys.insert(tasks.back().primaryKeys.end(), primaryKeys.begin(), primaryKeys.end());
+                    }
+                    break;
+                case CUSTOMMEMBER:
+                    {
+                        tasks.push_back(Task{
+                            .pid            = informationRequest.customMember.pid,
+                            .requestId      = informationRequest.customMember.requestID,
+                            .type           = CUSTOMMEMBERS,
+                            .customMember   = CustomMemberTask {
+                                .continuous = informationRequest.customMember.payload.continuous,
+                            }
+                        });
+                        {
+                            std::vector<std::string> queryLines = util::parseStringArray(informationRequest.custom.payload.query);
+                            tasks.back().customMember.query = std::accumulate(queryLines.begin(), queryLines.end(), std::string(""));
+                        }
                     }
                     break;
                 default:
@@ -338,6 +383,26 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                     tasks.erase(find(tasks.begin(), tasks.end(), task));
                 }
 
+                break;
+            }
+            case CUSTOMMEMBERS:
+            {
+                std::vector<std::string> response = getCustomResponseQueryNeo4J(task);
+
+                size_t counter = 0;
+                for (auto line: response) {
+                    CustomMemberResponse payload {
+                        .number = ++counter,
+                        .total  = response.size(),
+                    };
+                    util::parseString(payload.line, line);
+
+                    server.sendCustomMemberResponse(payload, task.pid, false);
+                }
+
+                if (!task.customMember.continuous) {
+                    tasks.erase(find(tasks.begin(), tasks.end(), task));
+                }
                 break;
             }
             default:

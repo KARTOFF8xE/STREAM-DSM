@@ -15,6 +15,7 @@ add_executable(standardSingleAttribute src/standardSingleAttribute.cpp)
 add_executable(standardAggregatedAttribute src/standardAggregatedAttribute.cpp)
 add_executable(customAttribute src/customAttribute.cpp)
 add_executable(aggregatedMember src/aggregatedMember.cpp)
+add_executable(customMember src/customMember.cpp)
 
 
 target_link_libraries(node
@@ -47,6 +48,11 @@ target_link_libraries(aggregatedMember
     ipc::ipc_lib
 )
 
+target_link_libraries(customMember
+  PRIVATE
+    ipc::ipc_lib
+)
+
 
 install(TARGETS
   node
@@ -55,6 +61,7 @@ install(TARGETS
   standardAggregatedAttribute
   customAttribute
   aggregatedMember
+  customMember
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

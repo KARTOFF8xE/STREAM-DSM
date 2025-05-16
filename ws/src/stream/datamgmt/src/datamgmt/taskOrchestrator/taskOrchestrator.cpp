@@ -72,6 +72,19 @@ bool receiveIPCClientAggregatedMemberRequest(const IpcServer &ipcServer, Standar
     return false;
 }
 
+bool receiveIPCClientCustomMemberRequest(const IpcServer &ipcServer, CustomInformationMemberRequest &receivedRequest) {
+    std::optional<CustomMemberRequest> response =
+        ipcServer.receiveCustomMemberRequest(receivedRequest.requestID, receivedRequest.pid, false);
+
+    if (response.has_value()) {
+        receivedRequest.payload = response.value();
+
+        return true;
+    }
+
+    return false;
+}
+
 
 void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started taskOrchestrator" << std::endl;
@@ -85,6 +98,7 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
         AggregatedStandardInformationRequest    aggregatedStandardInformationRequest;
         CustomInformationRequest                customInformationRequest;
         StandardInformationMemberRequest        standardInformationMemberRequest;
+        CustomInformationMemberRequest          customInformationMemberRequest;
 
 
         // TODO: Something that happens on pipe read from RELATIONMGMT
@@ -103,6 +117,10 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
         }
         if (receiveIPCClientAggregatedMemberRequest(server, standardInformationMemberRequest)) {
             writeT<StandardInformationMemberRequest>(pipe_w, standardInformationMemberRequest, AGGREGATEDMEMBER);
+            continue;
+        }
+        if (receiveIPCClientCustomMemberRequest(server, customInformationMemberRequest)) {
+            writeT<CustomInformationMemberRequest>(pipe_w, customInformationMemberRequest, CUSTOMMEMBER);
             continue;
         }
 

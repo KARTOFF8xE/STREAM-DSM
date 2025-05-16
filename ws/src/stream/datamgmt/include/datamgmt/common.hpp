@@ -46,11 +46,18 @@ struct StandardInformationMemberRequest {
     AggregatedMemberRequest payload;
 };
 
+struct CustomInformationMemberRequest {
+    requestId_t             requestID;
+    pid_t                   pid;
+    CustomMemberRequest payload;
+};
+
 union union_Tasks {
     SingleStandardInformationRequest        standardSingle;
     AggregatedStandardInformationRequest    standardAggregated;
     CustomInformationRequest                custom;
     StandardInformationMemberRequest        standardMember;
+    CustomInformationMemberRequest          customMember;
 
     union_Tasks() {}
     ~union_Tasks() {}
