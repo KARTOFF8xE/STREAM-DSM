@@ -42,11 +42,7 @@ int main() {
       std::optional<CustomAttributesResponse> optResp = client.receiveCustomAttributesResponse(false);
       if (optResp.has_value()) {
         CustomAttributesResponse payload = optResp.value();
-        std::vector<std::string> response = util::parseStringArray(payload.queryResponse);
-        std::cout << "Received Custom Reponse:" << std::flush;
-        for (auto item : response) {
-          std::cout << "\tvalue: " << item << std::endl;
-        }
+        std::cout << payload.number << ": " << payload.line << std::endl;
       }
     }
   }

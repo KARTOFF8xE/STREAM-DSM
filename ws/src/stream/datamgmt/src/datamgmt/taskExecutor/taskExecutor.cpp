@@ -357,12 +357,17 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
             }
             case CUSTOMVALUE:
             {
-                CustomAttributesResponse payload;
-                util::parseStringArray(payload.queryResponse, getCustomResponseQueryInfluxDB(task));
-                server.sendCustomAttributesResponse(payload, task.pid, false);
+                std::vector<std::string> response = getCustomResponseQueryInfluxDB(task);
 
-                if (!task.custom.continuous) {
-                    tasks.erase(find(tasks.begin(), tasks.end(), task));
+                size_t counter = 0;
+                for (auto line: response) {
+                    CustomAttributesResponse payload {
+                        .number = ++counter,
+                        .total  = response.size(),
+                    };
+                    util::parseString(payload.line, line);
+
+                    server.sendCustomAttributesResponse(payload, task.pid, false);
                 }
                 break;
             }
