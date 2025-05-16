@@ -20,7 +20,7 @@ using json = nlohmann::json;
 namespace taskOrchestrator {
 
 
-bool receiveIPCClientStandardSingleRequest(const IpcServer &ipcServer, SingleStandardInformationRequest &receivedRequest) {
+bool receiveIPCClientStandardSingleValueRequest(const IpcServer &ipcServer, SingleStandardInformationRequest &receivedRequest) {
     std::optional<StandardSingleAttributesRequest> response =
         ipcServer.receiveStandardSingleAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
 
@@ -33,7 +33,7 @@ bool receiveIPCClientStandardSingleRequest(const IpcServer &ipcServer, SingleSta
     return false;
 }
 
-bool receiveIPCClientStandardAggregatedRequest(const IpcServer &ipcServer, AggregatedStandardInformationRequest &receivedRequest) {
+bool receiveIPCClientStandardAggregatedValueRequest(const IpcServer &ipcServer, AggregatedStandardInformationRequest &receivedRequest) {
     std::optional<StandardAggregatedAttributesRequest> response =
         ipcServer.receiveStandardAggregatedAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
 
@@ -46,7 +46,7 @@ bool receiveIPCClientStandardAggregatedRequest(const IpcServer &ipcServer, Aggre
     return false;
 }
 
-bool receiveIPCClientCustomRequest(const IpcServer &ipcServer, CustomInformationRequest &receivedRequest) {
+bool receiveIPCClientCustomValueRequest(const IpcServer &ipcServer, CustomInformationRequest &receivedRequest) {
     std::optional<CustomAttributesRequest> response =
         ipcServer.receiveCustomAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
 
@@ -59,6 +59,20 @@ bool receiveIPCClientCustomRequest(const IpcServer &ipcServer, CustomInformation
     return false;
 }
 
+bool receiveIPCClientAggregatedMemberRequest(const IpcServer &ipcServer, StandardInformationMemberRequest &receivedRequest) {
+    std::optional<AggregatedMemberRequest> response =
+        ipcServer.receiveAggregatedMemberRequest(receivedRequest.requestID, receivedRequest.pid, false);
+
+    if (response.has_value()) {
+        receivedRequest.payload = response.value();
+
+        return true;
+    }
+
+    return false;
+}
+
+
 void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started taskOrchestrator" << std::endl;
     int pipe_r = pipes[RELATIONMGMT].read;
@@ -67,22 +81,28 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, s
     auto then = std::chrono::steady_clock::now();
     while (true) {
         bool receivedMessage = false;
-        SingleStandardInformationRequest singleStandardInformationRequest;
-        AggregatedStandardInformationRequest aggregatedStandardInformationRequest;
-        CustomInformationRequest customInformationRequest;
+        SingleStandardInformationRequest        singleStandardInformationRequest;
+        AggregatedStandardInformationRequest    aggregatedStandardInformationRequest;
+        CustomInformationRequest                customInformationRequest;
+        StandardInformationMemberRequest        standardInformationMemberRequest;
+
 
         // TODO: Something that happens on pipe read from RELATIONMGMT
 
-        if (receiveIPCClientStandardSingleRequest(server, singleStandardInformationRequest)) {
-            writeT<SingleStandardInformationRequest>(pipe_w, singleStandardInformationRequest, STANDARDSINGLE);
+        if (receiveIPCClientStandardSingleValueRequest(server, singleStandardInformationRequest)) {
+            writeT<SingleStandardInformationRequest>(pipe_w, singleStandardInformationRequest, STANDARDSINGLEVALUE);
             continue;
         }
-        if (receiveIPCClientStandardAggregatedRequest(server, aggregatedStandardInformationRequest)) {
-            writeT<AggregatedStandardInformationRequest>(pipe_w, aggregatedStandardInformationRequest, STANDARDAGGREGATED);
+        if (receiveIPCClientStandardAggregatedValueRequest(server, aggregatedStandardInformationRequest)) {
+            writeT<AggregatedStandardInformationRequest>(pipe_w, aggregatedStandardInformationRequest, STANDARDAGGREGATEDVALUE);
             continue;
         }
-        if (receiveIPCClientCustomRequest(server, customInformationRequest)) {
-            writeT<CustomInformationRequest>(pipe_w, customInformationRequest, CUSTOM);
+        if (receiveIPCClientCustomValueRequest(server, customInformationRequest)) {
+            writeT<CustomInformationRequest>(pipe_w, customInformationRequest, CUSTOMVALUEVALUE);
+            continue;
+        }
+        if (receiveIPCClientAggregatedMemberRequest(server, standardInformationMemberRequest)) {
+            writeT<StandardInformationMemberRequest>(pipe_w, standardInformationMemberRequest, AGGREGATEDMEMBER);
             continue;
         }
 

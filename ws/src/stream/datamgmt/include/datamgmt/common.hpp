@@ -40,10 +40,17 @@ struct CustomInformationRequest {
     CustomAttributesRequest payload;
 };
 
+struct StandardInformationMemberRequest {
+    requestId_t             requestID;
+    pid_t                   pid;
+    AggregatedMemberRequest payload;
+};
+
 union union_Tasks {
     SingleStandardInformationRequest        standardSingle;
     AggregatedStandardInformationRequest    standardAggregated;
     CustomInformationRequest                custom;
+    StandardInformationMemberRequest        standardMember;
 
     union_Tasks() {}
     ~union_Tasks() {}
