@@ -19,6 +19,6 @@ namespace processObserver {
  *
  * @return void This function does not return any value.
  */
-void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running);
+void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running);
 
 }

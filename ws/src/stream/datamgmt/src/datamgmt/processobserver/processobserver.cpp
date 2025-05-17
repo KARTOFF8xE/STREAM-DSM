@@ -226,7 +226,7 @@ std::string getMacAddress() {
 
 namespace processObserver {
 
-void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
+void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started processObserver" << std::endl;
     
     std::vector<FullProcessData> processVec;
@@ -287,7 +287,7 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
 
         NodeResponse response;
         ssize_t ret = -1;
-        ret = readT<NodeResponse>(pipes[RELATIONMGMT].read, response);
+        ret = pipe_ns::readT<NodeResponse>(pipes[RELATIONMGMT].read, response);
         if (ret == -1) {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);

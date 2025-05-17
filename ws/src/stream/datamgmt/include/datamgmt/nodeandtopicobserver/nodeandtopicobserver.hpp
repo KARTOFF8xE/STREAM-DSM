@@ -45,7 +45,7 @@ void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t prim
  * @param pipes File descriptor for reading client data.
  * @param running Atomic flag indicating whether the observer should continue running.
  */
-void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running);
+void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running);
 
 /**
  * @brief Receives and processes a NodeIsClientOfUpdate message.

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <variant>
 #include <bits/stdc++.h>
 #include <unordered_set>
 #include <nlohmann/json.hpp>
@@ -37,21 +38,33 @@ struct CustomMemberTask {
     bool        continuous;
 };
 
+// union union_Tasks {
+//     StandardSingleAttributesRequest     standardSingle;
+//     StandardAggregatedAttributesRequest standardAggregated;
+//     CustomAttributesTask                custom;
+//     AggregatedMemberRequest             aggregatedMember;
+//     CustomMemberTask                    customMember;
+
+
+//     union_Tasks() {}
+//     ~union_Tasks() {}
+// };
+
+using TaskVariant = std::variant<
+    StandardSingleAttributesRequest,
+    StandardAggregatedAttributesRequest,
+    CustomAttributesTask,
+    AggregatedMemberRequest,
+    CustomMemberTask
+>;
+
 struct Task {
     pid_t                       pid;
     requestId_t                 requestId;
     RequestType                 type;
     std::vector<primaryKey_t>   primaryKeys;
-    // SingleAttribute
-    StandardSingleAttributesRequest standardSingle;
-    // AggregatedAttribute
-    StandardAggregatedAttributesRequest standardAggregated;
-    // CustomAttribute
-    CustomAttributesTask custom;
-    // AggregateMember
-    AggregatedMemberRequest aggregatedMember;
-    // CustomMember
-    CustomMemberTask customMember;
+
+    TaskVariant                 task;
          
 
     bool operator==(const Task& other) const {
@@ -77,7 +90,22 @@ bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleStandardInformati
 
 
 double getValueStandardQueryInfluxDB(Task task) {
-    std::string request = influxDB::createPayloadGetSingleValue("STREAM", task.standardSingle.attribute, task.primaryKeys);
+    std::string request;
+    if (std::holds_alternative<StandardSingleAttributesRequest>(task.task)) {
+        request =
+            influxDB::createPayloadGetSingleValue(
+                "STREAM",
+                std::get<StandardSingleAttributesRequest>(task.task).attribute,
+                task.primaryKeys);
+    }
+    if (std::holds_alternative<StandardAggregatedAttributesRequest>(task.task)) {
+        request =
+            influxDB::createPayloadGetSingleValue(
+                "STREAM",
+                std::get<StandardAggregatedAttributesRequest>(task.task).attribute,
+                task.primaryKeys);
+    }
+
     std::string response = curl::push(request, curl::INFLUXDB_READ);
 
     return influxDB::extractValueFromCSV(response);
@@ -95,7 +123,10 @@ std::vector<std::string> split(std::string str, char delimiter) {
 }
 
 std::vector<std::string> getCustomResponseQueryInfluxDB(Task task) {
-    std::string response = curl::push(task.custom.query, curl::INFLUXDB_READ);
+    std::string response =
+        curl::push(
+            std::get<CustomAttributesTask>(task.task).query,
+            curl::INFLUXDB_READ);
     
     return split(response, '\n');
 }
@@ -106,7 +137,7 @@ std::vector<std::string> getCustomResponseQueryNeo4J(Task task) {
               "statements":
                   [
                       { "statement": ")";
-    query += task.customMember.query + R"( "
+    query += std::get<CustomMemberTask>(task.task).query + R"( "
                       }
                   ]
           })";
@@ -179,7 +210,7 @@ std::vector<primaryKey_t> makeDifference(const std::vector<primaryKey_t>& vector
     return result;
 }
 
-void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
+void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started taskExecutor" << std::endl;
     int pipe_r = pipes[TASKORCHESTRATOR].read;
 
@@ -187,42 +218,41 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
     auto then = std::chrono::steady_clock::now();
     while (true) {
         {
-            union_Tasks informationRequest;
-            MsgType type;
-            ssize_t ret = readT<union_Tasks>(pipe_r, informationRequest, &type);
+            union_Requests informationRequest;
+            pipe_ns::MsgType type;
+            ssize_t ret = pipe_ns::readT<union_Requests>(pipe_r, informationRequest, &type);
             while (ret != -1) {
                 switch (type)
                 {
-                case STANDARDSINGLEVALUE:
+                case pipe_ns::STANDARDSINGLEVALUE:
                     {
                         tasks.push_back(Task{
                         .pid            = informationRequest.standardSingle.pid,
                         .requestId      = informationRequest.standardSingle.requestID,
                         .type           = SINGLEVALUE,
-                        .standardSingle = informationRequest.standardSingle.payload,
+                        .task           = informationRequest.standardSingle.payload,
                         });
                         tasks.back().primaryKeys.push_back(informationRequest.standardSingle.payload.primaryKey);
                     }
                     break;
-                case STANDARDAGGREGATEDVALUE:
+                case pipe_ns::STANDARDAGGREGATEDVALUE:
                     {
                         tasks.push_back(Task{
                             .pid                = informationRequest.standardAggregated.pid,
                             .requestId          = informationRequest.standardAggregated.requestID,
                             .type               = AGGREGATEDVALUE,
-                            .standardAggregated = informationRequest.standardAggregated.payload,
+                            .task               = informationRequest.standardAggregated.payload,
                         });
-
                         std::string response = curl::push(tree::getPayloadForTree(
-                            tasks.back().standardAggregated.primaryKey_RootTree1,
-                            tasks.back().standardAggregated.tree1),
+                            std::get<StandardAggregatedAttributesRequest>(tasks.back().task).primaryKey_RootTree1,
+                            std::get<StandardAggregatedAttributesRequest>(tasks.back().task).tree1),
                             curl::NEO4J
                         );
                         std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
 
                         response = curl::push(tree::getPayloadForTree(
-                            tasks.back().standardAggregated.primaryKey_RootTree2,
-                            tasks.back().standardAggregated.tree2),
+                            std::get<StandardAggregatedAttributesRequest>(tasks.back().task).primaryKey_RootTree2,
+                            std::get<StandardAggregatedAttributesRequest>(tasks.back().task).tree2),
                             curl::NEO4J
                         );
                         std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
@@ -246,41 +276,42 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                         tasks.back().primaryKeys.insert(tasks.back().primaryKeys.end(), primaryKeys.begin(), primaryKeys.end());
                     }
                     break;
-                case CUSTOMVALUEVALUE:
+                case pipe_ns::CUSTOMVALUE:
                     {
                         tasks.push_back(Task{
                             .pid        = informationRequest.custom.pid,
                             .requestId  = informationRequest.custom.requestID,
                             .type       = CUSTOMVALUE,
-                            .custom     = CustomAttributesTask{
-                                .continuous = informationRequest.custom.payload.continuous,
-                            }
+                            .task       = CustomAttributesTask{.continuous = informationRequest.custom.payload.continuous}
                         });
                         {
                             std::vector<std::string> queryLines = util::parseStringArray(informationRequest.custom.payload.query);
-                            tasks.back().custom.query = std::accumulate(queryLines.begin(), queryLines.end(), std::string(""));
+                            std::get<CustomAttributesTask>(tasks.back().task).query =
+                                std::accumulate(queryLines.begin(),
+                                queryLines.end(),
+                                std::string(""));
                         }
                     }
                     break;
-                case AGGREGATEDMEMBER:
+                case pipe_ns::AGGREGATEDMEMBER:
                     {
                         tasks.push_back(Task{
                             .pid                = informationRequest.standardMember.pid,
                             .requestId          = informationRequest.standardMember.requestID,
                             .type               = AGGREGATEDMEMBERS,
-                            .aggregatedMember   = informationRequest.standardMember.payload
+                            .task               = informationRequest.standardMember.payload
                         });
-
                         std::string response = curl::push(tree::getPayloadForTree(
-                            tasks.back().aggregatedMember.primaryKey_RootTree1,
-                            tasks.back().aggregatedMember.tree1),
+                            std::get<AggregatedMemberRequest>(tasks.back().task).primaryKey_RootTree1,
+                            std::get<AggregatedMemberRequest>(tasks.back().task).tree1),
                             curl::NEO4J
                         );
                         std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
 
+
                         response = curl::push(tree::getPayloadForTree(
-                            tasks.back().aggregatedMember.primaryKey_RootTree2,
-                            tasks.back().aggregatedMember.tree2),
+                            std::get<AggregatedMemberRequest>(tasks.back().task).primaryKey_RootTree2,
+                            std::get<AggregatedMemberRequest>(tasks.back().task).tree2),
                             curl::NEO4J
                         );
                         std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
@@ -304,19 +335,20 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                         tasks.back().primaryKeys.insert(tasks.back().primaryKeys.end(), primaryKeys.begin(), primaryKeys.end());
                     }
                     break;
-                case CUSTOMMEMBER:
+                case pipe_ns::CUSTOMMEMBER:
                     {
                         tasks.push_back(Task{
                             .pid            = informationRequest.customMember.pid,
                             .requestId      = informationRequest.customMember.requestID,
                             .type           = CUSTOMMEMBERS,
-                            .customMember   = CustomMemberTask {
-                                .continuous = informationRequest.customMember.payload.continuous,
-                            }
+                            .task           = CustomMemberTask {.continuous = informationRequest.customMember.payload.continuous}
                         });
                         {
                             std::vector<std::string> queryLines = util::parseStringArray(informationRequest.custom.payload.query);
-                            tasks.back().customMember.query = std::accumulate(queryLines.begin(), queryLines.end(), std::string(""));
+                            std::get<CustomMemberTask>(tasks.back().task).query =
+                                std::accumulate(queryLines.begin(),
+                                queryLines.end(),
+                                std::string(""));
                         }
                     }
                     break;
@@ -324,7 +356,7 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                     break;
                 }
 
-                ret = readT<union_Tasks>(pipe_r, informationRequest, &type);
+                ret = pipe_ns::readT<union_Requests>(pipe_r, informationRequest, &type);
             };
         }
 
@@ -338,7 +370,7 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                 };
                 server.sendStandardSingleAttributesResponse(payload, task.pid, false);
 
-                if (!task.standardSingle.continuous) {
+                if (!std::get<StandardSingleAttributesRequest>(task.task).continuous) {
                     tasks.erase(find(tasks.begin(), tasks.end(), task));
                 }
                 break;
@@ -350,7 +382,7 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                 };
                 server.sendStandardAggregatedAttributesResponse(payload, task.pid, false);
 
-                if (!task.standardAggregated.continuous) {
+                if (!std::get<StandardAggregatedAttributesRequest>(task.task).continuous) {
                     tasks.erase(find(tasks.begin(), tasks.end(), task));
                 }
                 break;
@@ -384,7 +416,7 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                     server.sendAggregatedMemberResponse(payload, task.pid, false);
                 }
 
-                if (!task.custom.continuous) {
+                if (!std::get<AggregatedMemberRequest>(task.task).continuous) {
                     tasks.erase(find(tasks.begin(), tasks.end(), task));
                 }
 
@@ -405,7 +437,7 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::
                     server.sendCustomMemberResponse(payload, task.pid, false);
                 }
 
-                if (!task.customMember.continuous) {
+                if (!std::get<CustomMemberTask>(task.task).continuous) {
                     tasks.erase(find(tasks.begin(), tasks.end(), task));
                 }
                 break;

@@ -4,11 +4,14 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+
+namespace pipe_ns {
+
 enum MsgType {
     NONE,
     STANDARDSINGLEVALUE,
     STANDARDAGGREGATEDVALUE,
-    CUSTOMVALUEVALUE,
+    CUSTOMVALUE,
     AGGREGATEDMEMBER,
     CUSTOMMEMBER,
 };
@@ -30,3 +33,5 @@ ssize_t writeT(int __fd, const T& payload, MsgType type = MsgType::NONE);
 
 template<typename T>
 ssize_t readT(int __fd, T& payload, MsgType* type = nullptr);
+
+}

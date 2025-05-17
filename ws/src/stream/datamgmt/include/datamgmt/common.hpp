@@ -52,13 +52,13 @@ struct CustomInformationMemberRequest {
     CustomMemberRequest payload;
 };
 
-union union_Tasks {
+union union_Requests {
     SingleStandardInformationRequest        standardSingle;
     AggregatedStandardInformationRequest    standardAggregated;
     CustomInformationRequest                custom;
     StandardInformationMemberRequest        standardMember;
     CustomInformationMemberRequest          customMember;
 
-    union_Tasks() {}
-    ~union_Tasks() {}
+    union_Requests() {}
+    ~union_Requests() {}
 };

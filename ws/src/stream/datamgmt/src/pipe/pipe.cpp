@@ -10,6 +10,8 @@
 #include "datamgmt/common.hpp"
 
 
+namespace pipe_ns {
+
 int getPipe(int p[2], bool blocking) {
     if (int ret = pipe(p); ret != 0) {
         std::cerr << "\e[31mError: Failed to create pipe. Code: " << ret << "\e[0m" << std::endl;
@@ -71,7 +73,7 @@ template ssize_t writeT<AggregatedStandardInformationRequest>(int, const Aggrega
 template ssize_t writeT<CustomInformationRequest>(int, const CustomInformationRequest&, MsgType);
 template ssize_t writeT<StandardInformationMemberRequest>(int, const StandardInformationMemberRequest&, MsgType);
 template ssize_t writeT<CustomInformationMemberRequest>(int, const CustomInformationMemberRequest&, MsgType);
-template ssize_t writeT<union_Tasks>(int, const union_Tasks&, MsgType);
+template ssize_t writeT<union_Requests>(int, const union_Requests&, MsgType);
 
 template ssize_t readT<Client>(int, Client&, MsgType*);
 template ssize_t readT<NodeResponse>(int, NodeResponse&, MsgType*);
@@ -80,5 +82,6 @@ template ssize_t readT<AggregatedStandardInformationRequest>(int, AggregatedStan
 template ssize_t readT<CustomInformationRequest>(int, CustomInformationRequest&, MsgType*);
 template ssize_t readT<StandardInformationMemberRequest>(int, StandardInformationMemberRequest&, MsgType*);
 template ssize_t readT<CustomInformationMemberRequest>(int, CustomInformationMemberRequest&, MsgType*);
-template ssize_t readT<union_Tasks>(int, union_Tasks&, MsgType*);
+template ssize_t readT<union_Requests>(int, union_Requests&, MsgType*);
 
+}

@@ -20,6 +20,6 @@ namespace relationMgmt {
  *
  * @return void This function does not return any value.
  */
-void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running);
+void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running);
 
 }

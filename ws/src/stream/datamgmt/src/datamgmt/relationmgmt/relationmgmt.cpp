@@ -122,7 +122,7 @@ std::vector<Pair> extractPIDandID(const std::string& payload) {
 
 namespace relationMgmt {
 
-void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
+void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started relationMgmt" << std::endl;
     int pipeToProcessobserver_w = pipes[PROCESSOBSERVER].write;
     
@@ -131,7 +131,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
 
         NodeResponse response;
         ssize_t ret = -1;
-        ret = readT<NodeResponse>(pipes[NODEANDTOPICOBSERVER].read, response);
+        ret = pipe_ns::readT<NodeResponse>(pipes[NODEANDTOPICOBSERVER].read, response);
         if (ret == -1) {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
@@ -186,7 +186,7 @@ void relationMgmt(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
 
             for (auto pair : pairs) {
                 if (pair.pid == 0) continue;
-                writeT<NodeResponse>(
+                pipe_ns::writeT<NodeResponse>(
                     pipeToProcessobserver_w,
                     NodeResponse{
                         .primaryKey = pair.primaryKey,

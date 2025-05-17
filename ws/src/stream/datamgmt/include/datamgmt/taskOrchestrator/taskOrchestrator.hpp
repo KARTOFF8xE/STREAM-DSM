@@ -8,6 +8,6 @@
 namespace taskOrchestrator {
 
 // TODO
-void taskOrchestrator(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running);
+void taskOrchestrator(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running);
 
 }

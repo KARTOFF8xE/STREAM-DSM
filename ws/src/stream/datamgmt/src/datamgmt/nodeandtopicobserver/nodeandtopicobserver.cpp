@@ -189,7 +189,7 @@ void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t prim
     }
 }
 
-void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
+void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started nodeAndTopicObserver" << std::endl;
     int pipe_r = pipes[MAIN].read;
     // int pipe_writeToRelationMgmt = pipes[RELATIONMGMT].write;
@@ -212,10 +212,10 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
         bool receivedMessage = false;
         ssize_t ret = -1;
 
-        ret = readT<Client>(pipe_r, client);
+        ret = pipe_ns::readT<Client>(pipe_r, client);
         while (ret != -1) {
             handleClient(client, clients);
-            ret = readT<Client>(pipe_r, client);
+            ret = pipe_ns::readT<Client>(pipe_r, client);
         };
 
         /*
@@ -454,7 +454,7 @@ bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
             }
         }
 
-        writeT<NodeResponse>(pipeToRelationMgmt_w, payload);
+        pipe_ns::writeT<NodeResponse>(pipeToRelationMgmt_w, payload);
 
         return true;
     }

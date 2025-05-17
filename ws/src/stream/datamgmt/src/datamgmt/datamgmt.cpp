@@ -80,45 +80,45 @@ int main() {
 
     {
         int p[2];
-        getPipe(p);
-        modules[NODEANDTOPICOBSERVER].pipes[RELATIONMGMT] = Pipe {
+        pipe_ns::getPipe(p);
+        modules[NODEANDTOPICOBSERVER].pipes[RELATIONMGMT] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
-        modules[RELATIONMGMT].pipes[NODEANDTOPICOBSERVER] = Pipe {
-            .read   = p[0],
-            .write  = p[1],
-        };
-    }
-    {
-        int p[2];
-        getPipe(p);
-        modules[RELATIONMGMT].pipes[PROCESSOBSERVER] = Pipe {
-            .read   = p[0],
-            .write  = p[1],
-        };
-        modules[PROCESSOBSERVER].pipes[RELATIONMGMT] = Pipe {
+        modules[RELATIONMGMT].pipes[NODEANDTOPICOBSERVER] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
     }
     {
         int p[2];
-        getPipe(p);
-        modules[TASKORCHESTRATOR].pipes[TASKEXECUTOR] = Pipe {
+        pipe_ns::getPipe(p);
+        modules[RELATIONMGMT].pipes[PROCESSOBSERVER] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
-        modules[TASKEXECUTOR].pipes[TASKORCHESTRATOR] = Pipe {
+        modules[PROCESSOBSERVER].pipes[RELATIONMGMT] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
-        getPipe(p);
-        modules[RELATIONMGMT].pipes[TASKORCHESTRATOR] = Pipe {
+    }
+    {
+        int p[2];
+        pipe_ns::getPipe(p);
+        modules[TASKORCHESTRATOR].pipes[TASKEXECUTOR] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
-        modules[TASKORCHESTRATOR].pipes[RELATIONMGMT] = Pipe {
+        modules[TASKEXECUTOR].pipes[TASKORCHESTRATOR] = pipe_ns::Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        pipe_ns::getPipe(p);
+        modules[RELATIONMGMT].pipes[TASKORCHESTRATOR] = pipe_ns::Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[TASKORCHESTRATOR].pipes[RELATIONMGMT] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
@@ -149,7 +149,7 @@ int main() {
                     .primaryKey = payload.primaryKey,
                     .updates    = payload.updates,
                 };
-                writeT<Client>(modules[NODEANDTOPICOBSERVER].pipes[MAIN].write, clientInfo);
+                pipe_ns::writeT<Client>(modules[NODEANDTOPICOBSERVER].pipes[MAIN].write, clientInfo);
                 
                 singleTimeNodeResponse(nodeAndTopicObsServer, clientInfo, payload.primaryKey);
                 if (!modules[NODEANDTOPICOBSERVER].running) {
@@ -170,7 +170,7 @@ int main() {
                     .primaryKey = payload.primaryKey,
                     .updates    = payload.updates,
                 };
-                writeT<Client>(modules[NODEANDTOPICOBSERVER].pipes[MAIN].write, clientInfo);
+                pipe_ns::writeT<Client>(modules[NODEANDTOPICOBSERVER].pipes[MAIN].write, clientInfo);
 
                 singleTimeTopicResponse(nodeAndTopicObsServer, clientInfo, payload.primaryKey);
                 if (!modules[NODEANDTOPICOBSERVER].running) {
