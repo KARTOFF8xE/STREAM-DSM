@@ -68,20 +68,20 @@ ssize_t readT(int __fd, T& payload, MsgType* type) {
 // Explizite Instanziierungen:
 template ssize_t writeT<Client>(int, const Client&, MsgType);
 template ssize_t writeT<NodeResponse>(int, const NodeResponse&, MsgType);
-template ssize_t writeT<SingleStandardInformationRequest>(int, const SingleStandardInformationRequest&, MsgType);
-template ssize_t writeT<AggregatedStandardInformationRequest>(int, const AggregatedStandardInformationRequest&, MsgType);
-template ssize_t writeT<CustomInformationRequest>(int, const CustomInformationRequest&, MsgType);
-template ssize_t writeT<StandardInformationMemberRequest>(int, const StandardInformationMemberRequest&, MsgType);
-template ssize_t writeT<CustomInformationMemberRequest>(int, const CustomInformationMemberRequest&, MsgType);
+template ssize_t writeT<SingleAttributeInformationRequest>(int, const SingleAttributeInformationRequest&, MsgType);
+template ssize_t writeT<AggregatedAttributeInformationRequest>(int, const AggregatedAttributeInformationRequest&, MsgType);
+template ssize_t writeT<CustomAttributeInformationRequest>(int, const CustomAttributeInformationRequest&, MsgType);
+template ssize_t writeT<AggregatedMemberInformationRequest>(int, const AggregatedMemberInformationRequest&, MsgType);
+template ssize_t writeT<CustomMemberInformationRequest>(int, const CustomMemberInformationRequest&, MsgType);
 template ssize_t writeT<union_Requests>(int, const union_Requests&, MsgType);
 
 template ssize_t readT<Client>(int, Client&, MsgType*);
 template ssize_t readT<NodeResponse>(int, NodeResponse&, MsgType*);
-template ssize_t readT<SingleStandardInformationRequest>(int, SingleStandardInformationRequest&, MsgType*);
-template ssize_t readT<AggregatedStandardInformationRequest>(int, AggregatedStandardInformationRequest&, MsgType*);
-template ssize_t readT<CustomInformationRequest>(int, CustomInformationRequest&, MsgType*);
-template ssize_t readT<StandardInformationMemberRequest>(int, StandardInformationMemberRequest&, MsgType*);
-template ssize_t readT<CustomInformationMemberRequest>(int, CustomInformationMemberRequest&, MsgType*);
+template ssize_t readT<SingleAttributeInformationRequest>(int, SingleAttributeInformationRequest&, MsgType*);
+template ssize_t readT<AggregatedAttributeInformationRequest>(int, AggregatedAttributeInformationRequest&, MsgType*);
+template ssize_t readT<CustomAttributeInformationRequest>(int, CustomAttributeInformationRequest&, MsgType*);
+template ssize_t readT<AggregatedMemberInformationRequest>(int, AggregatedMemberInformationRequest&, MsgType*);
+template ssize_t readT<CustomMemberInformationRequest>(int, CustomMemberInformationRequest&, MsgType*);
 template ssize_t readT<union_Requests>(int, union_Requests&, MsgType*);
 
 }

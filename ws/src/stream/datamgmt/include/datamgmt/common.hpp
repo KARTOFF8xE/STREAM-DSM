@@ -21,43 +21,43 @@ struct Client {
 // #define MSGSIZE sizeof(Client)
 
 
-struct SingleStandardInformationRequest {
-    requestId_t                         requestID;
-    pid_t                               pid;
-    StandardSingleAttributesRequest     payload;
+struct SingleAttributeInformationRequest {
+    requestId_t             requestID;
+    pid_t                   pid;
+    SingleAttributesRequest payload;
 };
 
 
-struct AggregatedStandardInformationRequest {
-    requestId_t                         requestID;
-    pid_t                               pid;
-    StandardAggregatedAttributesRequest payload;
+struct AggregatedAttributeInformationRequest {
+    requestId_t                 requestID;
+    pid_t                       pid;
+    AggregatedAttributesRequest payload;
 };
 
-struct CustomInformationRequest {
+struct CustomAttributeInformationRequest {
     requestId_t             requestID;
     pid_t                   pid;
     CustomAttributesRequest payload;
 };
 
-struct StandardInformationMemberRequest {
+struct AggregatedMemberInformationRequest {
     requestId_t             requestID;
     pid_t                   pid;
     AggregatedMemberRequest payload;
 };
 
-struct CustomInformationMemberRequest {
-    requestId_t             requestID;
-    pid_t                   pid;
+struct CustomMemberInformationRequest {
+    requestId_t         requestID;
+    pid_t               pid;
     CustomMemberRequest payload;
 };
 
 union union_Requests {
-    SingleStandardInformationRequest        standardSingle;
-    AggregatedStandardInformationRequest    standardAggregated;
-    CustomInformationRequest                custom;
-    StandardInformationMemberRequest        standardMember;
-    CustomInformationMemberRequest          customMember;
+    SingleAttributeInformationRequest       singleAttribute;
+    AggregatedAttributeInformationRequest   aggregatedAttribute;
+    CustomAttributeInformationRequest       customAttribute;
+    AggregatedMemberInformationRequest      aggregatedMember;
+    CustomMemberInformationRequest          customMember;
 
     union_Requests() {}
     ~union_Requests() {}

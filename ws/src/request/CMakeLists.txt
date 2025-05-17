@@ -11,8 +11,8 @@ find_package(ipc REQUIRED)
 
 add_executable(node src/node.cpp)
 add_executable(topic src/topic.cpp)
-add_executable(standardSingleAttribute src/standardSingleAttribute.cpp)
-add_executable(standardAggregatedAttribute src/standardAggregatedAttribute.cpp)
+add_executable(singleAttribute src/singleAttribute.cpp)
+add_executable(aggregatedAttribute src/aggregatedAttribute.cpp)
 add_executable(customAttribute src/customAttribute.cpp)
 add_executable(aggregatedMember src/aggregatedMember.cpp)
 add_executable(customMember src/customMember.cpp)
@@ -28,12 +28,12 @@ target_link_libraries(topic
     ipc::ipc_lib
 )
 
-target_link_libraries(standardSingleAttribute
+target_link_libraries(singleAttribute
   PRIVATE
     ipc::ipc_lib
 )
 
-target_link_libraries(standardAggregatedAttribute
+target_link_libraries(aggregatedAttribute
   PRIVATE
     ipc::ipc_lib
 )
@@ -57,8 +57,8 @@ target_link_libraries(customMember
 install(TARGETS
   node
   topic
-  standardSingleAttribute
-  standardAggregatedAttribute
+  singleAttribute
+  aggregatedAttribute
   customAttribute
   aggregatedMember
   customMember

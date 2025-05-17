@@ -6,7 +6,7 @@
 #include <thread>
 
 int main() {
-  std::cout << "Make a Standard Aggregated Attribute Request..." << std::endl;
+  std::cout << "Make a Aggregated Attribute Request..." << std::endl;
 
   IpcClient client(4);
 
@@ -14,7 +14,7 @@ int main() {
   // primaryKey_t pKey;
   // std::cin >> pKey;
   requestId_t requestId;
-  const StandardAggregatedAttributesRequest request{
+  const AggregatedAttributesRequest request{
     .primaryKey_RootTree1 = 4,
     .primaryKey_RootTree2 = 11,
     .tree1 = PROCESSDRIVEN,
@@ -25,13 +25,13 @@ int main() {
   };
 
   std::cout << "send request..." << std::flush;
-  client.sendStandardAggregatedAttributesRequest(request, requestId, false);
+  client.sendAggregatedAttributesRequest(request, requestId, false);
   std::cout << "done" << std::endl;
   while (true) {
     {
-      std::optional<StandardAggregatedAttributesResponse> optResp = client.receiveStandardAggregatedAttributesResponse(false);
+      std::optional<AggregatedAttributesResponse> optResp = client.receiveAggregatedAttributesResponse(false);
       if (optResp.has_value()) {
-        StandardAggregatedAttributesResponse resp = optResp.value();
+        AggregatedAttributesResponse resp = optResp.value();
         std::cout <<
           "Received Node Reponse:" <<
           "\n\tvalue: " << resp.value <<

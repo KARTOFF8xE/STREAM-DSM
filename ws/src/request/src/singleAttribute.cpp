@@ -6,7 +6,7 @@
 #include <thread>
 
 int main() {
-  std::cout << "Make a Standard Single Attribute Request..." << std::endl;
+  std::cout << "Make a Single Attribute Request..." << std::endl;
   
   IpcClient client(4);
   
@@ -14,19 +14,19 @@ int main() {
   primaryKey_t pKey;
   std::cin >> pKey;
   requestId_t requestId;
-  const StandardSingleAttributesRequest request{
+  const SingleAttributesRequest request{
     .primaryKey = pKey,
     .attribute = CPU_UTILIZATION,
     .continuous = true,
   };
   std::cout << "send request..." << std::flush;
-  client.sendStandardSingleAttributesRequest(request, requestId, false);
+  client.sendSingleAttributesRequest(request, requestId, false);
   std::cout << "done" << std::endl;
   while (true) {
     {
-      std::optional<StandardSingleAttributesResponse> optResp = client.receiveStandardSingleAttributesResponse(false);
+      std::optional<SingleAttributesResponse> optResp = client.receiveSingleAttributesResponse(false);
       if (optResp.has_value()) {
-        StandardSingleAttributesResponse resp = optResp.value();
+        SingleAttributesResponse resp = optResp.value();
         std::cout <<
           "Received Node Reponse:" <<
           "\n\tvalue: " << resp.value <<
