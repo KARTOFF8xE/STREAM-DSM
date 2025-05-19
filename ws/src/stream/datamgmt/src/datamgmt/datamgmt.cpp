@@ -23,6 +23,7 @@
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "datamgmt/taskOrchestrator/taskOrchestrator.hpp"
 #include "datamgmt/taskExecutor/taskExecutor.hpp"
+#include "datamgmt/datatracer/datatracer.hpp"
 
 
 void runModule(IpcServer &server, Module_t module_t, Module &module) {
@@ -54,13 +55,20 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
             }
             module.running.store(true);
             module.thread = std::thread(taskOrchestrator::taskOrchestrator, std::cref(server), module.pipes, std::ref(module.running));
-            return;        
+            return;
         case TASKEXECUTOR:
             if (module.thread.has_value() && module.thread.value().joinable()) {
                 module.thread.value().join();
             }
             module.running.store(true);
             module.thread = std::thread(taskExecutor::taskExecutor, std::cref(server), module.pipes, std::ref(module.running));
+            return;
+        case DATATRACER:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(datatracer::datatracer, std::cref(server), module.pipes, std::ref(module.running));
             return;
         default:
             std::cerr << "No matching function found" << std::endl;
@@ -72,6 +80,7 @@ int main() {
     IpcServer nodeAndTopicObsServer(1);
     IpcServer dummyServer(3);
     IpcServer taskServer(4);
+    IpcServer tracerServer(5);
 
     std::map<Module_t, Module> modules;
     for (int i = NODEANDTOPICOBSERVER; i < LASTOPTION; i++) {
@@ -125,15 +134,17 @@ int main() {
     }
 
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
-    sleep(1);
+    usleep(250);
     runModule(dummyServer, RELATIONMGMT, modules[RELATIONMGMT]);
-    sleep(1);
+    usleep(250);
     runModule(dummyServer, PROCESSOBSERVER, modules[PROCESSOBSERVER]);
-    sleep(1);
+    usleep(250);
     runModule(taskServer, TASKORCHESTRATOR, modules[TASKORCHESTRATOR]);
-    sleep(1);
+    usleep(250);
     runModule(taskServer, TASKEXECUTOR, modules[TASKEXECUTOR]);
-    sleep(1);
+    usleep(250);
+    runModule(tracerServer, DATATRACER, modules[DATATRACER]);
+    usleep(250);
 
     auto then = std::chrono::steady_clock::now();
     while (true) {

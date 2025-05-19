@@ -274,13 +274,19 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
 
         }
         curl::push(
-            influxDB::createPayloadMultipleValSameTime(influxDB::CPU_UTILIZATION, pairs),
+            influxDB::createPayloadMultipleValSameTime(pairs),
             curl::INFLUXDB_WRITE
         );
         
         calcCPUUtil(cpuData);
+        
         curl::push(
-            influxDB::createPayloadSingleVal(influxDB::CPU_UTILIZATION, cpuData.primaryKey, cpuData.utilization),
+            influxDB::createPayloadSingleVal(influxDB::ValuePairs {
+                .attribute  = influxDB::CPU_UTILIZATION,
+                .primaryKey = cpuData.primaryKey,
+                .timestamp  = std::chrono::high_resolution_clock::now().time_since_epoch(),
+                .value      = cpuData.utilization,
+            }),
             curl::INFLUXDB_WRITE
         );
 

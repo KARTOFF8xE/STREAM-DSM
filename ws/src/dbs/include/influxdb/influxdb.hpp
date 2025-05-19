@@ -11,6 +11,7 @@ namespace influxDB {
 
     enum ValueT {
         CPU_UTILIZATION,
+        DISK_UTILIZATION,
         STATECHANGE,
         CLIENT,
         ACTIONCLIENT,
@@ -21,8 +22,10 @@ namespace influxDB {
     };
 
     struct ValuePairs {
-        primaryKey_t    primaryKey;
-        double          value;    
+        ValueT                      attribute;
+        primaryKey_t                primaryKey;
+        std::chrono::nanoseconds    timestamp;
+        long double                 value;
     };
 
     /**
@@ -35,7 +38,7 @@ namespace influxDB {
      * 
      * @returns The payload for the Query.
      */
-    std::string createPayloadSingleVal(ValueT valueType, primaryKey_t primaryKey, long double value, std::chrono::nanoseconds timestamp = std::chrono::high_resolution_clock::now().time_since_epoch());
+    std::string createPayloadSingleVal(ValuePairs valuePair);
 
     /**
      * @brief Builds the Payload to query Influx-DB, consisting of a multiple informations.
@@ -46,7 +49,7 @@ namespace influxDB {
      * 
      * @returns The payload for the Query.
      */
-    std::string createPayloadMultipleValSameTime(ValueT valueType, std::vector<ValuePairs> pairs, std::chrono::nanoseconds timestamp = std::chrono::high_resolution_clock::now().time_since_epoch());
+    std::string createPayloadMultipleValSameTime(std::vector<ValuePairs> pairs);
 
     // TODO
     std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, std::vector<primaryKey_t> primaryKeys);
