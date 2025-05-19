@@ -54,11 +54,6 @@ ssize_t readT(int __fd, T& payload, MsgType* type) {
 
     if (type) *type = header.type;
 
-    // if (header.size != sizeof(T)) {
-    //     std::cerr << "\e[31mError: Payload size mismatch.\e[0m" << std::endl;
-    //     return -1;
-    // }
-
     ssize_t pret = read(__fd, &payload, sizeof(T));
     if (pret <= 0) return -1;
 

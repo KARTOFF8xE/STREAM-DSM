@@ -19,7 +19,6 @@ using namespace std::chrono_literals;
 #include <neo4j/roots/roots.hpp>
 #include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
-
 #include "datamgmt/utils.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
