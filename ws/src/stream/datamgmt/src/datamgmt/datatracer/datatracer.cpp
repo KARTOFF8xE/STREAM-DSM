@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include <cctype>
 using namespace std::chrono_literals;
 
 #include <nlohmann/json.hpp>
@@ -19,12 +20,33 @@ using namespace std::chrono_literals;
 namespace datatracer {
 
 
+std::string parseShmName(const std::string& input) {
+    if (input.empty() || input[0] != '/') {
+        throw std::invalid_argument("Input must start with '/'");
+    }
+
+    std::string output = "/";
+    for (size_t i = 1; i < input.length(); ++i) {
+        char ch = input[i];
+        if (std::isdigit(ch)) {
+            output += static_cast<char>('a' + (ch - '0'));
+        } else {
+            output += ch;
+        }
+    }
+
+    return output;
+}
+
 void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started Tracer (Endpoint)" << std::endl;
 
-    std::vector<sharedMem::SHMChannel> channels;
+    std::vector<std::unique_ptr<sharedMem::SHMChannel>> channels;
 
     auto then = std::chrono::steady_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
+    size_t counter = 0;
+    std::vector<influxDB::ValuePairs> valuePairs;
     while (true) {
         requestId_t requestID;
         pid_t pid;
@@ -36,28 +58,24 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
             sprintf(address, "/%d%d", pid, requestID);
             SHMAddressResponse response;
 
-            util::parseString(response.memAdress, address);
+            util::parseString(response.memAdress, parseShmName(address));
 
-            channels.push_back(sharedMem::SHMChannel(address, true));
+            channels.push_back(std::make_unique<sharedMem::SHMChannel>(response.memAdress, true));
 
+            server.sendSHMAddressResponse(response, pid, false);
+            std::cout << "response.memAdress: " << response.memAdress << std::endl;
             continue;
         }
 
-        size_t counter = 0;
-        std::vector<sharedMem::Value> values;
-        std::vector<influxDB::ValuePairs> valuePairs;
-        for (auto channel : channels) {
+        for (const auto& channel : channels) {
             sharedMem::Value msg;
-            channel.receive(msg);
-            values.push_back(msg);
-            valuePairs.push_back(
-                influxDB::ValuePairs {
+            if(!channel->receive(msg)) continue;
+            influxDB::ValuePairs v {
                     .primaryKey = msg.primaryKey,
                     .timestamp  = msg.timestamp,
                     .value      = msg.value,
-                }
-            );
-
+            };
+            valuePairs.push_back(v);
             switch (msg.type) {
                 case sharedMem::MessageType::CPU:
                     valuePairs.back().attribute = influxDB::CPU_UTILIZATION;
@@ -69,13 +87,16 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
                     break;
             }
 
-            if (counter++ >= 10 || 
-                std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-then) >= 1s
+            auto now = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = now - start;
+            if (++counter >= 1000 || 
+                elapsed.count() >= 1.0
             ) {
                 counter = 0;
-
+                
                 curl::push(influxDB::createPayloadMultipleValSameTime(valuePairs), curl::INFLUXDB_WRITE);
                 valuePairs.clear();
+                start = now;
             }
         }
 

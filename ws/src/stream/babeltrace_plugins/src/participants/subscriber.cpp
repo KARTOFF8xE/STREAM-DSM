@@ -44,7 +44,14 @@ void Subscriber::toGraph(std::string payload) {
 }
 
 std::string Subscriber::getTimeSeriesPayload() {
-    return influxDB::createPayloadSingleVal(influxDB::SUBSCRIBER, this->primaryKey, 1);
+    return influxDB::createPayloadSingleVal(
+        influxDB::ValuePairs {
+            .attribute  = influxDB::SUBSCRIBER,
+            .primaryKey = this->primaryKey,
+            .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
+            .value      = 1,
+        }
+    );
 }
 
 void Subscriber::toTimeSeries(std::string payload) {

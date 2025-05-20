@@ -73,7 +73,14 @@ void Node::toGraph(std::string payload) {
 }
 
 std::string Node::getTimeSeriesPayload() {
-    return influxDB::createPayloadSingleVal(influxDB::STATECHANGE, this->primaryKey, 1);
+    return influxDB::createPayloadSingleVal(
+        influxDB::ValuePairs {
+            .attribute  = influxDB::STATECHANGE,
+            .primaryKey = this->primaryKey,
+            .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
+            .value      = 1,
+        }
+    );
 }
 
 void Node::toTimeSeries(std::string payload) {

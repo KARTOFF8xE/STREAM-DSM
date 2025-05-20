@@ -67,9 +67,23 @@ void Service::toGraph(std::string payload) {
 std::string Service::getTimeSeriesPayload() {
     if (this->name.find("/_action/") != std::string::npos) return "";
 
-    if (this->isAction) return influxDB::createPayloadSingleVal(influxDB::ACTIONSERVICE, this->primaryKey, 1);
+    if (this->isAction) return influxDB::createPayloadSingleVal(
+        influxDB::ValuePairs {
+            .attribute  = influxDB::ACTIONSERVICE,
+            .primaryKey = this->primaryKey,
+            .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
+            .value      = 1,
+        }
+    );
 
-    return influxDB::createPayloadSingleVal(influxDB::SERVICE, this->primaryKey, 1);
+    return influxDB::createPayloadSingleVal(
+        influxDB::ValuePairs {
+            .attribute  = influxDB::SERVICE,
+            .primaryKey = this->primaryKey,
+            .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
+            .value      = 1,
+        }
+    );
 }
 
 void Service::toTimeSeries(std::string payload) {
