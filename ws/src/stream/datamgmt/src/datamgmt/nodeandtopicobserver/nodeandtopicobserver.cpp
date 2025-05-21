@@ -19,7 +19,7 @@ using namespace std::chrono_literals;
 using json = nlohmann::json;
 
 
-void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
+void singleTimeNodeResponse(const IpcServer &server, Client client, primaryKey_t primaryKey) {
     std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -145,7 +145,7 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
     }
 }
 
-void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
+void singleTimeTopicResponse(const IpcServer &server, Client client, primaryKey_t primaryKey) {
     std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -212,11 +212,36 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
         bool receivedMessage = false;
         ssize_t ret = -1;
 
-        ret = pipe_ns::readT<Client>(pipe_r, client);
-        while (ret != -1) {
-            handleClient(client, clients);
-            ret = pipe_ns::readT<Client>(pipe_r, client);
-        };
+        bool gotRequest;
+        do {
+            gotRequest = false;
+            {
+                std::optional<NodeRequest> request = server.receiveNodeRequest(client.requestId, client.pid, false);
+                if (request.has_value()) {
+                    NodeRequest payload = request.value();
+                    client.primaryKey   = payload.primaryKey;
+                    client.updates      = payload.updates;
+
+                    if (client.updates)  handleClient(client, clients);
+
+                    singleTimeNodeResponse(server, client, payload.primaryKey);
+                    gotRequest = true;
+                }
+            }
+            {
+                std::optional<TopicRequest> request = server.receiveTopicRequest(client.requestId, client.pid, false);
+                if (request.has_value()) {
+                    TopicRequest payload = request.value();
+                    client.primaryKey   = payload.primaryKey;
+                    client.updates      = payload.updates;
+                    
+                    if (client.updates) handleClient(client, clients);
+
+                    singleTimeTopicResponse(server, client, payload.primaryKey);
+                    gotRequest = true;
+                }
+            }
+        } while (gotRequest);
 
         /*
         for (const pid_t &pid : pids) {
