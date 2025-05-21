@@ -86,20 +86,18 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
                 default:
                     break;
             }
-
             auto now = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = now - start;
-            if (++counter >= 1000 || 
+            if (++counter >= 100000 || 
                 elapsed.count() >= 1.0
             ) {
                 counter = 0;
-                
                 curl::push(influxDB::createPayloadMultipleValSameTime(valuePairs), curl::INFLUXDB_WRITE);
                 valuePairs.clear();
                 start = now;
             }
         }
-
+        continue;
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
         auto sleepTime = 1ms - elapsed;

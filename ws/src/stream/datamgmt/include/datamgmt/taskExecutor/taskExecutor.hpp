@@ -3,11 +3,12 @@
 
 #include "datamgmt/common.hpp"
 #include "datamgmt/datamgmt.hpp"
+#include "datamgmt/tasks.hpp"
 
 
 namespace taskExecutor {
 
 // TODO
-void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running);
+void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running, Tasks &tasks);
 
 }

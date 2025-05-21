@@ -20,38 +20,6 @@ using namespace std::chrono_literals;
 using json = nlohmann::json;
 
 
-struct CustomAttributesTask {
-    std::string query;
-    bool        continuous;
-};
-
-struct CustomMemberTask {
-    std::string query;
-    bool        continuous;
-};
-
-using TaskVariant = std::variant<
-    SingleAttributesRequest,
-    AggregatedAttributesRequest,
-    CustomAttributesTask,
-    AggregatedMemberRequest,
-    CustomMemberTask
->;
-
-struct Task {
-    pid_t                       pid;
-    requestId_t                 requestId;
-    pipe_ns::MsgType            type;
-    std::vector<primaryKey_t>   primaryKeys;
-
-    TaskVariant                 task;
-         
-
-    bool operator==(const Task& other) const {
-        return this->pid == other.pid;
-    }
-};
-
 
 namespace taskExecutor {
 
@@ -67,7 +35,6 @@ bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleAttributeInformat
 
     return false;
 }
-
 
 double getValueStandardQueryInfluxDB(Task task) {
     std::string request;
@@ -132,298 +99,102 @@ std::vector<std::string> getCustomResponseQueryNeo4J(Task task) {
     return responseSplitted;
 }
 
-std::vector<primaryKey_t> parsePrimaryKeys(const std::string& jsonPayload) {
-    std::vector<primaryKey_t> result;
-
-    auto j = json::parse(jsonPayload);
-
-    if (j.contains("results") && !j["results"].empty()) {
-        auto& resultObj = j["results"][0];
-
-        if (resultObj.contains("data") && !resultObj["data"].empty()) {
-            auto& rowArray = resultObj["data"][0]["row"];
-
-            if (!rowArray.empty() && rowArray[0].is_array()) {
-                for (const auto& key : rowArray[0]) {
-                    result.push_back(key.get<primaryKey_t>());
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
-std::vector<primaryKey_t> makeUnion(const std::vector<primaryKey_t>& vector1, const std::vector<primaryKey_t>& vector2) {
-    std::unordered_set<primaryKey_t> resultSet(vector1.begin(), vector1.end());
-
-    for (const primaryKey_t& val : vector2) {
-        resultSet.insert(val);
-    }
-
-    return std::vector<primaryKey_t>(resultSet.begin(), resultSet.end());
-}
-
-std::vector<primaryKey_t> makeIntersection(const std::vector<primaryKey_t>& vector1, const std::vector<primaryKey_t>& vector2) {
-    std::unordered_set<primaryKey_t> set1(vector1.begin(), vector1.end());
-    std::unordered_set<primaryKey_t> resultSet;
-
-    for (const primaryKey_t& val : vector2) {
-        if (set1.find(val) != set1.end()) {
-            resultSet.insert(val);
-        }
-    }
-
-    return std::vector<primaryKey_t>(resultSet.begin(), resultSet.end());
-}
-
-std::vector<primaryKey_t> makeDifference(const std::vector<primaryKey_t>& vector1, const std::vector<primaryKey_t>& vector2) {
-    std::unordered_set<primaryKey_t> toRemove(vector2.begin(), vector2.end());
-    std::vector<primaryKey_t> result;
-
-    for (primaryKey_t val : vector1) {
-        if (toRemove.find(val) == toRemove.end()) {
-            result.push_back(val);
-        }
-    }
-
-    return result;
-}
-
-void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
+void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running, Tasks &tasks) {
     std::cout << "started taskExecutor" << std::endl;
-    int pipe_r = pipes[TASKORCHESTRATOR].read;
 
-    std::vector<Task> tasks;
     auto then = std::chrono::steady_clock::now();
     while (true) {
         {
-            union_Requests informationRequest;
-            pipe_ns::MsgType type;
-            ssize_t ret = pipe_ns::readT<union_Requests>(pipe_r, informationRequest, &type);
-            while (ret != -1) {
-                switch (type)
+            std::lock_guard<std::mutex> lock(tasks.mutex);
+            for (Task task : tasks.vec) {
+                switch (task.type)
                 {
-                case pipe_ns::SINGLEATTRIBUTE:
-                    {
-                        tasks.push_back(Task{
-                        .pid            = informationRequest.singleAttribute.pid,
-                        .requestId      = informationRequest.singleAttribute.requestID,
-                        .type           = pipe_ns::SINGLEATTRIBUTE,
-                        .task           = informationRequest.singleAttribute.payload,
-                        });
-                        tasks.back().primaryKeys.push_back(informationRequest.singleAttribute.payload.primaryKey);
-                    }
-                    break;
-                case pipe_ns::AGGREGATEDATTRIBUTE:
-                    {
-                        tasks.push_back(Task{
-                            .pid                = informationRequest.aggregatedAttribute.pid,
-                            .requestId          = informationRequest.aggregatedAttribute.requestID,
-                            .type               = pipe_ns::AGGREGATEDATTRIBUTE,
-                            .task               = informationRequest.aggregatedAttribute.payload,
-                        });
-                        std::string response = curl::push(tree::getPayloadForTree(
-                            std::get<AggregatedAttributesRequest>(tasks.back().task).primaryKey_RootTree1,
-                            std::get<AggregatedAttributesRequest>(tasks.back().task).tree1),
-                            curl::NEO4J
-                        );
-                        std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
+                case SINGLEATTRIBUTE:
+                {
+                    SingleAttributesResponse payload {
+                        .value = getValueStandardQueryInfluxDB(task)
+                    };
+                    server.sendSingleAttributesResponse(payload, task.pid, false);
 
-                        response = curl::push(tree::getPayloadForTree(
-                            std::get<AggregatedAttributesRequest>(tasks.back().task).primaryKey_RootTree2,
-                            std::get<AggregatedAttributesRequest>(tasks.back().task).tree2),
-                            curl::NEO4J
-                        );
-                        std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
-                        
-                        std::vector<primaryKey_t> primaryKeys;
-                        switch (informationRequest.aggregatedAttribute.payload.binOperation)
-                        {
-                        case UNION:
-                            primaryKeys = makeUnion(tree1, tree2);
-                            break;
-                        case INTERSECTION:
-                            primaryKeys = makeIntersection(tree1, tree2);
-                            break;
-                        case DIFFERENCE:
-                            primaryKeys = makeDifference(tree1, tree2);
-                            break;
-                        default:
-                            std::cout << "unknown Operation" << std::endl;
-                            break;
-                        }
-                        tasks.back().primaryKeys.insert(tasks.back().primaryKeys.end(), primaryKeys.begin(), primaryKeys.end());
+                    if (!std::get<SingleAttributesRequest>(task.task).continuous) {
+                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
                     }
                     break;
-                case pipe_ns::CUSTOMATTRIBUTE:
-                    {
-                        tasks.push_back(Task{
-                            .pid        = informationRequest.customAttribute.pid,
-                            .requestId  = informationRequest.customAttribute.requestID,
-                            .type       = pipe_ns::CUSTOMATTRIBUTE,
-                            .task       = CustomAttributesTask{.continuous = informationRequest.customAttribute.payload.continuous}
-                        });
-                        {
-                            std::vector<std::string> queryLines = util::parseStringArray(informationRequest.customAttribute.payload.query);
-                            std::get<CustomAttributesTask>(tasks.back().task).query =
-                                std::accumulate(queryLines.begin(),
-                                queryLines.end(),
-                                std::string(""));
-                        }
-                    }
-                    break;
-                case pipe_ns::AGGREGATEDMEMBER:
-                    {
-                        tasks.push_back(Task{
-                            .pid                = informationRequest.aggregatedMember.pid,
-                            .requestId          = informationRequest.aggregatedMember.requestID,
-                            .type               = pipe_ns::AGGREGATEDMEMBER,
-                            .task               = informationRequest.aggregatedMember.payload
-                        });
-                        std::string response = curl::push(tree::getPayloadForTree(
-                            std::get<AggregatedMemberRequest>(tasks.back().task).primaryKey_RootTree1,
-                            std::get<AggregatedMemberRequest>(tasks.back().task).tree1),
-                            curl::NEO4J
-                        );
-                        std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
+                }
+                case AGGREGATEDATTRIBUTE:
+                {
+                    AggregatedAttributesResponse payload {
+                        .value = getValueStandardQueryInfluxDB(task)
+                    };
+                    server.sendAggregatedAttributesResponse(payload, task.pid, false);
 
-
-                        response = curl::push(tree::getPayloadForTree(
-                            std::get<AggregatedMemberRequest>(tasks.back().task).primaryKey_RootTree2,
-                            std::get<AggregatedMemberRequest>(tasks.back().task).tree2),
-                            curl::NEO4J
-                        );
-                        std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
-
-                        std::vector<primaryKey_t> primaryKeys;
-                        switch (informationRequest.aggregatedMember.payload.binOperation)
-                        {
-                        case UNION:
-                            primaryKeys = makeUnion(tree1, tree2);
-                            break;
-                        case INTERSECTION:
-                            primaryKeys = makeIntersection(tree1, tree2);
-                            break;
-                        case DIFFERENCE:
-                            primaryKeys = makeDifference(tree1, tree2);
-                            break;
-                        default:
-                            std::cout << "unknown Operation" << std::endl;
-                            break;
-                        }
-                        tasks.back().primaryKeys.insert(tasks.back().primaryKeys.end(), primaryKeys.begin(), primaryKeys.end());
+                    if (!std::get<AggregatedAttributesRequest>(task.task).continuous) {
+                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
                     }
                     break;
-                case pipe_ns::CUSTOMMEMBER:
-                    {
-                        tasks.push_back(Task{
-                            .pid            = informationRequest.customMember.pid,
-                            .requestId      = informationRequest.customMember.requestID,
-                            .type           = pipe_ns::CUSTOMMEMBER,
-                            .task           = CustomMemberTask {.continuous = informationRequest.customMember.payload.continuous}
-                        });
-                        {
-                            std::vector<std::string> queryLines = util::parseStringArray(informationRequest.customAttribute.payload.query);
-                            std::get<CustomMemberTask>(tasks.back().task).query =
-                                std::accumulate(queryLines.begin(),
-                                queryLines.end(),
-                                std::string(""));
-                        }
+                }
+                case CUSTOMATTRIBUTE:
+                {
+                    std::vector<std::string> response = getCustomResponseQueryInfluxDB(task);
+
+                    size_t counter = 0;
+                    for (auto line: response) {
+                        CustomAttributesResponse payload {
+                            .number = ++counter,
+                            .total  = response.size(),
+                        };
+                        util::parseString(payload.line, line);
+
+                        server.sendCustomAttributesResponse(payload, task.pid, false);
+                    }
+
+                    if (!std::get<CustomMemberTask>(task.task).continuous) {
+                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
                     }
                     break;
+                }
+                case AGGREGATEDMEMBER:
+                {
+                    u_int16_t counter = 0;
+                    for (auto primKey: task.primaryKeys) {
+                        AggregatedMemberResponse payload {
+                            .number     = ++counter,
+                            .total      = task.primaryKeys.size(),
+                            .primaryKey = primKey                                        
+                        };
+
+                        server.sendAggregatedMemberResponse(payload, task.pid, false);
+                    }
+
+                    if (!std::get<AggregatedMemberRequest>(task.task).continuous) {
+                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                    }
+
+                    break;
+                }
+                case CUSTOMMEMBER:
+                {
+                    std::vector<std::string> response = getCustomResponseQueryNeo4J(task);
+
+                    size_t counter = 0;
+                    for (auto line: response) {
+                        CustomMemberResponse payload {
+                            .number = ++counter,
+                            .total  = response.size(),
+                        };
+                        util::parseString(payload.line, line);
+
+                        server.sendCustomMemberResponse(payload, task.pid, false);
+                    }
+
+                    if (!std::get<CustomMemberTask>(task.task).continuous) {
+                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                    }
+                    break;
+                }
                 default:
                     break;
                 }
-
-                ret = pipe_ns::readT<union_Requests>(pipe_r, informationRequest, &type);
-            };
-        }
-
-        for (Task task : tasks) {
-            switch (task.type)
-            {
-            case pipe_ns::SINGLEATTRIBUTE:
-            {
-                SingleAttributesResponse payload {
-                    .value = getValueStandardQueryInfluxDB(task)
-                };
-                server.sendSingleAttributesResponse(payload, task.pid, false);
-
-                if (!std::get<SingleAttributesRequest>(task.task).continuous) {
-                    tasks.erase(find(tasks.begin(), tasks.end(), task));
-                }
-                break;
-            }
-            case pipe_ns::AGGREGATEDATTRIBUTE:
-            {
-                AggregatedAttributesResponse payload {
-                    .value = getValueStandardQueryInfluxDB(task)
-                };
-                server.sendAggregatedAttributesResponse(payload, task.pid, false);
-
-                if (!std::get<AggregatedAttributesRequest>(task.task).continuous) {
-                    tasks.erase(find(tasks.begin(), tasks.end(), task));
-                }
-                break;
-            }
-            case pipe_ns::CUSTOMATTRIBUTE:
-            {
-                std::vector<std::string> response = getCustomResponseQueryInfluxDB(task);
-
-                size_t counter = 0;
-                for (auto line: response) {
-                    CustomAttributesResponse payload {
-                        .number = ++counter,
-                        .total  = response.size(),
-                    };
-                    util::parseString(payload.line, line);
-
-                    server.sendCustomAttributesResponse(payload, task.pid, false);
-                }
-                break;
-            }
-            case pipe_ns::AGGREGATEDMEMBER:
-            {
-                u_int16_t counter = 0;
-                for (auto primKey: task.primaryKeys) {
-                    AggregatedMemberResponse payload {
-                        .number     = ++counter,
-                        .total      = task.primaryKeys.size(),
-                        .primaryKey = primKey                                        
-                    };
-
-                    server.sendAggregatedMemberResponse(payload, task.pid, false);
-                }
-
-                if (!std::get<AggregatedMemberRequest>(task.task).continuous) {
-                    tasks.erase(find(tasks.begin(), tasks.end(), task));
-                }
-
-                break;
-            }
-            case pipe_ns::CUSTOMMEMBER:
-            {
-                std::vector<std::string> response = getCustomResponseQueryNeo4J(task);
-
-                size_t counter = 0;
-                for (auto line: response) {
-                    CustomMemberResponse payload {
-                        .number = ++counter,
-                        .total  = response.size(),
-                    };
-                    util::parseString(payload.line, line);
-
-                    server.sendCustomMemberResponse(payload, task.pid, false);
-                }
-
-                if (!std::get<CustomMemberTask>(task.task).continuous) {
-                    tasks.erase(find(tasks.begin(), tasks.end(), task));
-                }
-                break;
-            }
-            default:
-                break;
             }
         }
 

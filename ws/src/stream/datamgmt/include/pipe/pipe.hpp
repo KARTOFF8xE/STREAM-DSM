@@ -9,11 +9,6 @@ namespace pipe_ns {
 
 enum MsgType {
     NONE,
-    SINGLEATTRIBUTE,
-    AGGREGATEDATTRIBUTE,
-    CUSTOMATTRIBUTE,
-    AGGREGATEDMEMBER,
-    CUSTOMMEMBER,
 };
 
 struct Header {

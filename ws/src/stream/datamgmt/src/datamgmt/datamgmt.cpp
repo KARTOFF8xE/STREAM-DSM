@@ -24,6 +24,7 @@
 #include "datamgmt/taskOrchestrator/taskOrchestrator.hpp"
 #include "datamgmt/taskExecutor/taskExecutor.hpp"
 #include "datamgmt/datatracer/datatracer.hpp"
+#include "datamgmt/tasks.hpp"
 
 
 void runModule(IpcServer &server, Module_t module_t, Module &module) {
@@ -34,34 +35,6 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
             }
             module.running.store(true);
             module.thread = std::thread(nodeAndTopicObserver, std::cref(server), module.pipes, std::ref(module.running));
-            return;
-        case RELATIONMGMT:
-            if (module.thread.has_value() && module.thread.value().joinable()) {
-                module.thread.value().join();
-            }
-            module.running.store(true);
-            module.thread = std::thread(relationMgmt::relationMgmt, module.pipes, std::ref(module.running));
-            return;
-        case PROCESSOBSERVER:
-            if (module.thread.has_value() && module.thread.value().joinable()) {
-                module.thread.value().join();
-            }
-            module.running.store(true);
-            module.thread = std::thread(processObserver::processObserver, module.pipes, std::ref(module.running));
-            return;
-        case TASKORCHESTRATOR:
-            if (module.thread.has_value() && module.thread.value().joinable()) {
-                module.thread.value().join();
-            }
-            module.running.store(true);
-            module.thread = std::thread(taskOrchestrator::taskOrchestrator, std::cref(server), module.pipes, std::ref(module.running));
-            return;
-        case TASKEXECUTOR:
-            if (module.thread.has_value() && module.thread.value().joinable()) {
-                module.thread.value().join();
-            }
-            module.running.store(true);
-            module.thread = std::thread(taskExecutor::taskExecutor, std::cref(server), module.pipes, std::ref(module.running));
             return;
         case DATATRACER:
             if (module.thread.has_value() && module.thread.value().joinable()) {
@@ -76,9 +49,53 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
     }
 }
 
+
+void runModule(Module_t module_t, Module &module) {
+    switch (module_t) {
+        case RELATIONMGMT:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(relationMgmt::relationMgmt, module.pipes, std::ref(module.running));
+            return;
+        case PROCESSOBSERVER:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(processObserver::processObserver, module.pipes, std::ref(module.running));
+            return;
+        default:
+            std::cerr << "No matching function found" << std::endl;
+            return;
+    }
+}
+
+void runModule(IpcServer &server, Module_t module_t, Module &module, Tasks &tasks) {
+    switch (module_t) {
+        case TASKORCHESTRATOR:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(taskOrchestrator::taskOrchestrator, std::cref(server), module.pipes, std::ref(module.running), std::ref(tasks));
+            return;
+        case TASKEXECUTOR:
+            if (module.thread.has_value() && module.thread.value().joinable()) {
+                module.thread.value().join();
+            }
+            module.running.store(true);
+            module.thread = std::thread(taskExecutor::taskExecutor, std::cref(server), module.pipes, std::ref(module.running), std::ref(tasks));
+            return;
+        default:
+            std::cerr << "No matching function found" << std::endl;
+            return;
+    }
+}
+
 int main() {
     IpcServer nodeAndTopicObsServer(1);
-    IpcServer dummyServer(3);
     IpcServer taskServer(4);
     IpcServer tracerServer(5);
 
@@ -114,15 +131,6 @@ int main() {
     {
         int p[2];
         pipe_ns::getPipe(p);
-        modules[TASKORCHESTRATOR].pipes[TASKEXECUTOR] = pipe_ns::Pipe {
-            .read   = p[0],
-            .write  = p[1],
-        };
-        modules[TASKEXECUTOR].pipes[TASKORCHESTRATOR] = pipe_ns::Pipe {
-            .read   = p[0],
-            .write  = p[1],
-        };
-        pipe_ns::getPipe(p);
         modules[RELATIONMGMT].pipes[TASKORCHESTRATOR] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
@@ -133,18 +141,20 @@ int main() {
         };
     }
 
+
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
-    usleep(250);
-    runModule(dummyServer, RELATIONMGMT, modules[RELATIONMGMT]);
-    usleep(250);
-    runModule(dummyServer, PROCESSOBSERVER, modules[PROCESSOBSERVER]);
-    usleep(250);
-    runModule(taskServer, TASKORCHESTRATOR, modules[TASKORCHESTRATOR]);
-    usleep(250);
-    runModule(taskServer, TASKEXECUTOR, modules[TASKEXECUTOR]);
-    usleep(250);
+        usleep(250);
+    runModule(RELATIONMGMT, modules[RELATIONMGMT]);
+        usleep(250);
+    runModule(PROCESSOBSERVER, modules[PROCESSOBSERVER]);
+        usleep(250);
     runModule(tracerServer, DATATRACER, modules[DATATRACER]);
-    usleep(250);
+        usleep(250);
+    Tasks tasks;
+    runModule(taskServer, TASKORCHESTRATOR, modules[TASKORCHESTRATOR], tasks);
+        usleep(250);
+    runModule(taskServer, TASKEXECUTOR, modules[TASKEXECUTOR], tasks);
+        usleep(250);
 
     auto then = std::chrono::steady_clock::now();
     while (true) {
