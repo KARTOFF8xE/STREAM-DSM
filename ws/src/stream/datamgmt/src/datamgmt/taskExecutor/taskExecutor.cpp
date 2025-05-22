@@ -114,8 +114,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     task.channel->send(
                         sharedMem::Response {
                             .header {
-                                .type           = sharedMem::NUMERICAL,
-                                .payloadSize    = sizeof(sharedMem::NumericalResponse)
+                                .type           = sharedMem::NUMERICAL
                             },
                             .payload {
                                 .numerical {
@@ -137,8 +136,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     task.channel->send(
                         sharedMem::Response {
                             .header {
-                                .type           = sharedMem::NUMERICAL,
-                                .payloadSize    = sizeof(sharedMem::NumericalResponse)
+                                .type           = sharedMem::NUMERICAL
                             },
                             .payload {
                                 .numerical {
@@ -163,8 +161,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     for (auto line: response) {
                         sharedMem::Response resp {
                             .header {
-                                .type           = sharedMem::TEXTUAL,
-                                .payloadSize    = sizeof(sharedMem::TextualResponse),
+                                .type           = sharedMem::TEXTUAL
                             },
                             .payload {
                                 .textual {
@@ -190,8 +187,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                         task.channel->send (
                                 sharedMem::Response {
                                 .header {
-                                    .type           = sharedMem::NUMERICAL,
-                                    .payloadSize    = sizeof(sharedMem::NumericalResponse)
+                                    .type           = sharedMem::NUMERICAL
                                 },
                                 .payload {
                                     .numerical  {
@@ -218,8 +214,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     for (auto line: response) {
                         sharedMem::Response resp {
                             .header {
-                                .type           = sharedMem::TEXTUAL,
-                                .payloadSize    = sizeof(sharedMem::TextualResponse)
+                                .type           = sharedMem::TEXTUAL
                             },
                             .payload {
                                 .textual {
