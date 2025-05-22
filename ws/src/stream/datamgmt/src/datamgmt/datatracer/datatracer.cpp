@@ -37,7 +37,7 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
 
             
             SHMAddressResponse response;
-            util::parseString(response.memAddress, sharedMem::parseShmName(pid, requestID));
+            util::parseString(response.memAddress, sharedMem::composeShmName(pid, requestID));
 
             channels.push_back(std::make_unique<sharedMem::SHMChannel<sharedMem::InputValue>>(response.memAddress, true));
 
@@ -48,7 +48,7 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
 
         for (const auto& channel : channels) {
             sharedMem::InputValue msg;
-            if(!channel->receive(msg)) continue;
+            if(!channel->receive(msg, false)) continue;
             influxDB::ValuePairs v {
                     .primaryKey = msg.primaryKey,
                     .timestamp  = msg.timestamp,

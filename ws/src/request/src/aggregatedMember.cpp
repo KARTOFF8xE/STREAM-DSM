@@ -16,10 +16,14 @@ int main() {
   // std::cin >> pKey;
   requestId_t requestId;
   const AggregatedMemberRequest request{
-    .primaryKey_RootTree1 = 4,
-    .primaryKey_RootTree2 = 11,
-    .tree1 = PROCESSDRIVEN,
-    .tree2 = PROCESSDRIVEN,
+    .rootedTree1 {
+      .primaryKey = 4,
+      .tree       = PROCESSDRIVEN,
+    },
+    .rootedTree2 {
+      .primaryKey = 11,
+      .tree       = PROCESSDRIVEN
+    },
     .binOperation = DIFFERENCE,
     .continuous = false,
   };
@@ -37,7 +41,7 @@ int main() {
   while (true) {
     {
       sharedMem::Response sharedMemResponse {};
-      if (!channel.receive(sharedMemResponse)) continue;
+      if (!channel.receive(sharedMemResponse, false)) continue;
 
       sharedMem::printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }

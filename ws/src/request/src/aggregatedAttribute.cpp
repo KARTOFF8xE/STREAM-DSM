@@ -17,7 +17,7 @@ void printResponse<sharedMem::NumericalResponse>(const sharedMem::Response& resp
         return;
     }
 
-    const sharedMem::NumericalResponse& nr = response.payload.numerical;
+    const sharedMem::NumericalResponse& nr = response.numerical;
     std::cout << "NumericalResponse:\n";
     std::cout << "  Number: " << nr.number << "\n";
     std::cout << "  Total: " << nr.total << "\n";
@@ -31,7 +31,7 @@ void printResponse<sharedMem::TextualResponse>(const sharedMem::Response& respon
         return;
     }
 
-    const sharedMem::TextualResponse& tr = response.payload.textual;
+    const sharedMem::TextualResponse& tr = response.textual;
     std::cout << "TextualResponse:\n";
     std::cout << "  Number: " << tr.number << "\n";
     std::cout << "  Total: " << tr.total << "\n";
@@ -49,10 +49,14 @@ int main() {
   // std::cin >> pKey;
   requestId_t requestId;
   const AggregatedAttributesRequest request{
-    .primaryKey_RootTree1 = 4,
-    .primaryKey_RootTree2 = 11,
-    .tree1 = PROCESSDRIVEN,
-    .tree2 = PROCESSDRIVEN,
+    .rootedTree1 {
+      .primaryKey = 4,
+      .tree       = PROCESSDRIVEN,
+    },
+    .rootedTree2 {
+      .primaryKey = 11,
+      .tree       = PROCESSDRIVEN
+    },
     .attribute = CPU_UTILIZATION,
     .binOperation = DIFFERENCE,
     .continuous = true,
@@ -70,7 +74,7 @@ int main() {
   while (true) {
     {
       sharedMem::Response sharedMemResponse {};
-      if (!channel.receive(sharedMemResponse)) continue;
+      if (!channel.receive(sharedMemResponse, false)) continue;
 
       sharedMem::printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }

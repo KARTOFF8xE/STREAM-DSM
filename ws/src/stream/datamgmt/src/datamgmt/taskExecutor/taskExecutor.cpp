@@ -116,12 +116,10 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                             .header {
                                 .type           = sharedMem::NUMERICAL
                             },
-                            .payload {
-                                .numerical {
-                                    .number = 1,
-                                    .total  = 1,
-                                    .value  = getValueStandardQueryInfluxDB(task)
-                                }
+                            .numerical {
+                                .number = 1,
+                                .total  = 1,
+                                .value  = getValueStandardQueryInfluxDB(task)
                             }
                         }
                     );
@@ -138,12 +136,10 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                             .header {
                                 .type           = sharedMem::NUMERICAL
                             },
-                            .payload {
-                                .numerical {
-                                    .number = 1,
-                                    .total  = 1,
-                                    .value  = getValueStandardQueryInfluxDB(task)
-                                }
+                            .numerical {
+                                .number = 1,
+                                .total  = 1,
+                                .value  = getValueStandardQueryInfluxDB(task)
                             }
                         }
                     );
@@ -163,14 +159,12 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                             .header {
                                 .type           = sharedMem::TEXTUAL
                             },
-                            .payload {
-                                .textual {
-                                    .number = ++counter,
-                                    .total  = response.size()
-                                }
+                            .textual {
+                                .number = ++counter,
+                                .total  = response.size()
                             }
                         };
-                        util::parseString(resp.payload.textual.line, line);
+                        util::parseString(resp.textual.line, line);
 
                         task.channel->send(resp);
                     }
@@ -189,12 +183,10 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                                 .header {
                                     .type           = sharedMem::NUMERICAL
                                 },
-                                .payload {
-                                    .numerical  {
-                                        .number = ++counter,
-                                        .total  = task.primaryKeys.size(),
-                                        .value  = double(primKey)
-                                    }
+                                .numerical  {
+                                    .number = ++counter,
+                                    .total  = task.primaryKeys.size(),
+                                    .value  = double(primKey)
                                 }
                             }
                         );
@@ -216,14 +208,12 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                             .header {
                                 .type           = sharedMem::TEXTUAL
                             },
-                            .payload {
-                                .textual {
-                                    .number = ++counter,
-                                    .total  = response.size()
-                                }
+                            .textual {
+                                .number = ++counter,
+                                .total  = response.size()
                             }
                         };
-                        util::parseString(resp.payload.textual.line, line);
+                        util::parseString(resp.textual.line, line);
 
                         task.channel->send(resp);
                     }

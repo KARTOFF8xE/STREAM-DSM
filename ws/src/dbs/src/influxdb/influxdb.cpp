@@ -60,7 +60,7 @@ namespace influxDB {
         return oss.str();
     }
 
-    std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, std::vector<primaryKey_t> primaryKeys) {
+    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, std::vector<primaryKey_t> primaryKeys) {
         std::string attr;
 
         switch (attribute) {
