@@ -44,11 +44,18 @@ void Publisher::toGraph(std::string payload) {
 }
 
 std::string Publisher::getTimeSeriesPayload() {
-    return influxDB::createPayloadSingleVal(influxDB::PUBLISHER, this->primaryKey, 1);    
+    return influxDB::createPayloadSingleVal(
+        influxDB::ValuePairs {
+            .attribute  = influxDB::PUBLISHER,
+            .primaryKey = this->primaryKey,
+            .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
+            .value      = 1,
+        }
+    );    
 }
 
 void Publisher::toTimeSeries(std::string payload) {
-    std::string response = curl::push(payload, curl::INFLUXDB);
+    std::string response = curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
 void Publisher::response(Communication &communication) {

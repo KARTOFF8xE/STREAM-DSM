@@ -19,7 +19,7 @@ using namespace std::chrono_literals;
 using json = nlohmann::json;
 
 
-void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
+void singleTimeNodeResponse(const IpcServer &server, Client client, primaryKey_t primaryKey) {
     std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -145,7 +145,7 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
     }
 }
 
-void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey) {
+void singleTimeTopicResponse(const IpcServer &server, Client client, primaryKey_t primaryKey) {
     std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -189,14 +189,14 @@ void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t prim
     }
 }
 
-void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
-    std::cout << "started procObserver" << std::endl;
+void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
+    std::cout << "started nodeAndTopicObserver" << std::endl;
     int pipe_r = pipes[MAIN].read;
     // int pipe_writeToRelationMgmt = pipes[RELATIONMGMT].write;
 
     std::vector<Client> clients;
     std::vector<pid_t> pids;
-    
+
     IpcClient ipcClient(2);
     requestId_t requestId;
     {
@@ -212,11 +212,36 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, Pipe> pipe
         bool receivedMessage = false;
         ssize_t ret = -1;
 
-        ret = readT<Client>(pipe_r, client);
-        while (ret != -1) {
-            handleClient(client, clients);
-            ret = readT<Client>(pipe_r, client);
-        };
+        bool gotRequest;
+        do {
+            gotRequest = false;
+            {
+                std::optional<NodeRequest> request = server.receiveNodeRequest(client.requestId, client.pid, false);
+                if (request.has_value()) {
+                    NodeRequest payload = request.value();
+                    client.primaryKey   = payload.primaryKey;
+                    client.updates      = payload.updates;
+
+                    if (client.updates)  handleClient(client, clients);
+
+                    singleTimeNodeResponse(server, client, payload.primaryKey);
+                    gotRequest = true;
+                }
+            }
+            {
+                std::optional<TopicRequest> request = server.receiveTopicRequest(client.requestId, client.pid, false);
+                if (request.has_value()) {
+                    TopicRequest payload = request.value();
+                    client.primaryKey   = payload.primaryKey;
+                    client.updates      = payload.updates;
+                    
+                    if (client.updates) handleClient(client, clients);
+
+                    singleTimeTopicResponse(server, client, payload.primaryKey);
+                    gotRequest = true;
+                }
+            }
+        } while (gotRequest);
 
         /*
         for (const pid_t &pid : pids) {
@@ -454,7 +479,7 @@ bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, con
             }
         }
 
-        writeT<NodeResponse>(pipeToRelationMgmt_w, payload);
+        pipe_ns::writeT<NodeResponse>(pipeToRelationMgmt_w, payload);
 
         return true;
     }

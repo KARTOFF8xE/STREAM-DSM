@@ -25,7 +25,7 @@ namespace node {
 
     std::string getPayloadRequestByPrimaryKey(pid_t pid) {
         return fmt::format(R"(
-            {{ nodeRequest
+            {{
                 "statements":
                     [
                         {{ "statement": "MATCH (n) WITH n, toInteger(last(SPLIT(elementId(n), \":\"))) AS extractedId WHERE extractedId = $primaryKey OPTIONAL MATCH (n)-[r]->(outgoingNeighbor) WITH n, elementId(n) AS fullElementId, extractedId, toInteger(n.pid) AS pid, type(r) AS outgoingRelType, collect({{id: toInteger(last(SPLIT(elementId(outgoingNeighbor), \":\"))), name: r.name, direction: 'outgoing'}}) AS outgoingNeighbors OPTIONAL MATCH (n)<-[r2]-(incomingNeighbor) WITH n, fullElementId, extractedId, pid, outgoingNeighbors, outgoingRelType, type(r2) AS incomingRelType, collect({{id: toInteger(last(SPLIT(elementId(incomingNeighbor), \":\"))), name: r2.name, direction: 'incoming'}}) AS incomingNeighbors RETURN DISTINCT n {{.*, pid: pid}}, collect(DISTINCT {{relationship: outgoingRelType, nodes: outgoingNeighbors}}) AS outgoing, collect(DISTINCT {{relationship: incomingRelType, nodes: incomingNeighbors}}) AS incoming ",

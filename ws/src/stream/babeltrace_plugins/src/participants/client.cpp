@@ -66,13 +66,27 @@ void Client::toGraph(std::string payload) {
 std::string Client::getTimeSeriesPayload() {
     if (this->name.find("/_action/") != std::string::npos) return "";
 
-    if (this->isAction) return influxDB::createPayloadSingleVal(influxDB::ACTIONCLIENT, this->primaryKey, 1);
+    if (this->isAction) return influxDB::createPayloadSingleVal(
+        influxDB::ValuePairs {
+            .attribute  = influxDB::ACTIONCLIENT,
+            .primaryKey = this->primaryKey,
+            .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
+            .value      = 1,
+        }
+    );
 
-    return influxDB::createPayloadSingleVal(influxDB::CLIENT, this->primaryKey, 1);
+    return influxDB::createPayloadSingleVal(
+        influxDB::ValuePairs {
+            .attribute  = influxDB::CLIENT,
+            .primaryKey = this->primaryKey,
+            .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
+            .value      = 1,
+        }
+    );
 }
 
 void Client::toTimeSeries(std::string payload) {
-    curl::push(payload, curl::INFLUXDB);
+    curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
 void Client::response(Communication &communication) {

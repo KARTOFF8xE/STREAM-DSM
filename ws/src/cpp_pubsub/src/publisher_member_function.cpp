@@ -56,8 +56,8 @@ int main(int argc, char * argv[])
     rclcpp::executors::SingleThreadedExecutor executor;
     rclcpp::Node::SharedPtr node1 = std::make_shared<MinimalPublisher>();
     executor.add_node(node1);
-    rclcpp::Node::SharedPtr node2 = std::make_shared<MinimalPublisher>();
-    executor.add_node(node2);
+    // rclcpp::Node::SharedPtr node2 = std::make_shared<MinimalPublisher>();
+    // executor.add_node(node2);
     executor.spin();
   rclcpp::shutdown();
   return 0;

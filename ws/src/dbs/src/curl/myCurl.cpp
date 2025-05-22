@@ -62,7 +62,7 @@ CURL *getCurlNeo4j(Request &request) {
 }
 
 
-CURL *getCurlInfluxDB(Request &request) {
+CURL *getCurlInfluxDB_write(Request &request) {
     request.url = "http://172.17.0.1:8086/api/v2/write?org=TUBAF&bucket=STREAM&precision=ns";
     const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
 
@@ -83,11 +83,47 @@ CURL *getCurlInfluxDB(Request &request) {
     return curl;
 }
 
+CURL *getCurlInfluxDB_read(Request &request) {
+    request.url = "http://172.17.0.1:8086/api/v2/query?org=TUBAF&bucket=STREAM&precision=ns";
+    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
+        return NULL;
+    }
+
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/vnd.flux");
+    headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
+    curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
+
+    return curl;
+}
 
 std::string push(std::string payload, const Destination destination) {
     struct Request request;
 
-    CURL *curl = ((destination == NEO4J) ? getCurlNeo4j(request) : getCurlInfluxDB(request));
+    CURL *curl;// = ((destination == NEO4J) ? getCurlNeo4j(request) : getCurlInfluxDB(request));
+    switch (destination)
+    {
+    case NEO4J:
+        curl = getCurlNeo4j(request);
+        break;
+    case INFLUXDB_WRITE:
+        curl = getCurlInfluxDB_write(request);
+        break;
+    case INFLUXDB_READ:
+        curl = getCurlInfluxDB_read(request);
+        break;
+    default:
+        std::cerr << "unknown request" << std::endl;
+        break;
+    }
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
     CURLcode res = curl_easy_perform(curl);
@@ -98,6 +134,7 @@ std::string push(std::string payload, const Destination destination) {
         if (destination == NEO4J) {
             nlohmann::json j = request.query_response;
             if (j.contains("errors") && !j["errors"].empty()) {
+                std::cout << request.query_response << std::endl;
                 std::string code = j["errors"][0]["code"];
                 std::string message = j["errors"][0]["message"];
                 std::cout << "Error Code: " << code << std::endl;

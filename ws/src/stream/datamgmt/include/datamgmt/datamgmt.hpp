@@ -15,19 +15,22 @@ enum Module_t {
     NODEANDTOPICOBSERVER,
     RELATIONMGMT,
     PROCESSOBSERVER,
+    TASKORCHESTRATOR,
+    TASKEXECUTOR,
+    DATATRACER,
     LASTOPTION,
     MAIN
 };
 
 struct Module {
-    std::optional<std::thread> thread;
-    std::map<Module_t, Pipe>   pipes;
-    std::atomic<bool>          running;
+    std::optional<std::thread>          thread;
+    std::map<Module_t, pipe_ns::Pipe>   pipes;
+    std::atomic<bool>                   running;
 
     Module() {
         int p[2];
-        getPipe(p);
-        this->pipes[MAIN] = Pipe {
+        pipe_ns::getPipe(p);
+        this->pipes[MAIN] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };

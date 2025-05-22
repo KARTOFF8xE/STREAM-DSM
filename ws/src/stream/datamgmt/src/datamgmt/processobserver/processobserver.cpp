@@ -19,7 +19,6 @@ using namespace std::chrono_literals;
 #include <neo4j/roots/roots.hpp>
 #include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
-
 #include "datamgmt/utils.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
@@ -226,7 +225,7 @@ std::string getMacAddress() {
 
 namespace processObserver {
 
-void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running) {
+void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started processObserver" << std::endl;
     
     std::vector<FullProcessData> processVec;
@@ -275,19 +274,25 @@ void processObserver(std::map<Module_t, Pipe> pipes, std::atomic<bool> &running)
 
         }
         curl::push(
-            influxDB::createPayloadMultipleValSameTime(influxDB::CPU_UTILIZATION, pairs),
-            curl::INFLUXDB
+            influxDB::createPayloadMultipleValSameTime(pairs),
+            curl::INFLUXDB_WRITE
         );
         
         calcCPUUtil(cpuData);
+        
         curl::push(
-            influxDB::createPayloadSingleVal(influxDB::CPU_UTILIZATION, cpuData.primaryKey, cpuData.utilization),
-            curl::INFLUXDB
+            influxDB::createPayloadSingleVal(influxDB::ValuePairs {
+                .attribute  = influxDB::CPU_UTILIZATION,
+                .primaryKey = cpuData.primaryKey,
+                .timestamp  = std::chrono::high_resolution_clock::now().time_since_epoch(),
+                .value      = cpuData.utilization,
+            }),
+            curl::INFLUXDB_WRITE
         );
 
         NodeResponse response;
         ssize_t ret = -1;
-        ret = readT<NodeResponse>(pipes[RELATIONMGMT].read, response);
+        ret = pipe_ns::readT<NodeResponse>(pipes[RELATIONMGMT].read, response);
         if (ret == -1) {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
