@@ -11,13 +11,14 @@
 #include "interface.hpp"
 #include "sink.hpp"
 #include "participantFactory.hpp"
+#include "participants.hpp"
 
 static bt_component_class_initialize_method_status publisher_initialize(
         bt_self_component_sink *self_component_sink,
         bt_self_component_sink_configuration *,
         const bt_value *params, void *) {
 
-    struct publisher *publisher = new struct publisher();
+    struct publisher *publisher = new struct publisher("/babeltonato");
 
     bt_self_component_set_data(
         bt_self_component_sink_as_self_component(self_component_sink),
@@ -94,34 +95,8 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
     struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
 
-    const bt_event *event = bt_message_event_borrow_event_const(message);
-    const bt_event_class *event_class = bt_event_borrow_class_const(event);
-
-    IParticipant *participant;
-    participant = ParticipantFactory::getParticipant(bt_event_class_get_name(event_class));
-
-    participant->extractInfo(event);
-    participant->toGraph(participant->getGraphPayload());
-    participant->toTimeSeries(participant->getTimeSeriesPayload());
-
-    // 1) Identifizieren anhand von:    bt_event_class_get_name(event_class)
-    // 2) extrahieren mittels:          participant->extractInfo(event)
-    // 3) senden an:                    "/babel/nato"
-
-    if (publisher->sendToNodeObserver) participant->response(publisher->communication);
-
-    delete(participant);
-    return;
-
-    // /***unknown Topic***/
-    // std::cout << "unknown topic" << std::endl;
-    //     std::cout << bt_event_class_get_name(event_class) << std::endl;
-    //     /***analyze context***/
-    //     const bt_field *ctx_field = bt_event_borrow_common_context_field_const(event);
-    //     analyzeField(ctx_field);
-    //     /***analyze payload***/
-    //     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
-    //     analyzeField(payload_field);
+    sharedMem::TraceMessage msg = extractTracedMessage(message);
+    publisher->channel.send(msg);
 }
 
 bt_component_class_sink_consume_method_status publisher_consume(
@@ -148,15 +123,6 @@ bt_component_class_sink_consume_method_status publisher_consume(
             break;
     }
 
-    std::optional<NodeSwitchRequest> request = publisher->communication.server.receiveNodeSwitchRequest(
-        publisher->communication.requestId,
-        publisher->communication.pid,
-        false
-    );
-    if (request.has_value()) {
-        publisher->sendToNodeObserver = request.value().updates;
-    }
-
     for (uint64_t i = 0; i < message_count; i++) {
         const bt_message *message = messages[i];
 
@@ -175,7 +141,7 @@ BT_PLUGIN_MODULE();
 BT_PLUGIN(publisher);
 
 BT_PLUGIN_AUTHOR("KARTOFF8xE");
-BT_PLUGIN_DESCRIPTION("This Plugin publishes a message onto a given Topic.");
+BT_PLUGIN_DESCRIPTION("This plugin publishes ROS2 information to the shared memory location: /babeltonato");
 BT_PLUGIN_VERSION(0, 0, 1, "dev");
 
 BT_PLUGIN_SINK_COMPONENT_CLASS(output, publisher_consume);

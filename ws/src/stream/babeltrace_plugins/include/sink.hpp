@@ -1,16 +1,22 @@
 #include <babeltrace2/babeltrace.h>
 
+#include "ipc/sharedMem.hpp"
+
 #include "common.hpp"
 #include "interface.hpp"
+
+#include <memory>
 
 
 struct publisher {
     bt_message_iterator *message_iterator;
-    Communication communication;
-
-    bool sendToNodeObserver = false;
     
-    publisher() : communication{ IpcServer(2), 0, 0 } {}
+    sharedMem::SHMChannel<sharedMem::TraceMessage> channel;
+    
+    publisher(const std::string& name)
+        : channel(name.c_str(), true)
+    {}
+
 };
 
 /**

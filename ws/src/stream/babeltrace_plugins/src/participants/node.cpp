@@ -87,15 +87,15 @@ void Node::toTimeSeries(std::string payload) {
     std::string response = curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
-void Node::response(Communication &communication) {
-    NodeResponse msg {
-        .primaryKey = this->primaryKey,
-        .alive = true,
-        .aliveChangeTime = this->stateChangeTime,
-        .bootCount = this->bootcounter,
-        .pid = (pid_t) this->pid,
-    };
-    util::parseString(msg.name, this->getFullName());
+// void Node::response(Communication &communication) {
+//     NodeResponse msg {
+//         .primaryKey = this->primaryKey,
+//         .alive = true,
+//         .aliveChangeTime = this->stateChangeTime,
+//         .bootCount = this->bootcounter,
+//         .pid = (pid_t) this->pid,
+//     };
+//     util::parseString(msg.name, this->getFullName());
 
-    communication.server.sendNodeResponse(msg, communication.pid, false);
-}
+//     communication.server.sendNodeResponse(msg, communication.pid, false);
+// }

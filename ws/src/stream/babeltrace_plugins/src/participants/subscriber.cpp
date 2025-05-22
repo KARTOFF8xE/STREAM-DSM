@@ -58,14 +58,14 @@ void Subscriber::toTimeSeries(std::string payload) {
     std::string response = curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
-void Subscriber::response(Communication &communication) {
-    if (this->name.find("/_action/") != std::string::npos) return;
+// void Subscriber::response(Communication &communication) {
+//     if (this->name.find("/_action/") != std::string::npos) return;
 
-    NodeSubscribersToUpdate msg {
-        .primaryKey     = this->node_primaryKey,
-        .subscribesTo   = this->primaryKey,
-        .isUpdate       = true,
-    };
+//     NodeSubscribersToUpdate msg {
+//         .primaryKey     = this->node_primaryKey,
+//         .subscribesTo   = this->primaryKey,
+//         .isUpdate       = true,
+//     };
 
-    communication.server.sendNodeSubscribersToUpdate(msg, communication.pid, false);
-}
+//     communication.server.sendNodeSubscribersToUpdate(msg, communication.pid, false);
+// }

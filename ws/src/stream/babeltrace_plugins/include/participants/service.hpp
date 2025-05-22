@@ -56,5 +56,5 @@ class Service: public IParticipant {
          * @param communication Reference to a Communication object used for sending the response.
          * @param enabled Enables/Disables if messages are being send.
          */
-        void response(Communication &communication);
+        // void response(Communication &communication);
 };

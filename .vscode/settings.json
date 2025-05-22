@@ -98,5 +98,6 @@
         "spanstream": "cpp",
         "stdfloat": "cpp",
         "syncstream": "cpp"
-    }
+    },
+    "explorer.autoReveal": false
 }

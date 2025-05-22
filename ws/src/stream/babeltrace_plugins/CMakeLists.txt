@@ -22,6 +22,7 @@ add_library(sink SHARED
     src/participants/subscriber.cpp
     src/participants/publisher.cpp
     src/participants/subscriber.cpp
+    src/participants.cpp
 )
 
 target_include_directories(sink PRIVATE include)

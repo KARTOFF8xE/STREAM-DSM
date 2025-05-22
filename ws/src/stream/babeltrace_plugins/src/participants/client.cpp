@@ -89,29 +89,29 @@ void Client::toTimeSeries(std::string payload) {
     curl::push(payload, curl::INFLUXDB_WRITE);
 }
 
-void Client::response(Communication &communication) {
-    if (!this->isAction) {
-        for (primaryKey_t item : this->server_primaryKeys) {
-            NodeIsClientOfUpdate msg {
-                .primaryKey     = this->primaryKey,
-                .serverNodeId   = item,
-                .isUpdate       = true,
-            };
-            util::parseString(msg.srvName, this->name);
+// void Client::response(Communication &communication) {
+//     if (!this->isAction) {
+//         for (primaryKey_t item : this->server_primaryKeys) {
+//             NodeIsClientOfUpdate msg {
+//                 .primaryKey     = this->primaryKey,
+//                 .serverNodeId   = item,
+//                 .isUpdate       = true,
+//             };
+//             util::parseString(msg.srvName, this->name);
             
-            communication.server.sendNodeIsClientOfUpdate(msg, communication.pid, false);
-        }
-    } else {
-        if (this->name.find("/_action/") != std::string::npos) return;
-        for (primaryKey_t item : this->server_primaryKeys) {
-            NodeIsActionClientOfUpdate msg {
-                .primaryKey         = this->primaryKey,
-                .actionserverNodeId = item,
-                .isUpdate           = true,
-            };
-            util::parseString(msg.srvName, this->name);
+//             communication.server.sendNodeIsClientOfUpdate(msg, communication.pid, false);
+//         }
+//     } else {
+//         if (this->name.find("/_action/") != std::string::npos) return;
+//         for (primaryKey_t item : this->server_primaryKeys) {
+//             NodeIsActionClientOfUpdate msg {
+//                 .primaryKey         = this->primaryKey,
+//                 .actionserverNodeId = item,
+//                 .isUpdate           = true,
+//             };
+//             util::parseString(msg.srvName, this->name);
 
-            communication.server.sendNodeIsActionClientOfUpdate(msg, communication.pid, false);
-        }
-    }
-}
+//             communication.server.sendNodeIsActionClientOfUpdate(msg, communication.pid, false);
+//         }
+//     }
+// }

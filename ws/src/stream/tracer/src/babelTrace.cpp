@@ -72,6 +72,9 @@ int find_existing_instances_at_ip(const char *ip, bt_component_class_source *sou
 }
 
 int main() {
+    // hello world kekw
+    // bt_logging_set_global_level(bt_logging_level::BT_LOGGING_LEVEL_TRACE);
+
     /***Load Plugin source.ctf.lttng-live***/
     printf("Load Plugin ctf.lttng-live....."); fflush(stdout);
     const bt_plugin *plugin_lttnglive;
