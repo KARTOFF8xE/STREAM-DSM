@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "common.hpp"
+
 #include <ipc/ipc-client.hpp>
 #include <ipc/sharedMem.hpp>
 #include <ipc/util.hpp>
@@ -18,8 +20,6 @@ std::vector<std::string> getCustomResponseQuery(std::string str) {
     
     return splitted;
 }
-
-
 
 int main() {
   std::cout << "Make a Custom Member Request..." << std::endl;
@@ -50,7 +50,7 @@ int main() {
       sharedMem::Response sharedMemResponse {};
       if (!channel.receive(sharedMemResponse, false)) continue;
 
-      sharedMem::printResponse<sharedMem::TextualResponse>(sharedMemResponse);
+      printResponse<sharedMem::TextualResponse>(sharedMemResponse);
     }
   }
 }

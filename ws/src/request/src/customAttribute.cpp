@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "common.hpp"
+
 #include <ipc/ipc-client.hpp>
 #include <ipc/sharedMem.hpp>
 #include <ipc/util.hpp>
@@ -48,7 +50,7 @@ int main() {
       sharedMem::Response sharedMemResponse {};
       if (!channel.receive(sharedMemResponse, false)) continue;
 
-      sharedMem::printResponse<sharedMem::TextualResponse>(sharedMemResponse);
+      printResponse<sharedMem::TextualResponse>(sharedMemResponse);
     }
   }
 }

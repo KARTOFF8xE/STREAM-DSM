@@ -104,6 +104,9 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
     participant->toGraph(participant->getGraphPayload());
     participant->toTimeSeries(participant->getTimeSeriesPayload());
 
+    // 1) Identifizieren anhand von:    bt_event_class_get_name(event_class)
+    // 2) extrahieren mittels:          participant->extractInfo(event)
+    // 3) senden an:                    "/babel/nato"
 
     if (publisher->sendToNodeObserver) participant->response(publisher->communication);
 

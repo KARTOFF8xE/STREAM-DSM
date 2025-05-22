@@ -1,43 +1,12 @@
 #include <iostream>
 
+#include "common.hpp"
+
 #include <ipc/ipc-client.hpp>
 #include <ipc/sharedMem.hpp>
 
 #include <chrono>
 #include <thread>
-
-
-template<typename T>
-void printResponse(const sharedMem::Response& response);
-
-template<>
-void printResponse<sharedMem::NumericalResponse>(const sharedMem::Response& response) {
-    if (response.header.type != sharedMem::ResponseType::NUMERICAL) {
-        std::cerr << "Error: Response is not of type NUMERICAL\n";
-        return;
-    }
-
-    const sharedMem::NumericalResponse& nr = response.numerical;
-    std::cout << "NumericalResponse:\n";
-    std::cout << "  Number: " << nr.number << "\n";
-    std::cout << "  Total: " << nr.total << "\n";
-    std::cout << "  Value: " << nr.value << "\n";
-}
-
-template<>
-void printResponse<sharedMem::TextualResponse>(const sharedMem::Response& response) {
-    if (response.header.type != sharedMem::ResponseType::TEXTUAL) {
-        std::cerr << "Error: Response is not of type TEXTUAL\n";
-        return;
-    }
-
-    const sharedMem::TextualResponse& tr = response.textual;
-    std::cout << "TextualResponse:\n";
-    std::cout << "  Number: " << tr.number << "\n";
-    std::cout << "  Total: " << tr.total << "\n";
-    std::cout << "  Line:   " << tr.line << "\n";
-}
-
 
 int main() {
   std::cout << "Make a Aggregated Attribute Request..." << std::endl;
@@ -76,7 +45,7 @@ int main() {
       sharedMem::Response sharedMemResponse {};
       if (!channel.receive(sharedMemResponse, false)) continue;
 
-      sharedMem::printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
+      printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }
   }
 }
