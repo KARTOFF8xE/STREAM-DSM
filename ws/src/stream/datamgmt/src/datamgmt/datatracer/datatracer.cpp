@@ -19,29 +19,10 @@ using namespace std::chrono_literals;
 
 namespace datatracer {
 
-
-std::string parseShmName(const std::string& input) {
-    if (input.empty() || input[0] != '/') {
-        throw std::invalid_argument("Input must start with '/'");
-    }
-
-    std::string output = "/";
-    for (size_t i = 1; i < input.length(); ++i) {
-        char ch = input[i];
-        if (std::isdigit(ch)) {
-            output += static_cast<char>('a' + (ch - '0'));
-        } else {
-            output += ch;
-        }
-    }
-
-    return output;
-}
-
 void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started Tracer (Endpoint)" << std::endl;
 
-    std::vector<std::unique_ptr<sharedMem::SHMChannel>> channels;
+    std::vector<std::unique_ptr<sharedMem::SHMChannel<sharedMem::InputValue>>> channels;
 
     auto then = std::chrono::steady_clock::now();
     auto start = std::chrono::high_resolution_clock::now();
@@ -54,21 +35,19 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
         if (request.has_value()) {
             SHMAddressRequest payload = request.value();
 
-            char address[MAX_STRING_SIZE];
-            sprintf(address, "/%d%d", pid, requestID);
+            
             SHMAddressResponse response;
+            util::parseString(response.memAddress, sharedMem::parseShmName(pid, requestID));
 
-            util::parseString(response.memAdress, parseShmName(address));
-
-            channels.push_back(std::make_unique<sharedMem::SHMChannel>(response.memAdress, true));
+            channels.push_back(std::make_unique<sharedMem::SHMChannel<sharedMem::InputValue>>(response.memAddress, true));
 
             server.sendSHMAddressResponse(response, pid, false);
-            std::cout << "response.memAdress: " << response.memAdress << std::endl;
+            std::cout << "response.memAddress: " << response.memAddress << std::endl;
             continue;
         }
 
         for (const auto& channel : channels) {
-            sharedMem::Value msg;
+            sharedMem::InputValue msg;
             if(!channel->receive(msg)) continue;
             influxDB::ValuePairs v {
                     .primaryKey = msg.primaryKey,

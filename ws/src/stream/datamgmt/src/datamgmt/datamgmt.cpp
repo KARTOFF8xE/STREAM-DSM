@@ -72,25 +72,33 @@ void runModule(IpcServer &server, Module_t module_t, Module &module) {
 }
 
 void runModule(IpcServer &server, Module_t module_t, Module &module, Tasks &tasks) {
-    switch (module_t) {
-        case TASKORCHESTRATOR:
+    // switch (module_t) {
+    //     case TASKORCHESTRATOR:
             if (module.thread.has_value() && module.thread.value().joinable()) {
                 module.thread.value().join();
             }
             module.running.store(true);
             module.thread = std::thread(taskOrchestrator::taskOrchestrator, std::cref(server), module.pipes, std::ref(module.running), std::ref(tasks));
             return;
-        case TASKEXECUTOR:
+    //     default:
+    //         std::cerr << "No matching function found" << std::endl;
+    //         return;
+    // }
+}
+
+void runModule(Module_t module_t, Module &module, Tasks &tasks) {
+    // switch (module_t) {
+    //     case TASKEXECUTOR:
             if (module.thread.has_value() && module.thread.value().joinable()) {
                 module.thread.value().join();
             }
             module.running.store(true);
-            module.thread = std::thread(taskExecutor::taskExecutor, std::cref(server), module.pipes, std::ref(module.running), std::ref(tasks));
+            module.thread = std::thread(taskExecutor::taskExecutor, module.pipes, std::ref(module.running), std::ref(tasks));
             return;
-        default:
-            std::cerr << "No matching function found" << std::endl;
-            return;
-    }
+        // default:
+        //     std::cerr << "No matching function found" << std::endl;
+        //     return;
+    // }
 }
 
 int main() {
@@ -152,7 +160,7 @@ int main() {
     Tasks tasks;
     runModule(taskServer, TASKORCHESTRATOR, modules[TASKORCHESTRATOR], tasks);
         usleep(250);
-    runModule(taskServer, TASKEXECUTOR, modules[TASKEXECUTOR], tasks);
+    runModule(TASKEXECUTOR, modules[TASKEXECUTOR], tasks);
         usleep(250);
 
     auto then = std::chrono::steady_clock::now();

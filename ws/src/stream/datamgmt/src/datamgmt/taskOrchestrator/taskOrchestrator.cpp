@@ -34,15 +34,23 @@ bool receiveIPCClientStandardSingleAttributeRequest(const IpcServer &ipcServer, 
     return false;
 }
 
-void addSingleAttributeTask(SingleAttributeInformationRequest singleAttributeInformationRequest, Tasks &tasks) {
+void addSingleAttributeTask(const IpcServer &server, SingleAttributeInformationRequest singleAttributeInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
+    std::string memAddress = sharedMem::parseShmName(singleAttributeInformationRequest.pid, singleAttributeInformationRequest.requestID);
+
+    SingleAttributesResponse resp;
+    util::parseString(resp.memAddress, memAddress);
+
     tasks.vec.push_back(Task{
         .pid            = singleAttributeInformationRequest.pid,
         .requestId      = singleAttributeInformationRequest.requestID,
         .type           = SINGLEATTRIBUTE,
         .task           = singleAttributeInformationRequest.payload,
+        .channel        = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
     });
+
     tasks.vec.back().primaryKeys.push_back(singleAttributeInformationRequest.payload.primaryKey);
+    server.sendSingleAttributesResponse(resp, singleAttributeInformationRequest.pid, false);
 }
 
 bool receiveIPCClientStandardAggregatedAttributeRequest(const IpcServer &ipcServer, AggregatedAttributeInformationRequest &receivedRequest) {
@@ -116,13 +124,19 @@ std::vector<primaryKey_t> parsePrimaryKeys(const std::string& jsonPayload) {
     return result;
 }
 
-void addAggregatedAttributeTask(AggregatedAttributeInformationRequest aggregatedAttributeInformationRequest, Tasks &tasks) {
+void addAggregatedAttributeTask(const IpcServer &server, AggregatedAttributeInformationRequest aggregatedAttributeInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
-    tasks.vec.push_back(Task{
-        .pid                = aggregatedAttributeInformationRequest.pid,
-        .requestId          = aggregatedAttributeInformationRequest.requestID,
-        .type               = AGGREGATEDATTRIBUTE,
-        .task               = aggregatedAttributeInformationRequest.payload,
+    std::string memAddress = sharedMem::parseShmName(aggregatedAttributeInformationRequest.pid, aggregatedAttributeInformationRequest.requestID);
+
+    AggregatedAttributesResponse resp;
+    util::parseString(resp.memAddress, memAddress);
+
+    tasks.vec.push_back(Task {
+        .pid        = aggregatedAttributeInformationRequest.pid,
+        .requestId  = aggregatedAttributeInformationRequest.requestID,
+        .type       = AGGREGATEDATTRIBUTE,
+        .task       = aggregatedAttributeInformationRequest.payload,
+        .channel    = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
     });
     std::string response = curl::push(tree::getPayloadForTree(
         std::get<AggregatedAttributesRequest>(tasks.vec.back().task).primaryKey_RootTree1,
@@ -155,6 +169,7 @@ void addAggregatedAttributeTask(AggregatedAttributeInformationRequest aggregated
         break;
     }
     tasks.vec.back().primaryKeys.insert(tasks.vec.back().primaryKeys.end(), primaryKeys.begin(), primaryKeys.end());
+    server.sendAggregatedAttributesResponse(resp, aggregatedAttributeInformationRequest.pid, false);
 }
 
 bool receiveIPCClientCustomAttributeRequest(const IpcServer &ipcServer, CustomAttributeInformationRequest &receivedRequest) {
@@ -170,13 +185,19 @@ bool receiveIPCClientCustomAttributeRequest(const IpcServer &ipcServer, CustomAt
     return false;
 }
 
-void addCustomAttributeTask(CustomAttributeInformationRequest customAttributeInformationRequest, Tasks &tasks) {
+void addCustomAttributeTask(const IpcServer &server, CustomAttributeInformationRequest customAttributeInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
+    std::string memAddress = sharedMem::parseShmName(customAttributeInformationRequest.pid, customAttributeInformationRequest.requestID);
+
+    CustomAttributesResponse resp;
+    util::parseString(resp.memAddress, memAddress);
+
     tasks.vec.push_back(Task{
         .pid        = customAttributeInformationRequest.pid,
         .requestId  = customAttributeInformationRequest.requestID,
         .type       = CUSTOMATTRIBUTE,
-        .task       = CustomAttributesTask{.continuous = customAttributeInformationRequest.payload.continuous}
+        .task       = CustomAttributesTask{.continuous = customAttributeInformationRequest.payload.continuous},
+        .channel    = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
     });
     {
         std::vector<std::string> queryLines = util::parseStringArray(customAttributeInformationRequest.payload.query);
@@ -185,6 +206,8 @@ void addCustomAttributeTask(CustomAttributeInformationRequest customAttributeInf
             queryLines.end(),
             std::string(""));
     }
+
+    server.sendCustomAttributesResponse(resp, customAttributeInformationRequest.pid, false);
 }
 
 bool receiveIPCClientAggregatedMemberRequest(const IpcServer &ipcServer, AggregatedMemberInformationRequest &receivedRequest) {
@@ -200,13 +223,19 @@ bool receiveIPCClientAggregatedMemberRequest(const IpcServer &ipcServer, Aggrega
     return false;
 }
 
-void addAggregatedMemberTask(AggregatedMemberInformationRequest aggregatedMemberInformationRequest, Tasks &tasks) {
+void addAggregatedMemberTask(const IpcServer &server, AggregatedMemberInformationRequest aggregatedMemberInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
+    std::string memAddress = sharedMem::parseShmName(aggregatedMemberInformationRequest.pid, aggregatedMemberInformationRequest.requestID);
+
+    AggregatedMemberResponse resp;
+    util::parseString(resp.memAddress, memAddress);
+
     tasks.vec.push_back(Task{
-        .pid                = aggregatedMemberInformationRequest.pid,
-        .requestId          = aggregatedMemberInformationRequest.requestID,
-        .type               = AGGREGATEDMEMBER,
-        .task               = aggregatedMemberInformationRequest.payload
+        .pid        = aggregatedMemberInformationRequest.pid,
+        .requestId  = aggregatedMemberInformationRequest.requestID,
+        .type       = AGGREGATEDMEMBER,
+        .task       = aggregatedMemberInformationRequest.payload,
+        .channel    = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
     });
     std::string response = curl::push(tree::getPayloadForTree(
         std::get<AggregatedMemberRequest>(tasks.vec.back().task).primaryKey_RootTree1,
@@ -239,6 +268,7 @@ void addAggregatedMemberTask(AggregatedMemberInformationRequest aggregatedMember
         break;
     }
     tasks.vec.back().primaryKeys.insert(tasks.vec.back().primaryKeys.end(), primaryKeys.begin(), primaryKeys.end());
+    server.sendAggregatedMemberResponse(resp, aggregatedMemberInformationRequest.pid, false);
 }
 
 bool receiveIPCClientCustomMemberRequest(const IpcServer &ipcServer, CustomMemberInformationRequest &receivedRequest) {
@@ -254,13 +284,19 @@ bool receiveIPCClientCustomMemberRequest(const IpcServer &ipcServer, CustomMembe
     return false;
 }
 
-void addCustomMemberTask(CustomMemberInformationRequest customMemberInformationRequest, Tasks &tasks) {
+void addCustomMemberTask(const IpcServer &server,CustomMemberInformationRequest customMemberInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
+    std::string memAddress = sharedMem::parseShmName(customMemberInformationRequest.pid, customMemberInformationRequest.requestID);
+
+    CustomMemberResponse resp;
+    util::parseString(resp.memAddress, memAddress);
+
     tasks.vec.push_back(Task{
-        .pid            = customMemberInformationRequest.pid,
-        .requestId      = customMemberInformationRequest.requestID,
-        .type           = CUSTOMMEMBER,
-        .task           = CustomMemberTask {.continuous = customMemberInformationRequest.payload.continuous}
+        .pid        = customMemberInformationRequest.pid,
+        .requestId  = customMemberInformationRequest.requestID,
+        .type       = CUSTOMMEMBER,
+        .task       = CustomMemberTask {.continuous = customMemberInformationRequest.payload.continuous},
+        .channel    = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
     });
     {
         std::vector<std::string> queryLines = util::parseStringArray(customMemberInformationRequest.payload.query);
@@ -269,6 +305,7 @@ void addCustomMemberTask(CustomMemberInformationRequest customMemberInformationR
             queryLines.end(),
             std::string(""));
     }
+    server.sendCustomMemberResponse(resp, customMemberInformationRequest.pid, false);
 }
 
 
@@ -289,23 +326,23 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe>
         // TODO: Something that happens on pipe read from RELATIONMGMT
         
         if (receiveIPCClientStandardSingleAttributeRequest(server, singleAttributeInformationRequest)) {
-            addSingleAttributeTask(singleAttributeInformationRequest, tasks);
+            addSingleAttributeTask(server, singleAttributeInformationRequest, tasks);
             continue;
         }
         if (receiveIPCClientStandardAggregatedAttributeRequest(server, aggregatedAttributeInformationRequest)) {
-            addAggregatedAttributeTask(aggregatedAttributeInformationRequest, tasks);
+            addAggregatedAttributeTask(server, aggregatedAttributeInformationRequest, tasks);
             continue;
         }
         if (receiveIPCClientCustomAttributeRequest(server, customAttributeInformationRequest)) {
-            addCustomAttributeTask(customAttributeInformationRequest, tasks);
+            addCustomAttributeTask(server, customAttributeInformationRequest, tasks);
             continue;
         }
         if (receiveIPCClientAggregatedMemberRequest(server, aggregatedMemberInformationRequest)) {
-            addAggregatedMemberTask(aggregatedMemberInformationRequest, tasks);
+            addAggregatedMemberTask(server, aggregatedMemberInformationRequest, tasks);
             continue;
         }
         if (receiveIPCClientCustomMemberRequest(server, customMemberInformationRequest)) {
-            addCustomMemberTask(customMemberInformationRequest, tasks);
+            addCustomMemberTask(server, customMemberInformationRequest, tasks);
             continue;
         }
 

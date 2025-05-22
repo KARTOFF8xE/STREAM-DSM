@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <ipc/ipc-client.hpp>
+#include <ipc/sharedMem.hpp>
 
 #include <chrono>
 #include <thread>
@@ -22,16 +23,18 @@ int main() {
   std::cout << "send request..." << std::flush;
   client.sendSingleAttributesRequest(request, requestId, false);
   std::cout << "done" << std::endl;
+  std::optional<SingleAttributesResponse> response = client.receiveSingleAttributesResponse();
+  if (!response.has_value()) { std::cerr << "Response got no Value" << std::flush; return 1; }
+  SingleAttributesResponse resp = response.value();
+
+  sharedMem::SHMChannel<sharedMem::Response> channel(resp.memAddress, true);
+
   while (true) {
     {
-      std::optional<SingleAttributesResponse> optResp = client.receiveSingleAttributesResponse(false);
-      if (optResp.has_value()) {
-        SingleAttributesResponse resp = optResp.value();
-        std::cout <<
-          "Received Node Reponse:" <<
-          "\n\tvalue: " << resp.value <<
-          std::endl;
-      }
+      sharedMem::Response sharedMemResponse {};
+      if (!channel.receive(sharedMemResponse)) continue;
+
+      sharedMem::printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }
   }
 }

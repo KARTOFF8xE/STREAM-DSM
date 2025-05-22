@@ -17,26 +17,26 @@ using namespace std::chrono_literals;
 #include "pipe/pipe.hpp"
 #include "ipc/common.hpp"
 
-using json = nlohmann::json;
 
+using json = nlohmann::json;
 
 
 namespace taskExecutor {
 
-bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleAttributeInformationRequest &receivedRequest) {
-    std::optional<SingleAttributesRequest> response =
-        ipcServer.receiveSingleAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
+// bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleAttributeInformationRequest &receivedRequest) {
+//     std::optional<SingleAttributesRequest> response =
+//         ipcServer.receiveSingleAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
 
-    if (response.has_value()) {
-        receivedRequest.payload = response.value();
+//     if (response.has_value()) {
+//         receivedRequest.payload = response.value();
 
-        return true;
-    }
+//         return true;
+//     }
 
-    return false;
-}
+//     return false;
+// }
 
-double getValueStandardQueryInfluxDB(Task task) {
+double getValueStandardQueryInfluxDB(Task &task) {
     std::string request;
     if (std::holds_alternative<SingleAttributesRequest>(task.task)) {
         request =
@@ -69,7 +69,7 @@ std::vector<std::string> split(std::string str, char delimiter) {
     return res;
 }
 
-std::vector<std::string> getCustomResponseQueryInfluxDB(Task task) {
+std::vector<std::string> getCustomResponseQueryInfluxDB(Task &task) {
     std::string response =
         curl::push(
             std::get<CustomAttributesTask>(task.task).query,
@@ -78,7 +78,7 @@ std::vector<std::string> getCustomResponseQueryInfluxDB(Task task) {
     return split(response, '\n');
 }
 
-std::vector<std::string> getCustomResponseQueryNeo4J(Task task) {
+std::vector<std::string> getCustomResponseQueryNeo4J(Task &task) {
     std::string query = R"(
           {
               "statements":
@@ -99,22 +99,33 @@ std::vector<std::string> getCustomResponseQueryNeo4J(Task task) {
     return responseSplitted;
 }
 
-void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running, Tasks &tasks) {
+void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running, Tasks &tasks) {
     std::cout << "started taskExecutor" << std::endl;
 
     auto then = std::chrono::steady_clock::now();
     while (true) {
         {
             std::lock_guard<std::mutex> lock(tasks.mutex);
-            for (Task task : tasks.vec) {
+            for (Task &task : tasks.vec) {
                 switch (task.type)
                 {
                 case SINGLEATTRIBUTE:
                 {
-                    SingleAttributesResponse payload {
-                        .value = getValueStandardQueryInfluxDB(task)
-                    };
-                    server.sendSingleAttributesResponse(payload, task.pid, false);
+                    task.channel->send(
+                        sharedMem::Response {
+                            .header {
+                                .type           = sharedMem::NUMERICAL,
+                                .payloadSize    = sizeof(sharedMem::NumericalResponse)
+                            },
+                            .payload {
+                                .numerical {
+                                    .number = 1,
+                                    .total  = 1,
+                                    .value  = getValueStandardQueryInfluxDB(task)
+                                }
+                            }
+                        }
+                    );
 
                     if (!std::get<SingleAttributesRequest>(task.task).continuous) {
                         tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
@@ -123,10 +134,21 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pip
                 }
                 case AGGREGATEDATTRIBUTE:
                 {
-                    AggregatedAttributesResponse payload {
-                        .value = getValueStandardQueryInfluxDB(task)
-                    };
-                    server.sendAggregatedAttributesResponse(payload, task.pid, false);
+                    task.channel->send(
+                        sharedMem::Response {
+                            .header {
+                                .type           = sharedMem::NUMERICAL,
+                                .payloadSize    = sizeof(sharedMem::NumericalResponse)
+                            },
+                            .payload {
+                                .numerical {
+                                    .number = 1,
+                                    .total  = 1,
+                                    .value  = getValueStandardQueryInfluxDB(task)
+                                }
+                            }
+                        }
+                    );
 
                     if (!std::get<AggregatedAttributesRequest>(task.task).continuous) {
                         tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
@@ -139,16 +161,24 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pip
 
                     size_t counter = 0;
                     for (auto line: response) {
-                        CustomAttributesResponse payload {
-                            .number = ++counter,
-                            .total  = response.size(),
+                        sharedMem::Response resp {
+                            .header {
+                                .type           = sharedMem::TEXTUAL,
+                                .payloadSize    = sizeof(sharedMem::TextualResponse),
+                            },
+                            .payload {
+                                .textual {
+                                    .number = ++counter,
+                                    .total  = response.size()
+                                }
+                            }
                         };
-                        util::parseString(payload.line, line);
+                        util::parseString(resp.payload.textual.line, line);
 
-                        server.sendCustomAttributesResponse(payload, task.pid, false);
+                        task.channel->send(resp);
                     }
 
-                    if (!std::get<CustomMemberTask>(task.task).continuous) {
+                    if (!std::get<CustomAttributesTask>(task.task).continuous) {
                         tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
                     }
                     break;
@@ -157,13 +187,21 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pip
                 {
                     u_int16_t counter = 0;
                     for (auto primKey: task.primaryKeys) {
-                        AggregatedMemberResponse payload {
-                            .number     = ++counter,
-                            .total      = task.primaryKeys.size(),
-                            .primaryKey = primKey                                        
-                        };
-
-                        server.sendAggregatedMemberResponse(payload, task.pid, false);
+                        task.channel->send (
+                                sharedMem::Response {
+                                .header {
+                                    .type           = sharedMem::NUMERICAL,
+                                    .payloadSize    = sizeof(sharedMem::NumericalResponse)
+                                },
+                                .payload {
+                                    .numerical  {
+                                        .number = ++counter,
+                                        .total  = task.primaryKeys.size(),
+                                        .value  = double(primKey)
+                                    }
+                                }
+                            }
+                        );
                     }
 
                     if (!std::get<AggregatedMemberRequest>(task.task).continuous) {
@@ -178,13 +216,21 @@ void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pip
 
                     size_t counter = 0;
                     for (auto line: response) {
-                        CustomMemberResponse payload {
-                            .number = ++counter,
-                            .total  = response.size(),
+                        sharedMem::Response resp {
+                            .header {
+                                .type           = sharedMem::TEXTUAL,
+                                .payloadSize    = sizeof(sharedMem::TextualResponse)
+                            },
+                            .payload {
+                                .textual {
+                                    .number = ++counter,
+                                    .total  = response.size()
+                                }
+                            }
                         };
-                        util::parseString(payload.line, line);
+                        util::parseString(resp.payload.textual.line, line);
 
-                        server.sendCustomMemberResponse(payload, task.pid, false);
+                        task.channel->send(resp);
                     }
 
                     if (!std::get<CustomMemberTask>(task.task).continuous) {

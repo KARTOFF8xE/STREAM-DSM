@@ -9,6 +9,6 @@
 namespace taskExecutor {
 
 // TODO
-void taskExecutor(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running, Tasks &tasks);
+void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running, Tasks &tasks);
 
 }

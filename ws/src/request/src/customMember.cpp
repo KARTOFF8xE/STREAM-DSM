@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <ipc/ipc-client.hpp>
+#include <ipc/sharedMem.hpp>
 #include <ipc/util.hpp>
 
 #include <chrono>
@@ -38,14 +39,18 @@ int main() {
   std::cout << "send request..." << std::flush;
   client.sendCustomMemberRequest(request, requestId, false);
   std::cout << "done" << std::endl;
+  std::optional<CustomMemberResponse> response = client.receiveCustomMemberResponse();
+  if (!response.has_value()) { std::cerr << "Response got no Value" << std::flush; return 1; }
+  CustomMemberResponse resp = response.value();
+
+  sharedMem::SHMChannel<sharedMem::Response> channel(resp.memAddress, true);
 
   while (true) {
     {
-      std::optional<CustomMemberResponse> optResp = client.receiveCustomMemberResponse(true);
-      if (optResp.has_value()) {
-        CustomMemberResponse payload = optResp.value();
-        std::cout << payload.number << ": " << payload.line << std::endl;
-      }
+      sharedMem::Response sharedMemResponse {};
+      if (!channel.receive(sharedMemResponse)) continue;
+
+      sharedMem::printResponse<sharedMem::TextualResponse>(sharedMemResponse);
     }
   }
 }

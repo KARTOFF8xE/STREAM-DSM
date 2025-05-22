@@ -1,9 +1,43 @@
 #include <iostream>
 
 #include <ipc/ipc-client.hpp>
+#include <ipc/sharedMem.hpp>
 
 #include <chrono>
 #include <thread>
+
+
+template<typename T>
+void printResponse(const sharedMem::Response& response);
+
+template<>
+void printResponse<sharedMem::NumericalResponse>(const sharedMem::Response& response) {
+    if (response.header.type != sharedMem::ResponseType::NUMERICAL) {
+        std::cerr << "Error: Response is not of type NUMERICAL\n";
+        return;
+    }
+
+    const sharedMem::NumericalResponse& nr = response.payload.numerical;
+    std::cout << "NumericalResponse:\n";
+    std::cout << "  Number: " << nr.number << "\n";
+    std::cout << "  Total: " << nr.total << "\n";
+    std::cout << "  Value: " << nr.value << "\n";
+}
+
+template<>
+void printResponse<sharedMem::TextualResponse>(const sharedMem::Response& response) {
+    if (response.header.type != sharedMem::ResponseType::TEXTUAL) {
+        std::cerr << "Error: Response is not of type TEXTUAL\n";
+        return;
+    }
+
+    const sharedMem::TextualResponse& tr = response.payload.textual;
+    std::cout << "TextualResponse:\n";
+    std::cout << "  Number: " << tr.number << "\n";
+    std::cout << "  Total: " << tr.total << "\n";
+    std::cout << "  Line:   " << tr.line << "\n";
+}
+
 
 int main() {
   std::cout << "Make a Aggregated Attribute Request..." << std::endl;
@@ -27,16 +61,18 @@ int main() {
   std::cout << "send request..." << std::flush;
   client.sendAggregatedAttributesRequest(request, requestId, false);
   std::cout << "done" << std::endl;
+  std::optional<AggregatedAttributesResponse> response = client.receiveAggregatedAttributesResponse();
+  if (!response.has_value()) { std::cerr << "Response got no Value" << std::flush; return 1; }
+  AggregatedAttributesResponse resp = response.value();
+
+  sharedMem::SHMChannel<sharedMem::Response> channel(resp.memAddress, true);
+
   while (true) {
     {
-      std::optional<AggregatedAttributesResponse> optResp = client.receiveAggregatedAttributesResponse(false);
-      if (optResp.has_value()) {
-        AggregatedAttributesResponse resp = optResp.value();
-        std::cout <<
-          "Received Node Reponse:" <<
-          "\n\tvalue: " << resp.value <<
-          std::endl;
-      }
+      sharedMem::Response sharedMemResponse {};
+      if (!channel.receive(sharedMemResponse)) continue;
+
+      sharedMem::printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }
   }
 }

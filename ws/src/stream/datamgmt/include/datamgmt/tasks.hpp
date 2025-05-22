@@ -6,6 +6,7 @@
 #include <mutex>
 #include <ipc/common.hpp>
 #include <ipc/ipc-client.hpp>
+#include <ipc/sharedMem.hpp>
 
 #include "pipe/pipe.hpp"
 
@@ -37,13 +38,13 @@ using TaskVariant = std::variant<
 >;
 
 struct Task {
-    pid_t                       pid;
-    requestId_t                 requestId;
-    TaskType                    type;
-    std::vector<primaryKey_t>   primaryKeys;
+    pid_t                                                       pid;
+    requestId_t                                                 requestId;
+    TaskType                                                    type;
+    std::vector<primaryKey_t>                                   primaryKeys;
 
-    TaskVariant                 task;
-         
+    TaskVariant                                                 task;
+    std::unique_ptr<sharedMem::SHMChannel<sharedMem::Response>> channel;
 
     bool operator==(const Task& other) const {
         return this->pid == other.pid;

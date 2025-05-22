@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <ipc/ipc-client.hpp>
+#include <ipc/sharedMem.hpp>
 
 #include <chrono>
 #include <thread>
@@ -26,16 +27,19 @@ int main() {
   std::cout << "send request..." << std::flush;
   client.sendAggregatedMemberRequest(request, requestId, false);
   std::cout << "done" << std::endl;
+
+  std::optional<AggregatedMemberResponse> response = client.receiveAggregatedMemberResponse();
+  if (!response.has_value()) { std::cerr << "Response got no Value" << std::flush; return 1; }
+  AggregatedMemberResponse resp = response.value();
+
+  sharedMem::SHMChannel<sharedMem::Response> channel(resp.memAddress, true);
+
   while (true) {
     {
-      std::optional<AggregatedMemberResponse> optResp = client.receiveAggregatedMemberResponse(false);
-      if (optResp.has_value()) {
-        AggregatedMemberResponse resp = optResp.value();
-        std::cout <<
-          "Received Node Reponse:" <<
-          "\n\t" << resp.number << " of " << resp.total << ": " << resp.primaryKey <<
-          std::endl;
-      }
+      sharedMem::Response sharedMemResponse {};
+      if (!channel.receive(sharedMemResponse)) continue;
+
+      sharedMem::printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }
   }
 }

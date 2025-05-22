@@ -31,13 +31,13 @@ int main() {
   }
   
   SHMAddressResponse payload = response.value();
-  std::cout << "sharedMem Address: " << payload.memAdress << std::endl;
+  std::cout << "sharedMem Address: " << payload.memAddress << std::endl;
   
-  sharedMem::SHMChannel channel(util::parseString(payload.memAdress).c_str(), false);
-  std::cout << util::parseString(payload.memAdress) << std::endl;
+  sharedMem::SHMChannel<sharedMem::InputValue> channel(util::parseString(payload.memAddress).c_str(), false);
+  std::cout << util::parseString(payload.memAddress) << std::endl;
   double counter = 0;
   while (true) {
-    sharedMem::Value msg {
+    sharedMem::InputValue msg {
       .timestamp  = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()),
       .primaryKey = pKey,
       .value      = counter++,
