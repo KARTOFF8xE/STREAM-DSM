@@ -76,7 +76,7 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
                 start = now;
             }
         }
-        continue;
+
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
         auto sleepTime = 1ms - elapsed;
