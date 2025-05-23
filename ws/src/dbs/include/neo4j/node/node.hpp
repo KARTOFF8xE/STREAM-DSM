@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <ipc/sharedMem.hpp>
 
 namespace node {
     
@@ -17,4 +18,6 @@ namespace node {
     std::string getPayload(std::string name, u_int64_t handle, pid_t pid);
     std::string getPayloadRequestByPrimaryKey(pid_t pid);
     std::string getPayloadSetNodeOffline(pid_t pid);
+    std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine);
+    std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::LifeCycleState state);
 }

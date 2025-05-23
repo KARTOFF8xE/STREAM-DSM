@@ -529,6 +529,41 @@ void handleTimerToUpdate(sharedMem::TraceMessage msg, std::vector<Client> &clien
     }
 }
 
+void handleStateMachineInit(sharedMem::TraceMessage msg) {
+    std::string payloadNeo4j = node::getPayloadSetStateMachine(msg.smInit.nodeHandle, msg.smInit.stateMachine);
+   
+    curl::push(payloadNeo4j, curl::NEO4J);
+}
+
+NodeStateUpdate queryGraphDbForStateChange(std::string payloadNeo4j) {
+    NodeStateUpdate nodeStateUpdate;
+
+    std::string responseNeo4J = curl::push(payloadNeo4j, curl::NEO4J);
+
+    nlohmann::json data = nlohmann::json::parse(responseNeo4J);
+    if (!data["results"].empty() &&
+        !data["results"][0]["data"].empty() && 
+        !data["results"][0]["data"][0]["row"].empty()) {
+            nodeStateUpdate.primaryKey = data["results"][0]["data"][0]["row"][0].get<u_int64_t>();
+    } else {
+        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
+    }
+
+    return nodeStateUpdate;
+}
+
+void handleStateTransitionToUpdate(sharedMem::TraceMessage msg, std::vector<Client> &clients, const IpcServer &server) {
+    std::string payloadNeo4j = node::getPayloadSetStateTransition(msg.lcTrans.stateMachine, msg.lcTrans.state);
+    NodeStateUpdate nodeStateUpdate = queryGraphDbForStateChange(payloadNeo4j);
+    nodeStateUpdate.state = msg.lcTrans.state;
+
+    for (Client client : clients) {
+        if (client.primaryKey == nodeStateUpdate.primaryKey) {
+            server.sendNodeStateUpdate(nodeStateUpdate, client.pid, false);
+        }
+    }
+}
+
 void handleClient(Client &client, std::vector<Client> &clients) {
     std::cout << "pid:   " << client.pid
     << "\n\trequestId:  " << client.requestId <<
@@ -647,6 +682,12 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
                     break;
                 case sharedMem::MessageType::TIMERTRACE:
                     handleTimerToUpdate(msg, clients, server);
+                    break;
+                case sharedMem::MessageType::STATEMACHINEINITTRACE:
+                    handleStateMachineInit(msg);
+                    break;
+                case sharedMem::MessageType::STATETRANSITIONTRACE:
+                    handleStateTransitionToUpdate(msg, clients, server);
                     break;
                 default: 
                     std::cout << "unknown Type" << std::endl;

@@ -53,4 +53,36 @@ namespace node {
         )", pid);
     }
 
+    std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine) {
+        return fmt::format(R"(
+        {{
+            "statements":
+                [
+                    {{ "statement": "MATCH (n:Node {{handle: $handle}}) set n.stateMachine= $statemachine ",
+                    "parameters": {{
+                        "handle": "{}",
+                        "statemachine": {}
+                        }}
+                    }}
+                ]
+        }}
+        )", handle, stateMachine);       
+    }
+
+    std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::LifeCycleState state) {
+        return fmt::format(R"(
+        {{
+            "statements":
+                [
+                    {{ "statement": "MATCH (n:Node {{stateMachine: $statemachine}}) set n.state= $state RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                    "parameters": {{
+                        "statemachine": {},
+                        "state": {}
+                        }}
+                    }}
+                ]
+        }}
+        )", stateMachine, state);       
+    }
+
 }

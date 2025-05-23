@@ -1,6 +1,7 @@
 #include "participants.hpp"
 
 #include <ipc/util.hpp>
+#include <ipc/sharedMem.hpp>
 #include <sink.hpp>
 
 #include <string_view>
@@ -127,6 +128,44 @@ sharedMem::TraceMessage extractTimerLinkInfo(bt_self_component_sink *self_compon
     return msg;
 }
 
+sharedMem::TraceMessage extractLifecycleSMInitInfo(const bt_event *event) {
+    sharedMem::TraceMessage msg = (sharedMem::MessageType::STATEMACHINEINITTRACE);
+
+    const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
+    const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
+    if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
+        const bt_field *field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "node_handle");
+        msg.smInit.nodeHandle = bt_field_integer_unsigned_get_value(field);
+        field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "state_machine");
+        msg.smInit.stateMachine =  bt_field_integer_unsigned_get_value(field);
+    } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
+    return msg;
+}
+
+sharedMem::TraceMessage extractLifecycleTransitionInfo(const bt_event *event) {
+    sharedMem::TraceMessage msg = (sharedMem::MessageType::STATETRANSITIONTRACE);
+
+    const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
+    const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
+    if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
+        const bt_field *field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "state_machine");
+        msg.lcTrans.stateMachine = bt_field_integer_unsigned_get_value(field);
+        field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "state_machine");
+        field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "goal_label");
+        std::string_view state = bt_field_string_get_value(field);
+
+        using namespace std::string_view_literals;
+        if (state == "unconfigured"sv)  { msg.lcTrans.state = sharedMem::LifeCycleState::UNCONFIGURED; return msg; }
+        if (state == "inactive"sv)      { msg.lcTrans.state = sharedMem::LifeCycleState::INACTIVE;     return msg; }
+        if (state == "active"sv)        { msg.lcTrans.state = sharedMem::LifeCycleState::ACTIVE;       return msg; }
+        if (state == "finalized"sv)     { msg.lcTrans.state = sharedMem::LifeCycleState::FINALIZED;    return msg; }
+
+    } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
+
+    msg.lcTrans.state = sharedMem::LifeCycleState::INVALID;
+    return msg;
+}
+
 void get_value(
     const bt_field *structure_field,
     const bt_field_class_structure_member *member
@@ -185,6 +224,9 @@ sharedMem::TraceMessage extractTracedMessage(
 
     if (eventName == "ros2:rcl_timer_init"sv)           return extractTimerInitInfo(self_component_sink, event);
     if (eventName == "ros2:rclcpp_timer_link_node"sv)   return extractTimerLinkInfo(self_component_sink, event);
+
+    if (eventName == "ros2:rcl_lifecycle_state_machine_init"sv) return extractLifecycleSMInitInfo(event);
+    if (eventName == "ros2:rcl_lifecycle_transition"sv) return extractLifecycleTransitionInfo(event);
 
 
     /***unknown type***/

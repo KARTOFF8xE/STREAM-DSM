@@ -118,6 +118,17 @@ int main() {
           std::endl;
       }
     }
+    {
+     std::optional<NodeStateUpdate> optResp = client.receiveNodeStateUpdate(false);
+      if (optResp.has_value()) {
+        NodeStateUpdate resp = optResp.value();
+        std::cout << "Received State Update:" <<
+          "\n\tprimaryKey: " << resp.primaryKey <<
+          "\n\tstate: " << resp.state <<
+          "\n\tisUpdate: " << resp.isUpdate <<
+          std::endl;
+      }
+    }
   }
 
   // std::this_thread::sleep_for(std::chrono::milliseconds(500));
