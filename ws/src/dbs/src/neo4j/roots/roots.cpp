@@ -57,7 +57,7 @@ namespace createRoot {
             {{
                 "statements":
                     [
-                        {{ "statement": "MERGE (n:Node {{pid: \"0\"}}) SET n.name = $name, n.mac = $mac RETURN DISTINCT {{ id: toInteger(last(split(elementId(n), ':'))) }} ",
+                        {{ "statement": "MERGE (n:Node {{pid: 0}}) SET n.name = $name, n.mac = $mac RETURN DISTINCT {{ id: toInteger(last(split(elementId(n), ':'))) }} ",
                         "parameters": {{
                             "name": "{}",
                             "mac": "{}"

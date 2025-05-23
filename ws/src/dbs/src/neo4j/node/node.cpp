@@ -6,21 +6,22 @@
 
 namespace node {
 
-    std::string getPayload(std::string name, u_int64_t handle, pid_t pid) {
+    std::string getPayload(std::string name, u_int64_t handle, pid_t pid, time_t timestamp) {
         return fmt::format(R"(
             {{ 
                 "statements":
                     [
-                        {{ "statement": "MERGE (n:Node{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishes_to', 'subscription', 'service_for', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n ",
+                        {{ "statement": "MERGE (n:Node{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=1, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishes_to', 'subscription', 'service_for', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n ",
                         "parameters": {{
                             "name": "{}",
                             "handle": {},
-                            "pid": {}
+                            "pid": {},
+                            "timestamp": {}
                             }}
                         }}
                     ]
             }}
-        )", name, handle, pid);
+        )", name, handle, pid, timestamp);
     }
 
     std::string getPayloadRequestByPrimaryKey(pid_t pid) {
@@ -38,19 +39,20 @@ namespace node {
         )", pid);
     }
 
-    std::string getPayloadSetNodeOffline(pid_t pid) {
+    std::string getPayloadSetNodeOffline(pid_t pid, time_t timestamp) {
         return fmt::format(R"(
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Node {{pid:$pid}}) SET n.state = 0, n.stateChangeTime = TIMESTAMP() ",
+                    {{ "statement": "MATCH (n:Node {{pid:$pid}}) SET n.state = 0, n.stateChangeTime = $timestamp ",
                     "parameters": {{
-                        "pid": {}
+                        "pid": {},
+                        "timestamp": {}
                         }}
                     }}
                 ]
         }}
-        )", pid);
+        )", pid, timestamp);
     }
 
     std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine, u_int64_t state) {
@@ -70,20 +72,21 @@ namespace node {
         )", handle, stateMachine, state);       
     }
 
-    std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::State state) {
+    std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::State state, time_t timestamp) {
         return fmt::format(R"(
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Node {{stateMachine: $statemachine}}) set n.state= $state RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                    {{ "statement": "MATCH (n:Node {{stateMachine: $statemachine}}) set n.state = $state, n.stateChangeTime = $timestamp RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
                     "parameters": {{
                         "statemachine": {},
-                        "state": {}
+                        "state": {},
+                        "timestamp": {}
                         }}
                     }}
                 ]
         }}
-        )", stateMachine, state);       
+        )", stateMachine, state, timestamp);       
     }
 
 }

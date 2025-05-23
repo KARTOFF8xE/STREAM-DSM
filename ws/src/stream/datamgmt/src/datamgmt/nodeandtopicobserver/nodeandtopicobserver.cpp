@@ -478,11 +478,12 @@ NodeResponse queryGraphDbForNode(std::string payloadNeo4j) {
 
 void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server, int pipeToRelationMgmt_w) {
     std::string fqName = getFullName(msg.node.name, msg.node.nspace);
-    std::string payloadNeo4j = node::getPayload(fqName, msg.node.handle, msg.node.pid);
+    std::string payloadNeo4j = node::getPayload(fqName, msg.node.handle, msg.node.pid, msg.node.stateChangeTime);
     NodeResponse nodeResponse = queryGraphDbForNode(payloadNeo4j);
 
     nodeResponse.state              = sharedMem::State::ACTIVE;
     nodeResponse.pid                = msg.node.pid;
+    nodeResponse.stateChangeTime    = msg.node.stateChangeTime;
     // nodeResponse.stateChangeTime    = msg.node.stateChangeTime;  // TODO: get stateChangeTime from Tracer, not from DB
     util::parseString(nodeResponse.name, fqName);
 
@@ -553,9 +554,10 @@ NodeStateUpdate queryGraphDbForStateChange(std::string payloadNeo4j) {
 }
 
 void handleStateTransitionToUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server) {
-    std::string payloadNeo4j = node::getPayloadSetStateTransition(msg.lcTrans.stateMachine, msg.lcTrans.state);
+    std::string payloadNeo4j = node::getPayloadSetStateTransition(msg.lcTrans.stateMachine, msg.lcTrans.state, msg.lcTrans.stateChangeTime);
     NodeStateUpdate nodeStateUpdate = queryGraphDbForStateChange(payloadNeo4j);
     nodeStateUpdate.state = msg.lcTrans.state;
+    nodeStateUpdate.stateChangeTime = msg.lcTrans.stateChangeTime;
 
     for (RequestingClient client : clients) {
         if (client.primaryKey == nodeStateUpdate.primaryKey) {

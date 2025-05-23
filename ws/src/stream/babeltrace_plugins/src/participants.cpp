@@ -7,7 +7,7 @@
 #include <string_view>
 
 
-sharedMem::TraceMessage extractNodeInfo(const bt_event *event) {
+sharedMem::TraceMessage extractNodeInfo(const bt_event *event, const bt_clock_snapshot *timeStamp) {
     sharedMem::TraceMessage msg(sharedMem::MessageType::NODETRACE);
 
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
@@ -27,6 +27,12 @@ sharedMem::TraceMessage extractNodeInfo(const bt_event *event) {
         const bt_field *field = bt_field_structure_borrow_member_field_by_name_const(ctx_field, "vpid");
         msg.node.pid = pid_t(bt_field_integer_signed_get_value(field));
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
+
+    if (timeStamp) {
+        msg.node.stateChangeTime = bt_clock_snapshot_get_value(timeStamp) / 1'000'000'000;
+    } else {
+            msg.lcTrans.stateChangeTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    }
 
     return msg;
 }
@@ -143,7 +149,7 @@ sharedMem::TraceMessage extractLifecycleSMInitInfo(const bt_event *event) {
 }
 
 
-sharedMem::TraceMessage extractLifecycleTransitionInfo(const bt_event *event) {
+sharedMem::TraceMessage extractLifecycleTransitionInfo(const bt_event *event, const bt_clock_snapshot *timeStamp) {
     sharedMem::TraceMessage msg = (sharedMem::MessageType::STATETRANSITIONTRACE);
 
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
@@ -154,6 +160,12 @@ sharedMem::TraceMessage extractLifecycleTransitionInfo(const bt_event *event) {
         field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "state_machine");
         field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "goal_label");
         std::string_view state = bt_field_string_get_value(field);
+
+        if (timeStamp) {
+            msg.lcTrans.stateChangeTime = bt_clock_snapshot_get_value(timeStamp) / 1'000'000'000;
+        } else {
+            msg.lcTrans.stateChangeTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
 
         using namespace std::string_view_literals;
         if (state == "unconfigured"sv)  { msg.lcTrans.state = sharedMem::State::UNCONFIGURED; return msg; }
@@ -217,7 +229,7 @@ sharedMem::TraceMessage extractTracedMessage(
     std::string_view eventName(bt_event_class_get_name(eventClass));
 
     using namespace std::string_view_literals;
-    if (eventName == "ros2:rcl_node_init"sv)            return extractNodeInfo(event);
+    if (eventName == "ros2:rcl_node_init"sv)            return extractNodeInfo(event, bt_message_event_borrow_default_clock_snapshot_const(message));
     if (eventName == "ros2:rcl_publisher_init"sv)       return extractPublisherInfo(event);
     if (eventName == "ros2:rcl_subscription_init"sv)    return extractSubscriberInfo(event);
     if (eventName == "ros2:rcl_service_init"sv)         return extractServiceInfo(event);
@@ -227,7 +239,7 @@ sharedMem::TraceMessage extractTracedMessage(
     if (eventName == "ros2:rclcpp_timer_link_node"sv)   return extractTimerLinkInfo(self_component_sink, event);
 
     if (eventName == "ros2:rcl_lifecycle_state_machine_init"sv) return extractLifecycleSMInitInfo(event);
-    if (eventName == "ros2:rcl_lifecycle_transition"sv) return extractLifecycleTransitionInfo(event);
+    if (eventName == "ros2:rcl_lifecycle_transition"sv) return extractLifecycleTransitionInfo(event, bt_message_event_borrow_default_clock_snapshot_const(message));
 
 
     /***unknown type***/
