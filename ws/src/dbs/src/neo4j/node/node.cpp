@@ -69,7 +69,7 @@ namespace node {
         )", handle, stateMachine);       
     }
 
-    std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::LifeCycleState state) {
+    std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::State state) {
         return fmt::format(R"(
         {{
             "statements":

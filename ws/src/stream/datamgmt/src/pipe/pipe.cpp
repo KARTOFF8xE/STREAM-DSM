@@ -61,7 +61,7 @@ ssize_t readT(int __fd, T& payload, MsgType* type) {
 }
 
 // Explizite Instanziierungen:
-template ssize_t writeT<Client>(int, const Client&, MsgType);
+template ssize_t writeT<RequestingClient>(int, const RequestingClient&, MsgType);
 template ssize_t writeT<NodeResponse>(int, const NodeResponse&, MsgType);
 template ssize_t writeT<SingleAttributeInformationRequest>(int, const SingleAttributeInformationRequest&, MsgType);
 template ssize_t writeT<AggregatedAttributeInformationRequest>(int, const AggregatedAttributeInformationRequest&, MsgType);
@@ -70,7 +70,7 @@ template ssize_t writeT<AggregatedMemberInformationRequest>(int, const Aggregate
 template ssize_t writeT<CustomMemberInformationRequest>(int, const CustomMemberInformationRequest&, MsgType);
 template ssize_t writeT<union_Requests>(int, const union_Requests&, MsgType);
 
-template ssize_t readT<Client>(int, Client&, MsgType*);
+template ssize_t readT<RequestingClient>(int, RequestingClient&, MsgType*);
 template ssize_t readT<NodeResponse>(int, NodeResponse&, MsgType*);
 template ssize_t readT<SingleAttributeInformationRequest>(int, SingleAttributeInformationRequest&, MsgType*);
 template ssize_t readT<AggregatedAttributeInformationRequest>(int, AggregatedAttributeInformationRequest&, MsgType*);

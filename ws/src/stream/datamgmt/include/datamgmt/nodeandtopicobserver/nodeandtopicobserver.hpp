@@ -17,7 +17,7 @@
  * @param client The client requesting the node response.
  * @param primaryKey The unique identifier of the node to retrieve information for.
  */
-void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t primaryKey);
+void singleTimeNodeResponse(IpcServer &server, RequestingClient client, primaryKey_t primaryKey);
 
 /**
  * @brief Retrieves and sends a one-time topic response to a client.
@@ -31,7 +31,7 @@ void singleTimeNodeResponse(IpcServer &server, Client client, primaryKey_t prima
  * @param client The client requesting the topic response.
  * @param primaryKey The unique identifier of the topic to retrieve information for.
  */
-void singleTimeTopicResponse(IpcServer &server, Client client, primaryKey_t primaryKey);
+void singleTimeTopicResponse(IpcServer &server, RequestingClient client, primaryKey_t primaryKey);
 
 /**
  * @brief Monitors nodes and topics, handling client updates.
@@ -60,7 +60,7 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
  * 
  * @returns If a message had been received.
  */
-bool receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+bool receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<RequestingClient> &clients, const IpcServer &server);
 
 /**
  * @brief Receives and processes a NodeIsServerForUpdate message.
@@ -75,7 +75,7 @@ bool receiveNodeIsClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clie
  * 
  * @returns If a message had been received.
  */
-bool receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+bool receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<RequestingClient> &clients, const IpcServer &server);
 
 /**
  * @brief Receives and processes a NodeIsActionClientOfUpdate message.
@@ -91,7 +91,7 @@ bool receiveNodeIsServerForUpdate(IpcClient &ipcClient, std::vector<Client> &cli
  * 
  * @returns If a message had been received.
  */
-bool receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+bool receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<RequestingClient> &clients, const IpcServer &server);
 
 /**
  * @brief Receives and processes a NodeIsActionServerForUpdate message.
@@ -107,7 +107,7 @@ bool receiveNodeIsActionClientOfUpdate(IpcClient &ipcClient, std::vector<Client>
  * 
  * @returns If a message had been received.
  */
-bool receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+bool receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<RequestingClient> &clients, const IpcServer &server);
 
 /**
  * @brief Receives and processes a NodeSubscribersToUpdate message.
@@ -121,7 +121,7 @@ bool receiveNodeIsActionServerForUpdate(IpcClient &ipcClient, std::vector<Client
  * 
  * @returns If a message had been received.
  */
-bool receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+bool receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<RequestingClient> &clients, const IpcServer &server);
 
 /**
  * @brief Receives and processes a NodePublishersToUpdate message.
@@ -135,7 +135,7 @@ bool receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clien
  * 
  * @returns If a message had been received.
  */
-bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
+bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<RequestingClient> &clients, const IpcServer &server);
 
 /**
  * @brief Handles client requests by adding or removing the client from the list of clients.
@@ -150,4 +150,4 @@ bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &client
  *
  * @return void This function does not return any value.
  */
-void handleClient(Client &client, std::vector<Client> &clients);
+void handleClient(RequestingClient &client, std::vector<RequestingClient> &clients);
