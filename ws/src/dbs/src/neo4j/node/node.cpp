@@ -53,20 +53,21 @@ namespace node {
         )", pid);
     }
 
-    std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine) {
+    std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine, u_int64_t state) {
         return fmt::format(R"(
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Node {{handle: $handle}}) set n.stateMachine= $statemachine ",
+                    {{ "statement": "MATCH (n:Node {{handle: $handle}}) set n.stateMachine= $statemachine, n.state= $state ",
                     "parameters": {{
                         "handle": "{}",
-                        "statemachine": {}
+                        "statemachine": {},
+                        "state": {}
                         }}
                     }}
                 ]
         }}
-        )", handle, stateMachine);       
+        )", handle, stateMachine, state);       
     }
 
     std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::State state) {

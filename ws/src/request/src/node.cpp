@@ -30,8 +30,8 @@ int main() {
           "\n\tprimaryKey: " << resp.primaryKey <<
           "\n\tname: " << resp.name <<
           "\n\tpid: " << resp.pid <<
-          "\n\talive: " << resp.alive <<
-          "\n\taliveChangeTime: " << resp.aliveChangeTime <<
+          "\n\tstate: " << resp.state <<
+          "\n\tstateChangeTime: " << resp.stateChangeTime <<
           "\n\tbootCount: " << resp.bootCount <<
           "\n\tnrOfNeighours: " << resp.nrOfInitialUpdates <<
           std::endl;

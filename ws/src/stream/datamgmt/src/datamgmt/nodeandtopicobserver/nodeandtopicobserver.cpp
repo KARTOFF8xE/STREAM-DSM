@@ -138,8 +138,8 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient client, pr
 
     NodeResponse nodeResponse {
         .primaryKey         = primaryKey,
-        .alive              = requestedNode["state"] > 0,
-        .aliveChangeTime    = requestedNode["stateChangeTime"],
+        .state              = requestedNode["state"],
+        .stateChangeTime    = requestedNode["stateChangeTime"],
         .bootCount          = requestedNode["bootcounter"],
         .pid                = requestedNode["pid"],
         .nrOfInitialUpdates = pubs.size() + subs.size() +
@@ -468,7 +468,7 @@ NodeResponse queryGraphDbForNode(std::string payloadNeo4j) {
         !data["results"][0]["data"][0]["row"].empty())
         {
         nodeResponse.bootCount          = data["results"][0]["data"][0]["row"][0]["bootcounter"];
-        nodeResponse.aliveChangeTime    = data["results"][0]["data"][0]["row"][0]["stateChangeTime"];
+        nodeResponse.stateChangeTime    = data["results"][0]["data"][0]["row"][0]["stateChangeTime"];
     } else {
         std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
     }
@@ -481,9 +481,9 @@ void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient>
     std::string payloadNeo4j = node::getPayload(fqName, msg.node.handle, msg.node.pid);
     NodeResponse nodeResponse = queryGraphDbForNode(payloadNeo4j);
 
-    nodeResponse.alive              = true;
+    nodeResponse.state              = sharedMem::State::ACTIVE;
     nodeResponse.pid                = msg.node.pid;
-    // nodeResponse.aliveChangeTime    = msg.node.stateChangeTime;  // TODO: get stateChangeTime from Tracer, not from DB
+    // nodeResponse.stateChangeTime    = msg.node.stateChangeTime;  // TODO: get stateChangeTime from Tracer, not from DB
     util::parseString(nodeResponse.name, fqName);
 
 
@@ -530,7 +530,7 @@ void handleTimerToUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClie
 }
 
 void handleStateMachineInit(sharedMem::TraceMessage msg) {
-    std::string payloadNeo4j = node::getPayloadSetStateMachine(msg.lcSmInit.nodeHandle, msg.lcSmInit.stateMachine);
+    std::string payloadNeo4j = node::getPayloadSetStateMachine(msg.lcSmInit.nodeHandle, msg.lcSmInit.stateMachine, sharedMem::State::UNCONFIGURED);
    
     curl::push(payloadNeo4j, curl::NEO4J);
 }
