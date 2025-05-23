@@ -6,7 +6,7 @@
 
 
 sharedMem::TraceMessage extractNodeInfo(const bt_event *event) {
-    sharedMem::TraceMessage msg { .header = sharedMem::TraceHeader { .type = sharedMem::MessageType::NODETRACE } };
+    sharedMem::TraceMessage msg(sharedMem::MessageType::NODETRACE);
 
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
     const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
@@ -30,7 +30,7 @@ sharedMem::TraceMessage extractNodeInfo(const bt_event *event) {
 }
 
 sharedMem::TraceMessage extractPublisherInfo(const bt_event *event) {
-    sharedMem::TraceMessage msg { .header = sharedMem::TraceHeader{ sharedMem::MessageType::PUBLISHERTRACE }};
+    sharedMem::TraceMessage msg(sharedMem::MessageType::PUBLISHERTRACE);
 
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
     const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
@@ -46,7 +46,7 @@ sharedMem::TraceMessage extractPublisherInfo(const bt_event *event) {
 }
 
 sharedMem::TraceMessage extractSubscriberInfo(const bt_event *event) {
-    sharedMem::TraceMessage msg { .header = sharedMem::TraceHeader{ sharedMem::MessageType::SUBSCRIBERTRACE }};
+    sharedMem::TraceMessage msg(sharedMem::MessageType::SUBSCRIBERTRACE);
 
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
     const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
@@ -62,7 +62,7 @@ sharedMem::TraceMessage extractSubscriberInfo(const bt_event *event) {
 }
 
 sharedMem::TraceMessage extractServiceInfo(const bt_event *event) {
-    sharedMem::TraceMessage msg { .header = sharedMem::TraceHeader{ .type = sharedMem::MessageType::SERVICETRACE }};
+    sharedMem::TraceMessage msg(sharedMem::MessageType::SERVICETRACE);
 
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
     const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
@@ -77,7 +77,7 @@ sharedMem::TraceMessage extractServiceInfo(const bt_event *event) {
 }
 
 sharedMem::TraceMessage extractClientInfo(const bt_event *event) {
-    sharedMem::TraceMessage msg { .header = sharedMem::TraceHeader{ .type = sharedMem::MessageType::CLIENTTRACE }};
+    sharedMem::TraceMessage msg(sharedMem::MessageType::CLIENTTRACE);
 
     const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
     const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
@@ -107,5 +107,5 @@ sharedMem::TraceMessage extractTracedMessage(const bt_message *message) {
 
     std::cout << "found known message type " << eventName << std::endl;
 
-    return sharedMem::TraceMessage{};
+    return sharedMem::TraceMessage(sharedMem::MessageType::NONE);
 }

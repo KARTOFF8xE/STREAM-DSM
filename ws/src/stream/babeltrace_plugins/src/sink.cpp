@@ -8,9 +8,9 @@
 
 #include <ipc/ipc-server.hpp>
 
-#include "interface.hpp"
+// #include "interface.hpp"
 #include "sink.hpp"
-#include "participantFactory.hpp"
+// #include "participantFactory.hpp"
 #include "participants.hpp"
 
 static bt_component_class_initialize_method_status publisher_initialize(

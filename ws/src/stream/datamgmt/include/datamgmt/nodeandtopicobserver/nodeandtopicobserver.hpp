@@ -138,23 +138,6 @@ bool receiveSubscribersToUpdate(IpcClient &ipcClient, std::vector<Client> &clien
 bool receivePublishersToUpdate(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server);
 
 /**
- * @brief Receives a response from a node and processes it.
- *
- * This function listens for a response from a node via the IPC client. If a valid response 
- * is received, it searches for a matching client in the client list based on the `primaryKey`
- * and sends the response to that client via the server. The response is then written to a 
- * communication pipe.
- *
- * @param ipcClient Reference to the IPC client used to receive the response.
- * @param clients Reference to a vector of clients to be checked for the matching `primaryKey`.
- * @param server Reference to the IPC server used to send the response to the client.
- * @param pipeToRelationMgmt_w The write pipe descriptor used to send the node response to the relation management.
- *
- * @return If a message had been received.
- */
-bool receiveNodeResponse(IpcClient &ipcClient, std::vector<Client> &clients, const IpcServer &server, int pipeToRelationMgmt_w);
-
-/**
  * @brief Handles client requests by adding or removing the client from the list of clients.
  *
  * This function processes client updates by either adding or removing a client from the

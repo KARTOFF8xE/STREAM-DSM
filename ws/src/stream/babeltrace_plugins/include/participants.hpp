@@ -4,5 +4,5 @@
 #include <ipc/sharedMem.hpp>
 
 
-// ToDo
+// TODO
 sharedMem::TraceMessage extractTracedMessage(const bt_message *message);

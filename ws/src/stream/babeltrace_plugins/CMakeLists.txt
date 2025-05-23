@@ -13,16 +13,8 @@ find_package(dbs REQUIRED)
 find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
 
 add_library(sink SHARED
-    src/sink.cpp
-    src/participantFactory.cpp
-    src/participants/client.cpp
-    src/participants/node.cpp
-    src/participants/dummy.cpp
-    src/participants/service.cpp
-    src/participants/subscriber.cpp
-    src/participants/publisher.cpp
-    src/participants/subscriber.cpp
-    src/participants.cpp
+  src/participants.cpp
+  src/sink.cpp
 )
 
 target_include_directories(sink PRIVATE include)

@@ -2,9 +2,6 @@
 
 #include "ipc/sharedMem.hpp"
 
-#include "common.hpp"
-#include "interface.hpp"
-
 #include <memory>
 
 

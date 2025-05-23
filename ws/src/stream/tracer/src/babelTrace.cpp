@@ -1,6 +1,6 @@
 #include <babeltrace2/babeltrace.h>
 #include <stdio.h>
-#include<unistd.h>
+#include <unistd.h>
 
 int load_Plugin(const char *plugin_name, const bt_plugin **plugin) {
     bt_plugin_find_status plugin_find_status = bt_plugin_find(
@@ -72,8 +72,8 @@ int find_existing_instances_at_ip(const char *ip, bt_component_class_source *sou
 }
 
 int main() {
-    // hello world kekw
-    // bt_logging_set_global_level(bt_logging_level::BT_LOGGING_LEVEL_TRACE);
+    // set log level for debugging:
+    // bt_logging_set_global_level(bt_logging_level::BT_LOGGING_LEVEL_DEBUG);
 
     /***Load Plugin source.ctf.lttng-live***/
     printf("Load Plugin ctf.lttng-live....."); fflush(stdout);
