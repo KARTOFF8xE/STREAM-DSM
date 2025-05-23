@@ -5,4 +5,4 @@
 
 
 // TODO
-sharedMem::TraceMessage extractTracedMessage(const bt_message *message);
+sharedMem::TraceMessage extractTracedMessage(bt_self_component_sink *self_component_sink, const bt_message *message);

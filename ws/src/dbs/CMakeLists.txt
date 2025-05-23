@@ -22,6 +22,7 @@ add_library(dbs_lib SHARED
     src/neo4j/topic/topic.cpp
     src/neo4j/roots/roots.cpp
     src/neo4j/tree/tree.cpp
+    src/neo4j/timer/timer.cpp
     src/influxdb/influxdb.cpp
 )
 

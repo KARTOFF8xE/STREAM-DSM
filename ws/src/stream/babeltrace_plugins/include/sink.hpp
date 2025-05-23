@@ -3,6 +3,7 @@
 #include "ipc/sharedMem.hpp"
 
 #include <memory>
+#include <unordered_map>
 
 
 struct publisher {
@@ -10,10 +11,11 @@ struct publisher {
     
     sharedMem::SHMChannel<sharedMem::TraceMessage> channel;
     
+    std::unordered_map<u_int64_t, u_int32_t> timer_init;
+
     publisher(const std::string& name)
         : channel(name.c_str(), true)
     {}
-
 };
 
 /**

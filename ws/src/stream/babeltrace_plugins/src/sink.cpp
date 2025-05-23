@@ -8,9 +8,7 @@
 
 #include <ipc/ipc-server.hpp>
 
-// #include "interface.hpp"
 #include "sink.hpp"
-// #include "participantFactory.hpp"
 #include "participants.hpp"
 
 static bt_component_class_initialize_method_status publisher_initialize(
@@ -52,51 +50,13 @@ publisher_graph_is_configured(bt_self_component_sink *self_component_sink) {
     return BT_COMPONENT_CLASS_SINK_GRAPH_IS_CONFIGURED_METHOD_STATUS_OK;
 }
 
-void get_value(
-    const bt_field *structure_field,
-    const bt_field_class_structure_member *member
-    ) {
-    const bt_field_class *field_class = bt_field_class_structure_member_borrow_field_class_const(member);
-    const char *name = bt_field_class_structure_member_get_name(member);
-    const bt_field *field = bt_field_structure_borrow_member_field_by_name_const(structure_field, name);
-
-    switch(bt_field_class_get_type(field_class)) {
-        case BT_FIELD_CLASS_TYPE_STRING: {
-            printf("%s (string)\n", bt_field_string_get_value(field));
-            break;
-        }
-        case BT_FIELD_CLASS_TYPE_SIGNED_INTEGER: {
-            printf("%ld (Uint)\n", bt_field_integer_signed_get_value(field));
-            break;
-        }
-        case BT_FIELD_CLASS_TYPE_UNSIGNED_INTEGER: {
-            printf("%ld (Int)\n", bt_field_integer_unsigned_get_value(field));
-            break;
-        }
-        default: printf("\033[33;1UNKNOWN TYPE\033[0m\n");
-    }
-}
-
-void analyzeField(const bt_field *field) {
-    const bt_field_class *field_class = bt_field_borrow_class_const(field);
-    if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
-        uint64_t field_count = bt_field_class_structure_get_member_count(field_class);
-
-        for (uint64_t i = 0; i < field_count; i++) {
-            const bt_field_class_structure_member *member = bt_field_class_structure_borrow_member_by_index_const(field_class, i);
-            printf("\t%s:\t", bt_field_class_structure_member_get_name(member));
-            get_value(field, member);
-        }
-
-    } else { printf("\033[33;1UNKNOWN TYPE\033[0m\n"); }
-}
-
 static void publish(bt_self_component_sink *self_component_sink, const bt_message *message) {
     struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
 
-    sharedMem::TraceMessage msg = extractTracedMessage(message);
-    publisher->channel.send(msg);
+    sharedMem::TraceMessage msg = extractTracedMessage(self_component_sink, message);
+
+    if (msg.header.type != sharedMem::MessageType::NONE) publisher->channel.send(msg);
 }
 
 bt_component_class_sink_consume_method_status publisher_consume(
