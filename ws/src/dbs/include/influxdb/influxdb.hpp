@@ -22,10 +22,10 @@ namespace influxDB {
     };
 
     struct ValuePairs {
-        ValueT                      attribute;
-        primaryKey_t                primaryKey;
-        std::chrono::nanoseconds    timestamp;
-        long double                 value;
+        ValueT          attribute;
+        primaryKey_t    primaryKey;
+        time_t          timestamp;
+        long double     value;
     };
 
     /**

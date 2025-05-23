@@ -22,7 +22,7 @@ namespace influxDB {
         return type + "," +
             "primaryKey=" + std::to_string(pair.primaryKey) + " " +
             "value=" + std::to_string(pair.value) + " " +
-            std::to_string(pair.timestamp.count());
+            std::to_string(pair.timestamp);
     }
 
     std::string createPayloadMultipleValSameTime(std::vector<ValuePairs> pairs) {

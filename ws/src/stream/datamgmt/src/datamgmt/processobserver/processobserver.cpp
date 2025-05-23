@@ -284,7 +284,7 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
             influxDB::createPayloadSingleVal(influxDB::ValuePairs {
                 .attribute  = influxDB::CPU_UTILIZATION,
                 .primaryKey = cpuData.primaryKey,
-                .timestamp  = std::chrono::high_resolution_clock::now().time_since_epoch(),
+                .timestamp  = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()),
                 .value      = cpuData.utilization,
             }),
             curl::INFLUXDB_WRITE
