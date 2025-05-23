@@ -14,7 +14,7 @@ namespace actionservice {
                         {{ "statement": "MATCH (n:Node {{handle: $node_handle}}) SET n.ActionServices = COALESCE(n.ActionServices, []) + $name WITH n MATCH (c:Node) WHERE $name IN c.ActionClients CREATE (n)-[:action_for {{name: $name}}]->(c) RETURN COLLECT(DISTINCT {{ client_id: toInteger(split(elementId(c), \":\")[-1]), node_id: toInteger(split(elementId(n), \":\")[-1]) }}) AS row ",
                         "parameters": {{
                             "name": "{}",
-                            "node_handle": "{}"
+                            "node_handle": {}
                             }}
                         }}
                     ]

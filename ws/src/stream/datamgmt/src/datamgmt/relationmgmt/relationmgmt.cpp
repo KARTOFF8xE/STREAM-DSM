@@ -67,9 +67,9 @@ std::string getParameterString(std::vector<ProcessData> pdv) {
     std::ostringstream oss;
     oss << "[";
     for (size_t i = 0; i < pdv.size(); i++) {
-        oss << "{\"pid\": \""
+        oss << "{\"pid\": "
             << pdv.at(i).pid
-            << "\", \"name\": \""
+            << ", \"name\": \""
             << pdv.at(i).name
             << "\""
             << "}";

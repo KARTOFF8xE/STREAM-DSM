@@ -14,8 +14,8 @@ namespace node {
                         {{ "statement": "MERGE (n:Node{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishes_to', 'subscription', 'service_for', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n ",
                         "parameters": {{
                             "name": "{}",
-                            "handle": "{}",
-                            "pid": "{}"
+                            "handle": {},
+                            "pid": {}
                             }}
                         }}
                     ]
@@ -45,7 +45,7 @@ namespace node {
                 [
                     {{ "statement": "MATCH (n:Node {{pid:$pid}}) SET n.state = 0, n.stateChangeTime = TIMESTAMP() ",
                     "parameters": {{
-                        "pid": "{}"
+                        "pid": {}
                         }}
                     }}
                 ]
@@ -60,7 +60,7 @@ namespace node {
                 [
                     {{ "statement": "MATCH (n:Node {{handle: $handle}}) set n.stateMachine= $statemachine, n.state= $state ",
                     "parameters": {{
-                        "handle": "{}",
+                        "handle": {},
                         "statemachine": {},
                         "state": {}
                         }}
