@@ -11,7 +11,7 @@ namespace node {
             {{ 
                 "statements":
                     [
-                        {{ "statement": "MERGE (n:Node{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=1, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishes_to', 'subscription', 'service_for', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n ",
+                        {{ "statement": "MERGE (n:Active{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=1, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=1, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishes_to', 'subscription', 'service_for', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n ",
                         "parameters": {{
                             "name": "{}",
                             "handle": {},
@@ -44,7 +44,7 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Node {{pid:$pid}}) SET n.state = 0, n.stateChangeTime = $timestamp ",
+                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = 0, n.stateChangeTime = $timestamp ",
                     "parameters": {{
                         "pid": {},
                         "timestamp": {}
@@ -60,7 +60,7 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Node {{handle: $handle}}) set n.stateMachine= $statemachine, n.state= $state ",
+                    {{ "statement": "MATCH (n:Active {{handle: $handle}}) set n.stateMachine= $statemachine, n.state= $state ",
                     "parameters": {{
                         "handle": {},
                         "statemachine": {},
@@ -77,7 +77,7 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Node {{stateMachine: $statemachine}}) set n.state = $state, n.stateChangeTime = $timestamp RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                    {{ "statement": "MATCH (n:Active {{stateMachine: $statemachine}}) set n.state = $state, n.stateChangeTime = $timestamp RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
                     "parameters": {{
                         "statemachine": {},
                         "state": {},

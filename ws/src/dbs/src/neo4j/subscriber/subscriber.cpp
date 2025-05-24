@@ -11,7 +11,7 @@ namespace subscriber {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Node {{handle: $node_handle}}) MERGE (t:Topic {{name: $name}}) CREATE (n)<-[:subscription]-(t) RETURN {{node_id: toInteger(split(elementId(n), \":\")[-1]), topic_id: toInteger(split(elementId(t), \":\")[-1])}} AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $node_handle}}) MERGE (t:Passive {{name: $name}}) CREATE (n)<-[:subscription]-(t) RETURN {{node_id: toInteger(split(elementId(n), \":\")[-1]), topic_id: toInteger(split(elementId(t), \":\")[-1])}} AS row ",
                         "parameters": {{
                             "name": "{}",
                             "node_handle": {}

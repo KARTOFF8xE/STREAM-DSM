@@ -13,7 +13,7 @@ namespace timer {
             {{ 
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Node {{handle: $nodeHandle}}) CREATE (n) -[:timer {{frequency: $frequency}}]-> (n) WITH n RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) CREATE (n) -[:timer {{frequency: $frequency}}]-> (n) WITH n RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
                         "parameters": {{
                             "nodeHandle": {},
                             "frequency": {}
