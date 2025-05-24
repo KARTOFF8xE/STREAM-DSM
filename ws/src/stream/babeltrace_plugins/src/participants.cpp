@@ -28,11 +28,8 @@ sharedMem::TraceMessage extractNodeInfo(const bt_event *event, const bt_clock_sn
         msg.node.pid = pid_t(bt_field_integer_signed_get_value(field));
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 
-    if (timeStamp) {
-        msg.node.stateChangeTime = bt_clock_snapshot_get_value(timeStamp) / 1'000'000'000;
-    } else {
-            msg.lcTrans.stateChangeTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    }
+
+    msg.node.stateChangeTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
     return msg;
 }
@@ -161,11 +158,7 @@ sharedMem::TraceMessage extractLifecycleTransitionInfo(const bt_event *event, co
         field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "goal_label");
         std::string_view state = bt_field_string_get_value(field);
 
-        if (timeStamp) {
-            msg.lcTrans.stateChangeTime = bt_clock_snapshot_get_value(timeStamp) / 1'000'000'000;
-        } else {
-            msg.lcTrans.stateChangeTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        }
+        msg.lcTrans.stateChangeTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
         using namespace std::string_view_literals;
         if (state == "unconfigured"sv)  { msg.lcTrans.state = sharedMem::State::UNCONFIGURED; return msg; }

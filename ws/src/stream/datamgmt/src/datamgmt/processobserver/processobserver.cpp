@@ -259,6 +259,12 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
             processVec.at(index).cpu_utilisation = get_cpu_utilisation(processVec.at(index));
             if (processVec.at(index).cpu_utilisation < 0) {
                 std::cout << "removed Process " << processVec.at(index).exe_filename << " with pid " << processVec.at(index).pid << std::endl;
+                NodeResponse nodeUpdate {
+                    .state              = sharedMem::State::INACTIVE,
+                    .stateChangeTime    = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()),
+                    .pid                = processVec.at(index).pid,
+                };
+                pipe_ns::writeT<NodeResponse>(pipes[NODEANDTOPICOBSERVER].write, nodeUpdate);
                 processVec.erase(it);
                 if (processVec.size() == 0) break;
                 it--;

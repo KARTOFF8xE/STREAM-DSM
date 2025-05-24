@@ -148,7 +148,6 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
         if (type == pipe_ns::MsgType::TOPICRESPONSE) {
             {
             /*** Namespace-Tree ***/
-            std::cout << "Topic: " << unionResponse.topicResp.name << std::endl;
             curl::push(
                 createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(unionResponse.topicResp.name),
                 curl::NEO4J
@@ -159,7 +158,6 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
         }
 
         {
-            std::cout << "Node: " << unionResponse.nodeResp.name << std::endl;
             /*** Namespace-Tree ***/
             curl::push(
                 createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(unionResponse.nodeResp.name),

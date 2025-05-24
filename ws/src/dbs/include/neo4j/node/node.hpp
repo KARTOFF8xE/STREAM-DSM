@@ -15,9 +15,9 @@ namespace node {
      * 
      * @returns The Payload for the Query.
      */
-    std::string getPayload(std::string name, u_int64_t handle, pid_t pid, time_t timestamp);
+    std::string getPayload(std::string name, u_int64_t handle, u_int64_t state, pid_t pid, time_t timestamp);
     std::string getPayloadRequestByPrimaryKey(pid_t pid);
-    std::string getPayloadSetNodeOffline(pid_t pid, time_t timestamp);
+    std::string getPayloadSetNodeStateByPID(pid_t pid, time_t timestamp, u_int64_t state);
     std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine, u_int64_t state);
     std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::State state, time_t timestamp);
 }

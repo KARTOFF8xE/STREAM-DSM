@@ -134,15 +134,24 @@ int main() {
             .read   = p[0],
             .write  = p[1],
         };
-    }
-    {
-        int p[2];
         pipe_ns::getPipe(p);
         modules[RELATIONMGMT].pipes[TASKORCHESTRATOR] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
         modules[TASKORCHESTRATOR].pipes[RELATIONMGMT] = pipe_ns::Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+    }
+    {
+        int p[2];
+        pipe_ns::getPipe(p);
+        modules[PROCESSOBSERVER].pipes[NODEANDTOPICOBSERVER] = pipe_ns::Pipe {
+            .read   = p[0],
+            .write  = p[1],
+        };
+        modules[NODEANDTOPICOBSERVER].pipes[PROCESSOBSERVER] = pipe_ns::Pipe {
             .read   = p[0],
             .write  = p[1],
         };
