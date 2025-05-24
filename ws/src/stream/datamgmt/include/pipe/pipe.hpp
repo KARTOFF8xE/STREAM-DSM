@@ -3,12 +3,15 @@
 #include <cstdint>
 #include <unistd.h>
 #include <sys/types.h>
+#include "datamgmt/common.hpp"
 
 
 namespace pipe_ns {
 
 enum MsgType {
     NONE,
+    NODERESPONSE,
+    TOPICRESPONSE
 };
 
 struct Header {
@@ -19,6 +22,13 @@ struct Header {
 struct Pipe {
     int read;
     int write;
+};
+
+union UnionResponse {
+    TopicResponse   topicResp;
+    NodeResponse    nodeResp;
+
+    UnionResponse() {}
 };
 
 int getPipe(int p[2], bool blocking = false);

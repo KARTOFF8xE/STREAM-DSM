@@ -7,7 +7,6 @@
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"
-#include "datamgmt/common.hpp"
 
 
 namespace pipe_ns {
@@ -63,6 +62,7 @@ ssize_t readT(int __fd, T& payload, MsgType* type) {
 // Explizite Instanziierungen:
 template ssize_t writeT<RequestingClient>(int, const RequestingClient&, MsgType);
 template ssize_t writeT<NodeResponse>(int, const NodeResponse&, MsgType);
+template ssize_t writeT<UnionResponse>(int, const UnionResponse&, MsgType);
 template ssize_t writeT<SingleAttributeInformationRequest>(int, const SingleAttributeInformationRequest&, MsgType);
 template ssize_t writeT<AggregatedAttributeInformationRequest>(int, const AggregatedAttributeInformationRequest&, MsgType);
 template ssize_t writeT<CustomAttributeInformationRequest>(int, const CustomAttributeInformationRequest&, MsgType);
@@ -72,6 +72,7 @@ template ssize_t writeT<union_Requests>(int, const union_Requests&, MsgType);
 
 template ssize_t readT<RequestingClient>(int, RequestingClient&, MsgType*);
 template ssize_t readT<NodeResponse>(int, NodeResponse&, MsgType*);
+template ssize_t readT<UnionResponse>(int, UnionResponse&, MsgType*);
 template ssize_t readT<SingleAttributeInformationRequest>(int, SingleAttributeInformationRequest&, MsgType*);
 template ssize_t readT<AggregatedAttributeInformationRequest>(int, AggregatedAttributeInformationRequest&, MsgType*);
 template ssize_t readT<CustomAttributeInformationRequest>(int, CustomAttributeInformationRequest&, MsgType*);

@@ -384,7 +384,7 @@ NodeSubscribersToUpdate queryGraphDbForSubscriber(std::string payload) {
     return nodeSubToUpdate;
 }
 
-void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server) {
+void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server, int pipeToRelationMgmt_w) {
     std::string payloadNeo4j = subscriber::getPayload(msg.subscriber.topicName, msg.subscriber.nodeHandle);
     NodeSubscribersToUpdate nodeSubToUpdate = queryGraphDbForSubscriber(payloadNeo4j);
 
@@ -408,6 +408,10 @@ void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
             server.sendTopicSubscribersUpdate(payloadTopic, client.pid, false);
         }
     }
+
+    pipe_ns::UnionResponse unionResp;
+    std::memcpy(unionResp.topicResp.name, msg.subscriber.topicName, sizeof(msg.subscriber.topicName));
+    pipe_ns::writeT<pipe_ns::UnionResponse>(pipeToRelationMgmt_w, unionResp, pipe_ns::MsgType::TOPICRESPONSE);
 }
 
 NodePublishersToUpdate queryGraphDbForPublisher(std::string payload) {
@@ -423,7 +427,7 @@ NodePublishersToUpdate queryGraphDbForPublisher(std::string payload) {
     return nodePubToUpdate;
 }
 
-void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server) {
+void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server, int pipeToRelationMgmt_w) {
     std::string payloadNeo4j = publisher::getPayload(msg.publisher.topicName, msg.publisher.nodeHandle);
     NodePublishersToUpdate nodePubToUpdate = queryGraphDbForPublisher(payloadNeo4j);
 
@@ -447,6 +451,10 @@ void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
             server.sendTopicPublishersUpdate(payloadTopic, client.pid, false);
         }
     }
+
+    pipe_ns::UnionResponse unionResp;
+    std::memcpy(unionResp.topicResp.name, msg.publisher.topicName, sizeof(msg.publisher.topicName));
+    pipe_ns::writeT<pipe_ns::UnionResponse>(pipeToRelationMgmt_w, unionResp, pipe_ns::MsgType::TOPICRESPONSE);
 }
 
 NodeResponse queryGraphDbForNode(std::string payloadNeo4j) {
@@ -484,7 +492,6 @@ void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient>
     nodeResponse.state              = sharedMem::State::ACTIVE;
     nodeResponse.pid                = msg.node.pid;
     nodeResponse.stateChangeTime    = msg.node.stateChangeTime;
-    // nodeResponse.stateChangeTime    = msg.node.stateChangeTime;  // TODO: get stateChangeTime from Tracer, not from DB
     util::parseString(nodeResponse.name, fqName);
 
 
@@ -496,7 +503,10 @@ void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient>
         }
     }
 
-    pipe_ns::writeT<NodeResponse>(pipeToRelationMgmt_w, nodeResponse);
+    pipe_ns::UnionResponse unionResp;
+    unionResp.nodeResp = nodeResponse;
+    pipe_ns::writeT<pipe_ns::UnionResponse>(pipeToRelationMgmt_w, unionResp, pipe_ns::MsgType::NODERESPONSE);
+    // pipe_ns::writeT<NodeResponse>(pipeToRelationMgmt_w, nodeResponse);
 }
 
 
@@ -662,11 +672,11 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
                     break;
                 case sharedMem::MessageType::PUBLISHERTRACE:
                     if (strstr(msg.subscriber.topicName, "/_action/")) break;
-                    handlePublishersUpdate(msg, clients, server);
+                    handlePublishersUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::SUBSCRIBERTRACE:
                     if (strstr(msg.subscriber.topicName, "/_action/")) break;
-                    handleSubscribersUpdate(msg, clients, server);
+                    handleSubscribersUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::SERVICETRACE:
                     if (strstr(msg.service.name, "/_action/")) {
