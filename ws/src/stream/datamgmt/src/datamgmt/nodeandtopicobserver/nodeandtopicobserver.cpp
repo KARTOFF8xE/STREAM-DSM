@@ -469,9 +469,9 @@ NodeResponse queryGraphDbForNode(std::string payloadNeo4j) {
         {
         nodeResponse.primaryKey = static_cast<primaryKey_t>(data["results"][0]["data"][0]["meta"][0]["id"]);
     } else {
+        std::cout << "Failed parsing JSON (wanted ID):" << std::endl;
         std::cout << payloadNeo4j << std::endl;
         std::cout << responseNeo4J << std::endl;
-        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
     }
     if (!data["results"].empty() &&
         !data["results"][0]["data"].empty() && 
@@ -480,9 +480,9 @@ NodeResponse queryGraphDbForNode(std::string payloadNeo4j) {
         nodeResponse.bootCount          = data["results"][0]["data"][0]["row"][0]["bootcounter"];
         nodeResponse.stateChangeTime    = data["results"][0]["data"][0]["row"][0]["stateChangeTime"];
     } else {
+        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
         std::cout << payloadNeo4j << std::endl;
         std::cout << responseNeo4J << std::endl;
-        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
     }
 
     return nodeResponse;
@@ -526,9 +526,9 @@ NodeTimerToUpdate queryGraphDbForTimer(std::string payloadNeo4j) {
         !data["results"][0]["data"][0]["row"].empty()) {
             nodeTimerToUpdate.primaryKey = data["results"][0]["data"][0]["row"][0].get<u_int32_t>();
     } else {
+        std::cout << "Failed parsing JSON (wanted ID):" << std::endl;
         std::cout << payloadNeo4j << std::endl;
         std::cout << responseNeo4J << std::endl;
-        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
     }
 
     return nodeTimerToUpdate;
@@ -563,9 +563,9 @@ NodeStateUpdate queryGraphDbForStateChange(std::string payloadNeo4j) {
         !data["results"][0]["data"][0]["row"].empty()) {
             nodeStateUpdate.primaryKey = data["results"][0]["data"][0]["row"][0].get<u_int64_t>();
     } else {
+        std::cout << "Failed parsing JSON (wanted ID):" << std::endl;
         std::cout << payloadNeo4j << std::endl;
         std::cout << responseNeo4J << std::endl;
-        std::cout << "Failed parsing JSON (wanted ID)" << std::endl;
     }
 
     return nodeStateUpdate;
@@ -584,67 +584,48 @@ void handleStateTransitionToUpdate(sharedMem::TraceMessage msg, std::vector<Requ
     }
 }
 
-std::vector<NodeResponse> extractNodeInfo(std::string response) {
-    // NodeResponse foo {
-    //     .bootCount ,
-    //     .name,
-    //     .primaryKey,
-    //     .state,
-    //     .stateChangeTime,
-    //     .pid,
-    //     .primaryKey,
-    // }
-//     {
-//     "results": [
-//         {
-//             "columns": [
-//                 "n"
-//             ],
-//             "data": [
-//                 {
-//                     "row": [
-//                         {
-//                             "stateChangeTime": 1748077345,
-//                             "Services": [
-//                                 "/minimal_publisher/get_parameters",
-//                                 "/minimal_publisher/get_parameter_types",
-//                                 "/minimal_publisher/set_parameters",
-//                                 "/minimal_publisher/set_parameters_atomically",
-//                                 "/minimal_publisher/describe_parameters",
-//                                 "/minimal_publisher/list_parameters",
-//                                 "/minimal_publisher/get_type_description"
-//                             ],
-//                             "name": "/minimal_publisher",
-//                             "bootcounter": 1,
-//                             "handle": 110180750317552,
-//                             "pid": 64195,
-//                             "state": 2
-//                         }
-//                     ],
-//                     "meta": [
-//                         {
-//                             "id": 0,
-//                             "elementId": "4:f5975273-110f-47f2-97fc-227ff8a3c4eb:0",
-//                             "type": "node",
-//                             "deleted": false
-//                         }
-//                     ]
-//                 }
-//             ]
-//         }
-//     ],
-//     "errors": [],
-//     "lastBookmarks": [
-//         "FB:kcwQ9ZdScxEPR/KX/CJ/+KPE68kWUpA="
-//     ]
-// }
+std::vector<NodeStateUpdate> extractNodeInfo(std::string response) {
+    std::vector<NodeStateUpdate> nodeStateUpdates;
+
+    nlohmann::json data = nlohmann::json::parse(response);
+    if (!data["results"].empty() &&
+        !data["results"][0]["data"].empty() && 
+        !data["results"][0]["data"][0]["row"].empty()) {
+            nlohmann::json row = data["results"][0]["data"][0]["row"];
+            std::cout << row << std::endl;
+            for (auto item : row) {
+                NodeStateUpdate nodeStateUpdate;
+                if (item.contains("primaryKey")) { // TODO: der hier fehlt noch! muss von der query noch mit zurück gegeben werden
+                    nodeStateUpdate.primaryKey = item["primaryKey"];
+                }
+                if (item.contains("state")) {
+                    nodeStateUpdate.state = item["state"];
+                }
+                if (item.contains("stateChangeTime")) {
+                    nodeStateUpdate.stateChangeTime = item["stateChangeTime"];
+                }
+                nodeStateUpdates.push_back(nodeStateUpdate);
+            }
+    } else {
+        std::cout << "Failed parsing JSON:" << std::endl;
+        std::cout << response << std::endl;
+    }
+
+    return nodeStateUpdates;
 }
 
-void setNodeOffline(NodeResponse nodeUpdate) {
+void setNodeOffline( NodeResponse nodeUpdate, std::vector<RequestingClient> clients, const IpcServer &server) {
     std::string payload = node::getPayloadSetNodeStateByPID(nodeUpdate.pid, nodeUpdate.stateChangeTime, sharedMem::State::INACTIVE);
     std::string response = curl::push(payload, curl::NEO4J);
-    std::cout << response << std::endl;
-    // TODO inform clients
+    std::vector<NodeStateUpdate> NodeStateUpdates = extractNodeInfo(response);
+    
+    for (NodeStateUpdate nodeStateUpdate : NodeStateUpdates) {
+        for (RequestingClient client : clients) {
+            if (client.primaryKey == nodeStateUpdate.primaryKey) {
+                server.sendNodeStateUpdate(nodeStateUpdate, client.pid, false);
+            }
+        }
+    }
 }
 
 void handleClient(RequestingClient &client, std::vector<RequestingClient> &clients) {
@@ -781,7 +762,7 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
         NodeResponse nodeUpdate;
         ssize_t ret = pipe_ns::readT<NodeResponse>(pipes[PROCESSOBSERVER].read, nodeUpdate);
         if (ret != -1) {
-            setNodeOffline(nodeUpdate);
+            setNodeOffline(nodeUpdate, clients, server);
             continue;
         }
 

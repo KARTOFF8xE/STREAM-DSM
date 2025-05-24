@@ -45,7 +45,7 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp RETURN n ",
+                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp RETURN DISTINCT {{ stateChangeTime: n.stateChangeTime, state: n.state, primaryKey: toInteger(last(SPLIT(elementId(n), \":\"))) }} ",
                     "parameters": {{
                         "pid": {},
                         "timestamp": {},

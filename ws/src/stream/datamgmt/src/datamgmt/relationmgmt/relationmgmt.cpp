@@ -84,9 +84,9 @@ std::string getParameterString2(std::vector<ProcessData> pdv) {
     std::ostringstream oss;
     oss << "[";
     for (size_t i = 0; i < pdv.size(); i++) {
-        oss << "\""
+        oss << ""
             << pdv.at(i).pid
-            << "\"";
+            << "";
 
         if (i < pdv.size() - 1) oss << ", ";
     }
