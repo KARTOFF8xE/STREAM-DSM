@@ -15,8 +15,6 @@ using namespace std::chrono_literals;
 #include <neo4j/subscriber/subscriber.hpp>
 #include <neo4j/service/service.hpp>
 #include <neo4j/client/client.hpp>
-#include <neo4j/actionservice/actionservice.hpp>
-#include <neo4j/actionclient/actionclient.hpp>
 #include <neo4j/timer/timer.hpp>
 
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
@@ -34,7 +32,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient client, pr
 
     json payload = json::parse(response);
     json row = payload["results"][0]["data"][0]["row"];
-
+    std::cout << row << std::endl;
     json requestedNode;
     std::vector<NodePublishersToUpdate>         pubs;
     std::vector<NodeSubscribersToUpdate>        subs;
@@ -51,7 +49,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient client, pr
 
         size_t counter = 0;
         while (item[counter].contains("relationship")) {
-            if (item[counter]["relationship"] == "publishes_to") {
+            if (item[counter]["relationship"] == "publishing") {
                 for (const json & node: item[counter]["nodes"]) {
                     pubs.push_back(
                         NodePublishersToUpdate {
@@ -62,7 +60,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient client, pr
                     );
                 }
             }
-            if (item[counter]["relationship"] == "subscription") {
+            if (item[counter]["relationship"] == "subscribing") {
                 for (const json & node: item[counter]["nodes"]) {
                     subs.push_back(
                         NodeSubscribersToUpdate {
@@ -73,47 +71,49 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient client, pr
                     );
                 }
             }
-            if (item[counter]["relationship"] == "service_for") {
+            if (item[counter]["relationship"] == "sending") {       // concept of Services
                 for (const json & node: item[counter]["nodes"]) {
-                    if (node["direction"] == "outgoing") {
+                    if (!node["actionName"].is_null() || node["direction"] != "outgoing") { continue; }
+                    if (node["mode"] == "responds") {               // Service for...
                         NodeIsServerForUpdate tmp {
                         .primaryKey     = primaryKey,
                         .clientNodeId   = node["id"],
                         .isUpdate       = false,
                         };
-                        util::parseString(tmp.srvName, node["name"].get<std::string>());
+                        util::parseString(tmp.srvName, node["serviceName"].get<std::string>());
 
                         isServerFor.push_back(tmp);
-                    } else {
+                    } else {                                        // Client of...
                         NodeIsClientOfUpdate tmp {
                             .primaryKey     = primaryKey,
                             .serverNodeId   = node["id"],
                             .isUpdate       = false,
                         };
-                        util::parseString(tmp.srvName, node["name"].get<std::string>());
+                        util::parseString(tmp.srvName, node["serviceName"].get<std::string>());
 
                         isClientOf.push_back(tmp);
                     }
                 }
             }
-            if (item[counter]["relationship"] == "action_for") {
+            if (item[counter]["relationship"] == "sending") {       // concept of Actions
                 for (const json & node: item[counter]["nodes"]) {
-                    if (node["direction"] == "outgoing") {
+                    if (node["actionName"].is_null() || node["direction"] != "outgoing" || node["serviceName"] != "send_goal") { continue; }
+                    if (node["mode"] == "responds") {          // ActionService for...
                         NodeIsActionServerForUpdate tmp {
                         .primaryKey         = primaryKey,
                         .actionclientNodeId = node["id"],
                         .isUpdate           = false,
                         };
-                        util::parseString(tmp.srvName, node["name"].get<std::string>());
+                        util::parseString(tmp.srvName, node["actionName"].get<std::string>());
 
                         isActionServerFor.push_back(tmp);
-                    } else {
+                    } else {                                        // ActionClient of...
                         NodeIsActionClientOfUpdate tmp {
                             .primaryKey         = primaryKey,
                             .actionserverNodeId = node["id"],
                             .isUpdate           = false,
                         };
-                        util::parseString(tmp.srvName, node["name"].get<std::string>());
+                        util::parseString(tmp.srvName, node["actionName"].get<std::string>());
 
                         isActionClientOf.push_back(tmp);
                     }
@@ -217,7 +217,6 @@ void singleTimeTopicResponse(const IpcServer &server, RequestingClient client, p
 }
 
 
-
 std::vector<NodeIsClientOfUpdate> queryGraphDbForClient(std::string payload, std::string srvName) {
     std::vector<NodeIsClientOfUpdate> nodeIsClientOfUpdate;
 
@@ -272,9 +271,9 @@ std::vector<NodeIsServerForUpdate> queryGraphDbForService(std::string payload, s
 
     NodeIsServerForUpdate nodeIsServerForUpdateBlueprint;
     util::parseString(nodeIsServerForUpdateBlueprint.srvName, srvName);
-
+    
     std::string response = curl::push(payload, curl::NEO4J);
-
+    
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
 
@@ -297,7 +296,6 @@ std::vector<NodeIsServerForUpdate> queryGraphDbForService(std::string payload, s
 void handleIsServerForUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server) {
     std::string payloadNeo4j = service::getPayload(msg.service.name, msg.service.nodeHandle);
     std::vector<NodeIsServerForUpdate> nodeIsSrvForUpdate = queryGraphDbForService(payloadNeo4j, msg.service.name);
-
     for (RequestingClient client: clients) {
         for (NodeIsServerForUpdate item : nodeIsSrvForUpdate) {
             if (client.primaryKey == item.primaryKey) {
@@ -318,54 +316,64 @@ void handleIsServerForUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
 }
 
 void handleActionClientToUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server) {
-    if (!strstr(msg.service.name, "/_action/send_goal")) { return; }
-    
-    truncateAtSubstring(msg.service.name, "/_action/send_goal");
+    char serviceName[MAX_STRING_SIZE];
+    char actionName[MAX_STRING_SIZE];
+    strncpy(serviceName, msg.service.name, MAX_STRING_SIZE);
+    strncpy(actionName, msg.service.name, MAX_STRING_SIZE);
+    truncateAfterSubstring(serviceName, "/_action/");
+    truncateAtSubstring(actionName, "/_action/");
 
-    std::string payloadNeo4j = actionclient::getPayload(msg.client.srvName, msg.client.nodeHandle);
+    std::string payloadNeo4j = client::getPayload(serviceName, msg.client.nodeHandle, actionName);
     std::vector<NodeIsClientOfUpdate> nodeIsCliToUpdate = queryGraphDbForClient(payloadNeo4j, msg.service.name);
+    
+    if (strcmp(serviceName, "send_goal")) {
+        for (RequestingClient client: clients) {
+            for (NodeIsClientOfUpdate item : nodeIsCliToUpdate) {
+                if (client.primaryKey == item.primaryKey) {
+                    server.sendNodeIsClientOfUpdate(item, client.pid, false);
+                }
+                if (client.primaryKey == item.serverNodeId) {
+                    NodeIsClientOfUpdate msg{
+                        .primaryKey     = item.serverNodeId,
+                        .serverNodeId   = item.primaryKey,
+                        .isUpdate       = true,
+                    };
+                    util::parseString(msg.srvName, item.srvName);
 
-    for (RequestingClient client: clients) {
-        for (NodeIsClientOfUpdate item : nodeIsCliToUpdate) {
-            if (client.primaryKey == item.primaryKey) {
-                server.sendNodeIsClientOfUpdate(item, client.pid, false);
-            }
-            if (client.primaryKey == item.serverNodeId) {
-                NodeIsClientOfUpdate msg{
-                    .primaryKey     = item.serverNodeId,
-                    .serverNodeId   = item.primaryKey,
-                    .isUpdate       = true,
-                };
-                util::parseString(msg.srvName, item.srvName);
-
-                server.sendNodeIsClientOfUpdate(msg, client.pid, false);
+                    server.sendNodeIsClientOfUpdate(msg, client.pid, false);
+                }
             }
         }
     }
 }
 
 void handleActionServerForUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server) {
-    if (!strstr(msg.service.name, "/_action/send_goal")) { return; }
+    char serviceName[MAX_STRING_SIZE];
+    char actionName[MAX_STRING_SIZE];
+    strncpy(serviceName, msg.service.name, MAX_STRING_SIZE);
+    strncpy(actionName, msg.service.name, MAX_STRING_SIZE);
+    truncateAfterSubstring(serviceName, "/_action/");
+    truncateAtSubstring(actionName, "/_action/");
 
-    truncateAtSubstring(msg.service.name, "/_action/send_goal");
-
-    std::string payloadNeo4j = actionservice::getPayload(msg.service.name, msg.service.nodeHandle);
+    std::string payloadNeo4j = service::getPayload(serviceName, msg.service.nodeHandle, actionName);
     std::vector<NodeIsServerForUpdate> nodeIsSrvForUpdate = queryGraphDbForService(payloadNeo4j, msg.service.name);
 
-    for (RequestingClient client: clients) {
-        for (NodeIsServerForUpdate item : nodeIsSrvForUpdate) {
-            if (client.primaryKey == item.primaryKey) {
-                server.sendNodeIsServerForUpdate(item, client.pid, false);
-            }
-            if (client.primaryKey == item.clientNodeId) {
-                NodeIsClientOfUpdate msg{
-                    .primaryKey     = item.clientNodeId,
-                    .serverNodeId   = item.primaryKey,
-                    .isUpdate       = true,
-                };
-                util::parseString(msg.srvName, item.srvName);
+    if (strcmp(serviceName, "send_goal")) {
+        for (RequestingClient client: clients) {
+            for (NodeIsServerForUpdate item : nodeIsSrvForUpdate) {
+                if (client.primaryKey == item.primaryKey) {
+                    server.sendNodeIsServerForUpdate(item, client.pid, false);
+                }
+                if (client.primaryKey == item.clientNodeId) {
+                    NodeIsClientOfUpdate msg{
+                        .primaryKey     = item.clientNodeId,
+                        .serverNodeId   = item.primaryKey,
+                        .isUpdate       = true,
+                    };
+                    util::parseString(msg.srvName, item.srvName);
 
-                server.sendNodeIsClientOfUpdate(msg, client.pid, false);
+                    server.sendNodeIsClientOfUpdate(msg, client.pid, false);
+                }
             }
         }
     }
@@ -388,24 +396,26 @@ void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
     std::string payloadNeo4j = subscriber::getPayload(msg.subscriber.topicName, msg.subscriber.nodeHandle);
     NodeSubscribersToUpdate nodeSubToUpdate = queryGraphDbForSubscriber(payloadNeo4j);
 
-    for (RequestingClient client : clients)
-    {
-        if (client.primaryKey == nodeSubToUpdate.primaryKey)
+    if (!strstr(msg.subscriber.topicName, "/_action/")) {
+        for (RequestingClient client : clients)
         {
-            server.sendNodeSubscribersToUpdate(nodeSubToUpdate, client.pid, false);
+            if (client.primaryKey == nodeSubToUpdate.primaryKey)
+            {
+                server.sendNodeSubscribersToUpdate(nodeSubToUpdate, client.pid, false);
+            }
         }
-    }
 
-    TopicSubscribersUpdate payloadTopic {
-        .primaryKey = nodeSubToUpdate.subscribesTo,
-        .subscriber = nodeSubToUpdate.primaryKey,
-        .isUpdate = true
-    };
-    for (RequestingClient client : clients)
-    {
-        if (client.primaryKey == payloadTopic.primaryKey)
+        TopicSubscribersUpdate payloadTopic {
+            .primaryKey = nodeSubToUpdate.subscribesTo,
+            .subscriber = nodeSubToUpdate.primaryKey,
+            .isUpdate = true
+        };
+        for (RequestingClient client : clients)
         {
-            server.sendTopicSubscribersUpdate(payloadTopic, client.pid, false);
+            if (client.primaryKey == payloadTopic.primaryKey)
+            {
+                server.sendTopicSubscribersUpdate(payloadTopic, client.pid, false);
+            }
         }
     }
 
@@ -431,24 +441,24 @@ void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
     std::string payloadNeo4j = publisher::getPayload(msg.publisher.topicName, msg.publisher.nodeHandle);
     NodePublishersToUpdate nodePubToUpdate = queryGraphDbForPublisher(payloadNeo4j);
 
-    for (RequestingClient client : clients)
-    {
-        if (client.primaryKey == nodePubToUpdate.primaryKey)
-        {
-            server.sendNodePublishersToUpdate(nodePubToUpdate, client.pid, false);
+    if (!strstr(msg.subscriber.topicName, "/_action/")) {
+        for (RequestingClient client : clients) {
+            if (client.primaryKey == nodePubToUpdate.primaryKey)
+            {
+                server.sendNodePublishersToUpdate(nodePubToUpdate, client.pid, false);
+            }
         }
-    }
 
-    TopicPublishersUpdate payloadTopic {
-        .primaryKey = nodePubToUpdate.publishesTo,
-        .publisher = nodePubToUpdate.primaryKey,
-        .isUpdate = true
-    };
-    for (RequestingClient client : clients)
-    {
-        if (client.primaryKey == payloadTopic.primaryKey)
-        {
-            server.sendTopicPublishersUpdate(payloadTopic, client.pid, false);
+        TopicPublishersUpdate payloadTopic {
+            .primaryKey = nodePubToUpdate.publishesTo,
+            .publisher = nodePubToUpdate.primaryKey,
+            .isUpdate = true
+        };
+        for (RequestingClient client : clients) {
+            if (client.primaryKey == payloadTopic.primaryKey)
+            {
+                server.sendTopicPublishersUpdate(payloadTopic, client.pid, false);
+            }
         }
     }
 
@@ -512,7 +522,6 @@ void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient>
     pipe_ns::writeT<pipe_ns::UnionResponse>(pipeToRelationMgmt_w, unionResp, pipe_ns::MsgType::NODERESPONSE);
     // pipe_ns::writeT<NodeResponse>(pipeToRelationMgmt_w, nodeResponse);
 }
-
 
 NodeTimerToUpdate queryGraphDbForTimer(std::string payloadNeo4j) {
     NodeTimerToUpdate nodeTimerToUpdate;
@@ -592,10 +601,9 @@ std::vector<NodeStateUpdate> extractNodeInfo(std::string response) {
         !data["results"][0]["data"].empty() && 
         !data["results"][0]["data"][0]["row"].empty()) {
             nlohmann::json row = data["results"][0]["data"][0]["row"];
-            std::cout << row << std::endl;
             for (auto item : row) {
                 NodeStateUpdate nodeStateUpdate;
-                if (item.contains("primaryKey")) { // TODO: der hier fehlt noch! muss von der query noch mit zurück gegeben werden
+                if (item.contains("primaryKey")) {
                     nodeStateUpdate.primaryKey = item["primaryKey"];
                 }
                 if (item.contains("state")) {
@@ -721,11 +729,11 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
                     handleNodeUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::PUBLISHERTRACE:
-                    if (strstr(msg.subscriber.topicName, "/_action/")) break;
+                    // if (strstr(msg.subscriber.topicName, "/_action/")) break;
                     handlePublishersUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::SUBSCRIBERTRACE:
-                    if (strstr(msg.subscriber.topicName, "/_action/")) break;
+                    // if (strstr(msg.subscriber.topicName, "/_action/")) break;
                     handleSubscribersUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::SERVICETRACE:

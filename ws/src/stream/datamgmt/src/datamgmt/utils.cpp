@@ -26,3 +26,11 @@ void truncateAtSubstring(char* str, const char* substr) {
         *pos = '\0';
     }
 }
+
+void truncateAfterSubstring(char* str, const char* substr) {
+    char* pos = std::strstr(str, substr);
+    if (pos != nullptr) {
+        pos += std::strlen(substr);
+        std::memmove(str, pos, std::strlen(pos) + 1);
+    }
+}
