@@ -105,7 +105,9 @@ std::vector<Pair> extractPIDandID(const std::string& payload) {
     std::vector<Pair> result;
 
     for (const auto& item : j["results"][0]["data"]) {
-        if (item.contains("row") && !item["row"].empty()) {           
+        if (item.contains("row") && !item["row"].empty() &&
+            item["row"][0].contains("pid") && item["row"][0].contains("id") &&
+            !item["row"][0]["pid"].is_null() && !item["row"][0]["id"].is_null()) {
             result.push_back(
                 Pair {
                     .pid        = item["row"][0]["pid"].get<pid_t>(),
