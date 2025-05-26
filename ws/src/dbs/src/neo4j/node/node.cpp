@@ -6,7 +6,7 @@
 
 namespace node {
 
-    std::string getPayload(std::string name, u_int64_t handle, u_int64_t state, pid_t pid, time_t timestamp) {
+    std::string getPayload(std::string name, u_int64_t handle, sharedMem::State state, pid_t pid, time_t timestamp) {
         return fmt::format(R"(
             {{ 
                 "statements":
@@ -40,7 +40,7 @@ namespace node {
         )", pid);
     }
 
-    std::string getPayloadSetNodeStateByPID(pid_t pid, time_t timestamp, u_int64_t state) {
+    std::string getPayloadSetNodeStateByPID(pid_t pid, time_t timestamp, sharedMem::State state) {
         return fmt::format(R"(
         {{
             "statements":
@@ -58,7 +58,7 @@ namespace node {
         )", pid, timestamp, state, state==sharedMem::State::ACTIVE);
     }
 
-    std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine, u_int64_t state) {
+    std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine, sharedMem::State state) {
         return fmt::format(R"(
         {{
             "statements":
