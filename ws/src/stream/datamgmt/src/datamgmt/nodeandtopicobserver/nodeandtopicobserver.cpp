@@ -438,7 +438,7 @@ NodePublishersToUpdate queryGraphDbForPublisher(std::string payload) {
 }
 
 void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server, int pipeToRelationMgmt_w) {
-    std::string payloadNeo4j = publisher::getPayload(msg.publisher.topicName, msg.publisher.nodeHandle);
+    std::string payloadNeo4j = publisher::getPayload(msg.publisher.topicName, msg.publisher.nodeHandle, msg.publisher.publisherHandle);
     NodePublishersToUpdate nodePubToUpdate = queryGraphDbForPublisher(payloadNeo4j);
 
     if (!strstr(msg.subscriber.topicName, "/_action/")) {
@@ -711,16 +711,6 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
                 }
             }
         } while (gotRequest);
-
-        /*
-        for (const pid_t &pid : pids) {
-            if (kill(pid, 0) != 0) {
-                std::cout << pid << " died." << std::endl;
-                pids.erase(find(pids.begin(), pids.end(), pid));
-                curl::push(node::getPayloadSetOffline(pid));
-            }
-        }
-        */
 
         sharedMem::TraceMessage msg(sharedMem::MessageType::NONE);
         if (channel.receive(msg, false)) {

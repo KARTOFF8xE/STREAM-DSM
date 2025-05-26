@@ -10,6 +10,7 @@ namespace influxDB {
         switch (pair.attribute) {
             case CPU_UTILIZATION:   type = "CPU_UTILIZATION"; break;
             case STATECHANGE:       type = "STATECHANGE"; break;
+            case PUBLISHINGRATE:    type = "PUBLISHINGRATE"; break;
             case CLIENT:            type = "CLIENT"; break;
             case ACTIONCLIENT:      type = "ACTIONCLIENT"; break;
             case SERVICE:           type = "SERVICE"; break;
@@ -25,7 +26,7 @@ namespace influxDB {
             std::to_string(pair.timestamp);
     }
 
-    std::string createPayloadMultipleValSameTime(std::vector<ValuePairs> pairs) {
+    std::string createPayloadMultipleVal(std::vector<ValuePairs> pairs) {
         std::string type;
         
         std::string payload = "";
@@ -33,6 +34,7 @@ namespace influxDB {
             switch (pair.attribute) {
                 case CPU_UTILIZATION:   type = "CPU_UTILIZATION"; break;
                 case STATECHANGE:       type = "STATECHANGE"; break;
+                case PUBLISHINGRATE:    type = "PUBLISHINGRATE"; break;
                 case CLIENT:            type = "CLIENT"; break;
                 case ACTIONCLIENT:      type = "ACTIONCLIENT"; break;
                 case SERVICE:           type = "SERVICE"; break;

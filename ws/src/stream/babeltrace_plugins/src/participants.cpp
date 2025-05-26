@@ -45,6 +45,7 @@ sharedMem::TraceMessage extractPublisherInfo(const bt_event *event) {
             field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "node_handle");
             msg.publisher.nodeHandle = bt_field_integer_unsigned_get_value(field);
             field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "publisher_handle");
+            msg.publisher.publisherHandle = bt_field_integer_unsigned_get_value(field);
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 
     return msg;
@@ -60,7 +61,7 @@ sharedMem::TraceMessage extractSubscriberInfo(const bt_event *event) {
             util::parseString(msg.subscriber.topicName, bt_field_string_get_value(field));
             field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "node_handle");
             msg.subscriber.nodeHandle = bt_field_integer_unsigned_get_value(field);
-            field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "subscription_handle");
+            // field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "subscription_handle");
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 
     return msg;
@@ -96,8 +97,23 @@ sharedMem::TraceMessage extractClientInfo(const bt_event *event) {
     return msg;
 }
 
+sharedMem::TraceMessage extractPublishInfo(bt_self_component_sink *self_component_sink, const bt_event *event) {
+    struct tracer *tracer = (struct tracer *)bt_self_component_get_data(
+        bt_self_component_sink_as_self_component(self_component_sink)
+    );
+
+    const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
+    const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
+    if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
+        const bt_field *publisherHandle = bt_field_structure_borrow_member_field_by_name_const(payload_field, "publisher_handle");
+        tracer->publishingRate[bt_field_integer_unsigned_get_value(publisherHandle)]++;
+    } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
+
+    return sharedMem::TraceMessage(sharedMem::MessageType::NONE);
+}
+
 sharedMem::TraceMessage extractTimerInitInfo(bt_self_component_sink *self_component_sink, const bt_event *event) {
-    struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
+    struct tracer *tracer = (struct tracer *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink)
     );
 
@@ -106,7 +122,7 @@ sharedMem::TraceMessage extractTimerInitInfo(bt_self_component_sink *self_compon
     if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
         const bt_field *keyField = bt_field_structure_borrow_member_field_by_name_const(payload_field, "timer_handle");
         const bt_field *valueField = bt_field_structure_borrow_member_field_by_name_const(payload_field, "period");
-        publisher->timer_init[bt_field_integer_unsigned_get_value(keyField)]
+        tracer->timerInit[bt_field_integer_unsigned_get_value(keyField)]
             = bt_field_integer_signed_get_value(valueField);
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 
@@ -114,7 +130,7 @@ sharedMem::TraceMessage extractTimerInitInfo(bt_self_component_sink *self_compon
 }
 
 sharedMem::TraceMessage extractTimerLinkInfo(bt_self_component_sink *self_component_sink, const bt_event *event) {
-    struct publisher *publisher = (struct publisher *)bt_self_component_get_data(
+    struct tracer *tracer = (struct tracer *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink)
     );
     sharedMem::TraceMessage msg = (sharedMem::MessageType::TIMERTRACE);
@@ -125,8 +141,8 @@ sharedMem::TraceMessage extractTimerLinkInfo(bt_self_component_sink *self_compon
         const bt_field *field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "node_handle");
         msg.timer.nodeHandle = bt_field_integer_unsigned_get_value(field);
         field = bt_field_structure_borrow_member_field_by_name_const(payload_field, "timer_handle");
-        msg.timer.frequency = publisher->timer_init[bt_field_integer_unsigned_get_value(field)];
-        publisher->timer_init.erase(bt_field_integer_unsigned_get_value(field));
+        msg.timer.frequency = tracer->timerInit[bt_field_integer_unsigned_get_value(field)];
+        tracer->timerInit.erase(bt_field_integer_unsigned_get_value(field));
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
     return msg;
 }
@@ -227,6 +243,7 @@ sharedMem::TraceMessage extractTracedMessage(
     if (eventName == "ros2:rcl_subscription_init"sv)    return extractSubscriberInfo(event);
     if (eventName == "ros2:rcl_service_init"sv)         return extractServiceInfo(event);
     if (eventName == "ros2:rcl_client_init"sv)          return extractClientInfo(event);
+    if (eventName == "ros2:rcl_publish"sv)              return extractPublishInfo(self_component_sink, event);
 
     if (eventName == "ros2:rcl_timer_init"sv)           return extractTimerInitInfo(self_component_sink, event);
     if (eventName == "ros2:rclcpp_timer_link_node"sv)   return extractTimerLinkInfo(self_component_sink, event);

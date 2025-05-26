@@ -13,6 +13,7 @@ namespace publisher {
      * 
      * @returns The Payload for the Query.
      */
-    std::string getPayload(std::string name, u_int64_t handle);
-
+    // TODO
+    std::string getPayload(std::string name, u_int64_t nodeHandle, u_int64_t pubHandle);
+    std::string getprimKeyByPubHandle(u_int64_t pubHandle);
 }

@@ -95,7 +95,7 @@ int main() {
     /***Load Plugin sink.publisher.details***/
     printf("Load Plugin text.details....."); fflush(stdout);
     const bt_plugin *plugin_text;
-    load_Plugin("publisher", &plugin_text);
+    load_Plugin("tracer", &plugin_text);
 
     /***Create Graph and add Components***/
     printf("Create Graph\n"); fflush(stdout);
@@ -144,46 +144,35 @@ int main() {
     printf("Add sink Component to Graph....."); fflush(stdout);
     const bt_component_sink *sink_details;
     {
-        // bt_value *string_value = bt_value_string_create();
-        // bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "FOO");
-        // switch (string_set_status) {
-        //     case BT_VALUE_STRING_SET_STATUS_OK: break;
-        //     case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-        //     default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        // bt_value *arr_value = bt_value_array_create();
+        // {
+        //     bt_value *string_value = bt_value_string_create();
+        //     bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_node_init");
+        //     switch (string_set_status) {
+        //         case BT_VALUE_STRING_SET_STATUS_OK: break;
+        //         case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+        //         default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        //     }
+        //     bt_value_array_append_element(arr_value, string_value);
         // }
-        //----- set string
-        bt_value *arr_value = bt_value_array_create();
-        {
-            bt_value *string_value = bt_value_string_create();
-            bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_node_init");
-            switch (string_set_status) {
-                case BT_VALUE_STRING_SET_STATUS_OK: break;
-                case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-                default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-            }
-            bt_value_array_append_element(arr_value, string_value);
-        }
-        {
-            bt_value *string_value = bt_value_string_create();
-            bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_publisher_init");
-            switch (string_set_status) {
-                case BT_VALUE_STRING_SET_STATUS_OK: break;
-                case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-                default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-            }
-            bt_value_array_append_element(arr_value, string_value);
-        }
-        // printf("Length of array in here: %ld\n", bt_value_array_get_length(arr_value));
-
-
+        // {
+        //     bt_value *string_value = bt_value_string_create();
+        //     bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_publisher_init");
+        //     switch (string_set_status) {
+        //         case BT_VALUE_STRING_SET_STATUS_OK: break;
+        //         case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+        //         default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        //     }
+        //     bt_value_array_append_element(arr_value, string_value);
+        // }
 
         bt_value *map_value = bt_value_map_create();
-        bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "topic", arr_value);
-        switch (map_insert_entry_status) {
-            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: break;
-            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        }
+        // bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "topic", arr_value);
+        // switch (map_insert_entry_status) {
+        //     case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: break;
+        //     case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
+        //     default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+        // }
 
         const bt_component_class_sink *sink_class_details;
         sink_class_details = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "output");

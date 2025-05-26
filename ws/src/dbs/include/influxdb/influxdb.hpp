@@ -12,6 +12,7 @@ namespace influxDB {
     enum ValueT {
         CPU_UTILIZATION,
         DISK_UTILIZATION,
+        PUBLISHINGRATE,
         STATECHANGE,
         CLIENT,
         ACTIONCLIENT,
@@ -49,7 +50,7 @@ namespace influxDB {
      * 
      * @returns The payload for the Query.
      */
-    std::string createPayloadMultipleValSameTime(std::vector<ValuePairs> pairs);
+    std::string createPayloadMultipleVal(std::vector<ValuePairs> pairs);
 
     // TODO
     std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, std::vector<primaryKey_t> primaryKeys);

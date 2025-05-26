@@ -280,7 +280,7 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
 
         }
         curl::push(
-            influxDB::createPayloadMultipleValSameTime(pairs),
+            influxDB::createPayloadMultipleVal(pairs),
             curl::INFLUXDB_WRITE
         );
         

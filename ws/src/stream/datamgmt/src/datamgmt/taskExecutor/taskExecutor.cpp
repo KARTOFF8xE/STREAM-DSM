@@ -23,19 +23,6 @@ using json = nlohmann::json;
 
 namespace taskExecutor {
 
-// bool receiveIPCClientRequest(const IpcServer &ipcServer, SingleAttributeInformationRequest &receivedRequest) {
-//     std::optional<SingleAttributesRequest> response =
-//         ipcServer.receiveSingleAttributesRequest(receivedRequest.requestID, receivedRequest.pid, false);
-
-//     if (response.has_value()) {
-//         receivedRequest.payload = response.value();
-
-//         return true;
-//     }
-
-//     return false;
-// }
-
 double getValueStandardQueryInfluxDB(Task &task) {
     std::string request;
     if (std::holds_alternative<SingleAttributesRequest>(task.task)) {

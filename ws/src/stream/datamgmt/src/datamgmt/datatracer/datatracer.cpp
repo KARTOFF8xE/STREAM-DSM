@@ -71,7 +71,7 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
                 elapsed.count() >= 1.0
             ) {
                 counter = 0;
-                curl::push(influxDB::createPayloadMultipleValSameTime(valuePairs), curl::INFLUXDB_WRITE);
+                curl::push(influxDB::createPayloadMultipleVal(valuePairs), curl::INFLUXDB_WRITE);
                 valuePairs.clear();
                 start = now;
             }

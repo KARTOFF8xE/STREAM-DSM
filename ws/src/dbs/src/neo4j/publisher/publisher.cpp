@@ -6,20 +6,36 @@
 
 namespace publisher {
 
-    std::string getPayload(std::string name, u_int64_t handle) {
+    std::string getPayload(std::string name, u_int64_t nodeHandle, u_int64_t pubHandle) {
         return fmt::format(R"(
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Active {{handle: $node_handle}}) MERGE (t:Passive {{name: $name}}) CREATE (n)-[:publishing]->(t) RETURN {{node_id: toInteger(split(elementId(n), \":\")[-1]), topic_id: toInteger(split(elementId(t), \":\")[-1])}} AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) MERGE (t:Passive {{name: $name}}) CREATE (n)-[:publishing {{handle: $pubHandle}}]->(t) RETURN {{node_id: toInteger(split(elementId(n), \":\")[-1]), topic_id: toInteger(split(elementId(t), \":\")[-1])}} AS row ",
                         "parameters": {{
                             "name": "{}",
-                            "node_handle": {}
+                            "nodeHandle": {},
+                            "pubHandle": {}
                             }}
                         }}
                     ]
             }}
-        )", name, handle);
+        )", name, nodeHandle, pubHandle);
+    }
+
+    std::string getprimKeyByPubHandle(u_int64_t pubHandle) {
+        return fmt::format(R"(
+            {{
+                "statements":
+                    [
+                        {{ "statement": "MATCH ()-[p:publishing {{handle: $pubHandle}}]->() RETURN toInteger(last(SPLIT(elementId(p), \":\"))) ",
+                        "parameters": {{
+                            "pubHandle": {}
+                            }}
+                        }}
+                    ]
+            }}
+        )",pubHandle);
     }
 
 }
