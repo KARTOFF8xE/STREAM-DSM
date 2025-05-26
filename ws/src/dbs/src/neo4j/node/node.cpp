@@ -24,9 +24,6 @@ namespace node {
             }}
         )", name, handle, state, pid, timestamp);
     }
-    /*
-    MERGE (n:Active{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=$state, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=$state, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishing', 'subscribing', 'sending', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n 
-    */
 
     std::string getPayloadRequestByPrimaryKey(pid_t pid) {
         return fmt::format(R"(
@@ -48,16 +45,17 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp RETURN DISTINCT {{ stateChangeTime: n.stateChangeTime, state: n.state, primaryKey: toInteger(last(SPLIT(elementId(n), \":\"))) }} ",
+                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n MATCH (n)-[e]->() SET e.active=$edgeActive WITH n MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN DISTINCT {{ stateChangeTime: n.stateChangeTime, state: n.state, primaryKey: toInteger(last(SPLIT(elementId(n), \":\"))) }} ",
                     "parameters": {{
                         "pid": {},
                         "timestamp": {},
-                        "state": {}
+                        "state": {},
+                        "edgeActive": {}
                         }}
                     }}
                 ]
         }}
-        )", pid, timestamp, state);
+        )", pid, timestamp, state, state==sharedMem::State::ACTIVE);
     }
 
     std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine, u_int64_t state) {
@@ -82,16 +80,17 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Active {{stateMachine: $statemachine}}) set n.state = $state, n.stateChangeTime = $timestamp RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                    {{ "statement": "MATCH (n:Active {{stateMachine: $statemachine}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n MATCH (n)-[e]->() SET e.active=$edgeActive WITH n MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
                     "parameters": {{
                         "statemachine": {},
                         "state": {},
-                        "timestamp": {}
+                        "timestamp": {},
+                        "edgeActive": {}
                         }}
                     }}
                 ]
         }}
-        )", stateMachine, state, timestamp);       
+        )", stateMachine, state, timestamp, state==sharedMem::State::ACTIVE);       
     }
 
 }
