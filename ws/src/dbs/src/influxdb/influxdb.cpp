@@ -67,6 +67,7 @@ namespace influxDB {
 
         switch (attribute) {
             case CPU_UTILIZATION: attr = "CPU_UTILIZATION"; break;
+            case PUBLISHINGRATES: attr = "PUBLISHINGRATE"; break;
             default: break;
         }
 

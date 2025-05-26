@@ -19,7 +19,7 @@ int main() {
   requestId_t requestId;
   const SingleAttributesRequest request{
     .primaryKey = pKey,
-    .attribute = CPU_UTILIZATION,
+    .attribute = PUBLISHINGRATES,
     .continuous = true,
   };
   std::cout << "send request..." << std::flush;
