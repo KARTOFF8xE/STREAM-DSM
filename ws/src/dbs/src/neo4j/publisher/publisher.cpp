@@ -11,7 +11,7 @@ namespace publisher {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) MERGE (t:Passive {{name: $name}}) CREATE (n)-[:publishing {{handle: $pubHandle}}]->(t) RETURN {{node_id: toInteger(split(elementId(n), \":\")[-1]), topic_id: toInteger(split(elementId(t), \":\")[-1])}} AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) MERGE (t:Passive {{name: $name}}) MERGE (n)-[p:publishing]->(t) SET p.handle=$pubHandle, p.active=true RETURN {{node_id: toInteger(split(elementId(n), \":\")[-1]), topic_id: toInteger(split(elementId(t), \":\")[-1])}} AS row ",
                         "parameters": {{
                             "name": "{}",
                             "nodeHandle": {},

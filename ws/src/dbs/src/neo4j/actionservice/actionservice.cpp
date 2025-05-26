@@ -13,7 +13,7 @@ namespace actionservice {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) SET n.Actions = COALESCE(n.Actions, []) {} WITH n MATCH (c:Active) WHERE $actionName IN c.ActionClients CREATE (n)-[:sending {{serviceName: $name, mode: \"responds\", actionName: $actionName}}]->(c), (c)-[:sending {{serviceName: $name, mode: \"requests\", actionName: $actionName}}]->(n) RETURN COLLECT(DISTINCT {{ client_id: toInteger(split(elementId(c), \":\")[-1]), node_id: toInteger(split(elementId(n), \":\")[-1]) }}) AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) SET n.Actions = COALESCE(n.Actions, []) {} WITH n MATCH (c:Active) WHERE $actionName IN c.ActionClients MERGE (n)-[s:sending {{serviceName: $name, mode: \"responds\", actionName: $actionName}}]->(c) SET s.active=true WITH n,c MERGE (c)-[s:sending {{serviceName: $name, mode: \"requests\", actionName: $actionName}}]->(n) SET s.active=true WITH n,c RETURN COLLECT(DISTINCT {{ client_id: toInteger(split(elementId(c), \":\")[-1]), node_id: toInteger(split(elementId(n), \":\")[-1]) }}) AS row ",
                         "parameters": {{
                             "name": "{}",
                             "nodeHandle": {},

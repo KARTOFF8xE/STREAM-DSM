@@ -628,7 +628,7 @@ void setNodeOffline( NodeResponse nodeUpdate, std::vector<RequestingClient> clie
     std::string payload = node::getPayloadSetNodeStateByPID(nodeUpdate.pid, nodeUpdate.stateChangeTime, sharedMem::State::INACTIVE);
     std::string response = curl::push(payload, curl::NEO4J);
     std::vector<NodeStateUpdate> NodeStateUpdates = extractNodeInfo(response);
-    
+
     for (NodeStateUpdate nodeStateUpdate : NodeStateUpdates) {
         for (RequestingClient client : clients) {
             if (client.primaryKey == nodeStateUpdate.primaryKey) {

@@ -11,7 +11,7 @@ namespace node {
             {{ 
                 "statements":
                     [
-                        {{ "statement": "MERGE (n:Active{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=$state, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=$state, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishing', 'subscribing', 'sending', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n ",
+                        {{ "statement": "MERGE (n:Active{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=$state, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=$state, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() SET r.active=false WITH n RETURN DISTINCT n ",
                         "parameters": {{
                             "name": "{}",
                             "handle": {},
@@ -24,6 +24,9 @@ namespace node {
             }}
         )", name, handle, state, pid, timestamp);
     }
+    /*
+    MERGE (n:Active{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=$state, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=$state, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() WHERE TYPE(r) IN ['publishing', 'subscribing', 'sending', 'action_for', 'timer'] DELETE r WITH n RETURN DISTINCT n 
+    */
 
     std::string getPayloadRequestByPrimaryKey(pid_t pid) {
         return fmt::format(R"(
