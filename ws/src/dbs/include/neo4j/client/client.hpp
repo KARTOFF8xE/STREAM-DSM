@@ -14,7 +14,5 @@ namespace client {
      * @returns The Payload for the Query.
      */
     std::string getPayload(std::string serviceName, u_int64_t nodeHandle);
-    // TODO
-    std::string getPayload(std::string serviceName, u_int64_t nodeHandle, std::string actionName);
 
 }

@@ -17,6 +17,8 @@ add_library(dbs_lib SHARED
     src/neo4j/subscriber/subscriber.cpp
     src/neo4j/service/service.cpp
     src/neo4j/client/client.cpp
+    src/neo4j/actionservice/actionservice.cpp
+    src/neo4j/actionclient/actionclient.cpp
     src/neo4j/topic/topic.cpp
     src/neo4j/roots/roots.cpp
     src/neo4j/tree/tree.cpp

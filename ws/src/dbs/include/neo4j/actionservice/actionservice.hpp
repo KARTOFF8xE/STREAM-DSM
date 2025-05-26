@@ -3,7 +3,7 @@
 #include <string>
 
 
-namespace service {
+namespace actionservice {
 
     /**
      * @brief Builds the payload used to query neo4j.
@@ -13,6 +13,7 @@ namespace service {
      * 
      * @returns The Payload for the Query.
      */
-    std::string getPayload(std::string serviceName, u_int64_t nodeHandle) ;
+    // TODO
+    std::string getPayload(std::string serviceName, u_int64_t nodeHandle, std::string actionName) ;
 
 }

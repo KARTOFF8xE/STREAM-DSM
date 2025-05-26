@@ -15,6 +15,8 @@ using namespace std::chrono_literals;
 #include <neo4j/subscriber/subscriber.hpp>
 #include <neo4j/service/service.hpp>
 #include <neo4j/client/client.hpp>
+#include <neo4j/actionservice/actionservice.hpp>
+#include <neo4j/actionclient/actionclient.hpp>
 #include <neo4j/timer/timer.hpp>
 
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
@@ -323,7 +325,7 @@ void handleActionClientToUpdate(sharedMem::TraceMessage msg, std::vector<Request
     truncateAfterSubstring(serviceName, "/_action/");
     truncateAtSubstring(actionName, "/_action/");
 
-    std::string payloadNeo4j = client::getPayload(serviceName, msg.client.nodeHandle, actionName);
+    std::string payloadNeo4j = actionclient::getPayload(serviceName, msg.client.nodeHandle, actionName);
     std::vector<NodeIsClientOfUpdate> nodeIsCliToUpdate = queryGraphDbForClient(payloadNeo4j, msg.service.name);
     
     if (strcmp(serviceName, "send_goal")) {
@@ -355,7 +357,7 @@ void handleActionServerForUpdate(sharedMem::TraceMessage msg, std::vector<Reques
     truncateAfterSubstring(serviceName, "/_action/");
     truncateAtSubstring(actionName, "/_action/");
 
-    std::string payloadNeo4j = service::getPayload(serviceName, msg.service.nodeHandle, actionName);
+    std::string payloadNeo4j = actionservice::getPayload(serviceName, msg.service.nodeHandle, actionName);
     std::vector<NodeIsServerForUpdate> nodeIsSrvForUpdate = queryGraphDbForService(payloadNeo4j, msg.service.name);
 
     if (strcmp(serviceName, "send_goal")) {
