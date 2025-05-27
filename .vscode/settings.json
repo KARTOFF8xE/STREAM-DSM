@@ -97,7 +97,8 @@
         "latch": "cpp",
         "spanstream": "cpp",
         "stdfloat": "cpp",
-        "syncstream": "cpp"
+        "syncstream": "cpp",
+        "tracepoints.h": "c"
     },
     "explorer.autoReveal": false
 }
