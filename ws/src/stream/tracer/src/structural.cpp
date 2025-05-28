@@ -57,7 +57,7 @@ int find_existing_instances_at_ip(const char *ip, bt_component_class_source *sou
         bt_query_executor_query_status query_executor_query_status = bt_query_executor_query(query_executor, (const bt_value**)&result_array);
         switch (query_executor_query_status) {
             case BT_QUERY_EXECUTOR_QUERY_STATUS_OK: printf("."); fflush(stdout); sleep(1); break;
-            case BT_QUERY_EXECUTOR_QUERY_STATUS_UNKNOWN_OBJECT: printf("\033[32;1m.....Unknown object to query\033[0m\n"); break;
+            case BT_QUERY_EXECUTOR_QUERY_STATUS_UNKNOWN_OBJECT: printf("\033[31;1m.....Unknown object to query\033[0m\n"); break;
             case BT_QUERY_EXECUTOR_QUERY_STATUS_AGAIN: fprintf(stderr, "\033[31;1m.....Try Again\033[0m\n");  break;
             case BT_QUERY_EXECUTOR_QUERY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1m.....Out of memory\033[0m\n"); break;
             case BT_QUERY_EXECUTOR_QUERY_STATUS_ERROR: fprintf(stderr, "\033[31;1m.....Other Error (there might not be a lttng instance yet, start it first)\033[0m\n"); break;
@@ -92,10 +92,10 @@ int main() {
     }
     printf("\t\033[33m%s\033[0m\n", bt_value_string_get(url_val));
 
-    /***Load Plugin sink.publisher.details***/
-    printf("Load Plugin text.details....."); fflush(stdout);
+    /***Load Plugin sink.structural.details***/
+    printf("Load Plugin structural.details....."); fflush(stdout);
     const bt_plugin *plugin_text;
-    load_Plugin("tracer", &plugin_text);
+    load_Plugin("structural", &plugin_text);
 
     /***Create Graph and add Components***/
     printf("Create Graph\n"); fflush(stdout);
@@ -197,11 +197,11 @@ int main() {
     const bt_port_output *source_lttnglive_port_out;
     source_lttnglive_port_out = bt_component_source_borrow_output_port_by_name_const(source_lttnglive, "out");
 
-    printf("Get input port output/in\n");
+    printf("Get input port structural/in\n");
     const bt_port_input *sink_details_port_in;
     sink_details_port_in = bt_component_sink_borrow_input_port_by_name_const(sink_details, "in");
 
-    printf("Connect ports lttng-live/out -> output/in....."); fflush(stdout);
+    printf("Connect ports lttng-live/out -> structural/in....."); fflush(stdout);
     const bt_connection *connectionlttngdetails;
     bt_graph_connect_ports_status connect_ports_status = bt_graph_connect_ports(graph, source_lttnglive_port_out, sink_details_port_in, &connectionlttngdetails);
     switch (connect_ports_status) {
@@ -217,7 +217,7 @@ int main() {
     do {
         graph_status = bt_graph_run(graph);
     } while (graph_status == BT_GRAPH_RUN_STATUS_AGAIN);
-    switch (connect_ports_status) {
+    switch (graph_status) {
         case BT_GRAPH_RUN_STATUS_OK: printf("\033[32;1m.....Success\033[0m\n"); break;
         case BT_GRAPH_RUN_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1m.....Out of memory\033[0m\n"); break;
         case BT_GRAPH_RUN_STATUS_ERROR: fprintf(stderr, "\033[31;1m.....Other Error\033[0m\n"); break;

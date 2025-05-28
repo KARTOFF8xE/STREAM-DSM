@@ -134,7 +134,7 @@ bt_component_class_sink_consume_method_status tracer_consume(
 
 BT_PLUGIN_MODULE();
 
-BT_PLUGIN(tracer);
+BT_PLUGIN(structural);
 
 BT_PLUGIN_AUTHOR("KARTOFF8xE");
 BT_PLUGIN_DESCRIPTION("This plugin publishes ROS2 information to the shared memory location: /babeltonato");

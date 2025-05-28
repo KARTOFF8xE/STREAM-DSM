@@ -37,15 +37,30 @@ int main() {
 
 
     lttng_event *lttngEvent = lttng_event_create();
-        strncpy(lttngEvent->name, "ros2:rcl_node_init", LTTNG_SYMBOL_NAME_LEN);
+        strncpy(lttngEvent->name, "ros2:rcl_publish", LTTNG_SYMBOL_NAME_LEN);
         lttng_enable_event(lttngHandle, lttngEvent, lttngChannel->name);
     lttng_event *lttngEvent2 = lttng_event_create();
         strncpy(lttngEvent2->name, "ros2:rcl_publisher_init", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent, lttngChannel->name);
+        lttng_enable_event(lttngHandle, lttngEvent2, lttngChannel->name);
+    lttng_event *lttngEvent3 = lttng_event_create();
+        strncpy(lttngEvent3->name, "ros2:rcl_node_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent3, lttngChannel->name);
+    lttng_event *lttngEvent4 = lttng_event_create();
+        strncpy(lttngEvent4->name, "ros2:rcl_subscription_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent4, lttngChannel->name);
+    lttng_event *lttngEvent5 = lttng_event_create();
+        strncpy(lttngEvent5->name, "ros2:rcl_service_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent5, lttngChannel->name);
+    lttng_event *lttngEvent6 = lttng_event_create();
+        strncpy(lttngEvent6->name, "ros2:rcl_client_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent6, lttngChannel->name);
+    lttng_event *lttngEvent7 = lttng_event_create();
+        strncpy(lttngEvent7->name, "ros2:rcl_timer_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent7, lttngChannel->name);
 
 
     lttng_rotation_schedule *rotationSchedule = lttng_rotation_schedule_periodic_create();
-    lttng_rotation_schedule_periodic_set_period(rotationSchedule, 1000000);
+    lttng_rotation_schedule_periodic_set_period(rotationSchedule, 5000000);
 
     lttng_session_add_rotation_schedule("foo_session", rotationSchedule);
 
@@ -115,6 +130,11 @@ int main() {
     lttng_condition_destroy(condition);
     lttng_event_destroy(lttngEvent);
     lttng_event_destroy(lttngEvent2);
+    lttng_event_destroy(lttngEvent3);
+    lttng_event_destroy(lttngEvent4);
+    lttng_event_destroy(lttngEvent5);
+    lttng_event_destroy(lttngEvent6);
+    lttng_event_destroy(lttngEvent7);
     ret = lttng_stop_tracing("foo_session");
     if (ret != 0) {
         std::cerr << "lttng_stop_tracing failed with code: " << ret << std::endl;
@@ -123,7 +143,7 @@ int main() {
     if (ret != 0) {
         std::cerr << "lttng_destroy_session failed with code: " << ret << std::endl;
     }
-    std::cout << "done";
+    std::cout << "done" << std::endl;
 
     return 0;
 }

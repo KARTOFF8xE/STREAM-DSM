@@ -16,13 +16,16 @@ pkg_check_modules(
   REQUIRED
 )
 
-add_executable(babel src/babelTrace.cpp)
+add_executable(structural src/structural.cpp)
+add_executable(continuous src/continuous.cpp)
 
 
-target_link_libraries(babel PRIVATE ${babeltrace2_LIBRARIES})
+target_link_libraries(structural PRIVATE ${babeltrace2_LIBRARIES})
+target_link_libraries(continuous PRIVATE ${babeltrace2_LIBRARIES})
 
 install(TARGETS
-  babel
+  structural
+  continuous
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
