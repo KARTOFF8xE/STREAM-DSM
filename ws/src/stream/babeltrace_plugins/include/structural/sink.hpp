@@ -15,7 +15,6 @@ struct tracer {
     sharedMem::SHMChannel<sharedMem::TraceMessage> channel;
     
     std::unordered_map<u_int64_t, u_int32_t>    timerInit;
-    std::unordered_map<u_int64_t, u_int32_t>    publishingRate;
     
     std::chrono::_V2::steady_clock::time_point lastTick = std::chrono::steady_clock::now();
 

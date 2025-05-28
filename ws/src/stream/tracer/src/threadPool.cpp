@@ -44,7 +44,6 @@ void ThreadPool::workerThread(size_t worker_id) {
             task = std::move(tasks.front());
             tasks.pop();
         }
-        std::cout << "\tWorker " << worker_id << "\tpath: " << task << std::endl;
         createAndExecuteTraceGraph(task.c_str());
     }
 }

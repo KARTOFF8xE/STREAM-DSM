@@ -11,7 +11,7 @@ lttng enable-event --userspace 'ros2:rcl_timer_init'
 lttng enable-event --userspace 'ros2:rclcpp_timer_link_node'
 lttng enable-event --userspace 'ros2:rcl_lifecycle_state_machine_init'
 lttng enable-event --userspace 'ros2:rcl_lifecycle_transition'
-lttng enable-event --userspace 'ros2:rcl_publish'
+# lttng enable-event --userspace 'ros2:rcl_publish'
 # lttng enable-event --userspace 'ros2:rmw_client_init' // TODO: for client-server communication traffic (gid)
 # lttng enable-event --userspace 'ros2:rmw_send_request' // TODO: for client-server communication traffic count requests
 # lttng enable-event --userspace 'ros2:rmw_send_response' // TODO: for client-server communication traffic count responses

@@ -75,10 +75,10 @@ int createAndExecuteTraceGraph(const char *pathToTraceDir) {
     /***Load Plugin sink.structural.details***/
     // printf("Load Plugin text.details....."); fflush(stdout);
     const bt_plugin *plugin_text;
-    load_Plugin("text", &plugin_text);
+    load_Plugin("continuous", &plugin_text);
 
     const bt_component_class_sink *sink_class_text;
-    sink_class_text = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "pretty");
+    sink_class_text = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "output");
 
     /***Create Graph and add Components***/
     // printf("Create Graph\n"); fflush(stdout);

@@ -95,7 +95,6 @@ int main() {
 
         status = lttng_notification_channel_get_next_notification(notificationChannel, &notification);
         if (status == LTTNG_NOTIFICATION_CHANNEL_STATUS_OK) {
-            printf("finalized rotation: ");
             const lttng_evaluation *evaluation = lttng_notification_get_evaluation(notification);
             const lttng_trace_archive_location *location;
             ret = lttng_evaluation_session_rotation_completed_get_location(evaluation, &location);
@@ -109,7 +108,6 @@ int main() {
                 std::cerr << "lttng_trace_archive_location_local_get_absolute_path failed with code: " << ret << std::endl;
             }
 
-            std::cout << path << std::endl;
             pool.enqueue(path);
 
             lttng_notification_destroy(notification);

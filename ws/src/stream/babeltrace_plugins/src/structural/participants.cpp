@@ -1,8 +1,8 @@
-#include "participants.hpp"
+#include "structural/participants.hpp"
 
 #include <ipc/util.hpp>
 #include <ipc/sharedMem.hpp>
-#include <sink.hpp>
+#include <structural/sink.hpp>
 
 #include <string_view>
 
@@ -95,21 +95,6 @@ sharedMem::TraceMessage extractClientInfo(const bt_event *event) {
     } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
 
     return msg;
-}
-
-sharedMem::TraceMessage extractPublishInfo(bt_self_component_sink *self_component_sink, const bt_event *event) {
-    struct tracer *tracer = (struct tracer *)bt_self_component_get_data(
-        bt_self_component_sink_as_self_component(self_component_sink)
-    );
-
-    const bt_field *payload_field = bt_event_borrow_payload_field_const(event);
-    const bt_field_class *field_class = bt_field_borrow_class_const(payload_field);
-    if (bt_field_class_get_type(field_class) == BT_FIELD_CLASS_TYPE_STRUCTURE) {
-        const bt_field *publisherHandle = bt_field_structure_borrow_member_field_by_name_const(payload_field, "publisher_handle");
-        tracer->publishingRate[bt_field_integer_unsigned_get_value(publisherHandle)]++;
-    } else { printf("\033[33;1WRONG TYPE\033[0m\n"); }
-
-    return sharedMem::TraceMessage(sharedMem::MessageType::NONE);
 }
 
 sharedMem::TraceMessage extractTimerInitInfo(bt_self_component_sink *self_component_sink, const bt_event *event) {
@@ -243,7 +228,6 @@ sharedMem::TraceMessage extractTracedMessage(
     if (eventName == "ros2:rcl_subscription_init"sv)    return extractSubscriberInfo(event);
     if (eventName == "ros2:rcl_service_init"sv)         return extractServiceInfo(event);
     if (eventName == "ros2:rcl_client_init"sv)          return extractClientInfo(event);
-    if (eventName == "ros2:rcl_publish"sv)              return extractPublishInfo(self_component_sink, event);
 
     if (eventName == "ros2:rcl_timer_init"sv)           return extractTimerInitInfo(self_component_sink, event);
     if (eventName == "ros2:rclcpp_timer_link_node"sv)   return extractTimerLinkInfo(self_component_sink, event);
