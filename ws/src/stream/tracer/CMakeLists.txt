@@ -10,23 +10,20 @@ find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(PkgConfig 0.29 REQUIRED)
 pkg_check_modules(LTTNG REQUIRED lttng-ctl)
-# pkg_check_modules(
-#   lttng
-#   IMPORTED_TARGET
-#     lttng-ctl
-#   REQUIRED
-# )
 
-add_executable(structural src/structural.cpp)
+
+add_executable(structural src/structural/tracer.cpp)
 add_executable(continuous
-  src/continuous.cpp
-  src/threadPool.cpp
-  src/babeltrace.cpp)
+  src/continuous/tracer.cpp
+  src/continuous/threadPool.cpp
+  src/continuous/babeltrace.cpp)
 target_include_directories(continuous PRIVATE include/)
 
 
 target_include_directories(continuous PRIVATE ${LTTNG_INCLUDE_DIRS})
 target_link_libraries(continuous PRIVATE ${LTTNG_LIBRARIES})
+target_include_directories(structural PRIVATE ${LTTNG_INCLUDE_DIRS})
+target_link_libraries(structural PRIVATE ${LTTNG_LIBRARIES})
 
 target_link_libraries(structural PRIVATE ${babeltrace2_LIBRARIES})
 target_link_libraries(continuous PRIVATE ${babeltrace2_LIBRARIES})

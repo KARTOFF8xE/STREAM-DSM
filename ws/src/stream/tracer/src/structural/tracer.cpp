@@ -1,6 +1,17 @@
 #include <babeltrace2/babeltrace.h>
 #include <stdio.h>
+#include <cstring>
+#include <iostream>
 #include <unistd.h>
+#include <lttng/lttng.h>
+#include <csignal>
+
+
+void handle_sigint(int) {
+    lttng_destroy_session("structuralSession");
+    exit(EXIT_SUCCESS);
+}
+
 
 int load_Plugin(const char *plugin_name, const bt_plugin **plugin) {
     bt_plugin_find_status plugin_find_status = bt_plugin_find(
@@ -72,6 +83,91 @@ int find_existing_instances_at_ip(const char *ip, bt_component_class_source *sou
 }
 
 int main() {
+    signal(SIGINT, handle_sigint);
+    lttng_destroy_session("structuralSession");
+
+    int ret = lttng_create_session_live("structuralSession", "net://localhost", 1000000);
+    if (ret < 0) {
+        std::cerr << "Failed to create LTTng session: " << lttng_strerror(ret) << std::endl;
+        return 1;
+    }
+    std::cout << "LTTng session created successfully." << std::endl;
+
+    lttng_domain lttngDomain {
+        .type       = lttng_domain_type::LTTNG_DOMAIN_UST,
+        .buf_type   = lttng_buffer_type::LTTNG_BUFFER_PER_UID
+    };
+    lttng_handle *lttngHandle = lttng_create_handle("structuralSession", &lttngDomain);
+
+    lttng_channel *lttngChannel = lttng_channel_create(&lttngDomain);
+    lttngChannel->attr.subbuf_size = 524288;
+    strncpy(lttngChannel->name, "channel0", LTTNG_SYMBOL_NAME_LEN);
+    ret = lttng_enable_channel(lttngHandle, lttngChannel);
+    if (ret < 0) {
+        std::cerr << "Failed to enable LTTng channel: " << lttng_strerror(ret) << std::endl;
+        return 1;
+    }
+
+    lttng_event *lttngEvent3 = lttng_event_create();
+        strncpy(lttngEvent3->name, "ros2:rcl_node_init", LTTNG_SYMBOL_NAME_LEN);
+        ret = lttng_enable_event(lttngHandle, lttngEvent3, lttngChannel->name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
+            return 1;
+        }
+
+    lttng_event *lttngEvent2 = lttng_event_create();
+        strncpy(lttngEvent2->name, "ros2:rcl_publisher_init", LTTNG_SYMBOL_NAME_LEN);
+        ret = lttng_enable_event(lttngHandle, lttngEvent2, lttngChannel->name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
+            return 1;
+        }
+    lttng_event *lttngEvent4 = lttng_event_create();
+        strncpy(lttngEvent4->name, "ros2:rcl_subscription_init", LTTNG_SYMBOL_NAME_LEN);
+        ret = lttng_enable_event(lttngHandle, lttngEvent4, lttngChannel->name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
+            return 1;
+        }
+    lttng_event *lttngEvent5 = lttng_event_create();
+        strncpy(lttngEvent5->name, "ros2:rcl_service_init", LTTNG_SYMBOL_NAME_LEN);
+        ret = lttng_enable_event(lttngHandle, lttngEvent5, lttngChannel->name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
+            return 1;
+        }
+    lttng_event *lttngEvent6 = lttng_event_create();
+        strncpy(lttngEvent6->name, "ros2:rcl_client_init", LTTNG_SYMBOL_NAME_LEN);
+        ret = lttng_enable_event(lttngHandle, lttngEvent6, lttngChannel->name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
+            return 1;
+        }
+    lttng_event *lttngEvent7 = lttng_event_create();
+        strncpy(lttngEvent7->name, "ros2:rcl_timer_init", LTTNG_SYMBOL_NAME_LEN);
+        ret = lttng_enable_event(lttngHandle, lttngEvent7, lttngChannel->name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
+            return 1;
+        }
+
+    lttng_event_context ctx;
+    ctx.ctx = lttng_event_context_type::LTTNG_EVENT_CONTEXT_PROCNAME;
+    lttng_add_context(lttngHandle, &ctx, "ros2:rcl_node_init", "channel0");
+    lttng_event_context ctx2;
+    ctx2.ctx = lttng_event_context_type::LTTNG_EVENT_CONTEXT_VPID;
+    lttng_add_context(lttngHandle, &ctx2, "ros2:rcl_node_init", "channel0");
+
+    ret = lttng_start_tracing("structuralSession");
+    if (ret != 0) {
+        std::cerr << "Failed to start tracing: " << lttng_strerror(ret) << std::endl;
+        return 1;
+    }
+
+
+
+
     // set log level for debugging:
     // bt_logging_set_global_level(bt_logging_level::BT_LOGGING_LEVEL_DEBUG);
 

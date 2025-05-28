@@ -67,10 +67,8 @@ void sendPubDataToTimeSeries(std::unordered_map<u_int64_t, u_int32_t> &pubRates)
     std::vector<influxDB::ValuePairs> values;
     time_t timestamp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     for (auto &pubRate : pubRates) {
-        std::cout << pubRate.first << ": " << pubRate.second << std::endl;
         std::string payload = publisher::getprimKeyByPubHandle(pubRate.first);
         std::string responseNeo4J = curl::push(payload, curl::NEO4J);
-        std::cout << responseNeo4J << std::endl;
         nlohmann::json data = nlohmann::json::parse(responseNeo4J);
         if (!data["results"].empty() &&
             !data["results"][0]["data"].empty() && 
@@ -82,16 +80,11 @@ void sendPubDataToTimeSeries(std::unordered_map<u_int64_t, u_int32_t> &pubRates)
                 .value      = double(pubRate.second)
             };
             values.push_back(value);
-            std::cout << value.primaryKey << ":" << value.value << "\t" << std::endl;
         }
     }
 
-    std::cout << std::endl;
     pubRates.clear();
-    std::cout << "values.size(): " << values.size() << std::endl;
     std::string payload = influxDB::createPayloadMultipleVal(values);
-    std::cout << "payload: " << payload << std::endl;
-    std::cout << "response: " << curl::push(payload, curl::INFLUXDB_WRITE) << std::endl;;
 }
 
 bt_component_class_sink_consume_method_status tracer_consume(

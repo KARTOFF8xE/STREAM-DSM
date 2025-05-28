@@ -21,7 +21,7 @@ lttng destroy -a
 
 
 tmux select-pane -t 0
-tmux send-keys -t $SESSION 'clear && ./lttng_startsession.sh && ros2 run tracer structural' C-m
+tmux send-keys -t $SESSION 'clear && ros2 run tracer structural' C-m
 tmux select-pane -t 1
 tmux send-keys -t $SESSION 'clear && ros2 run tracer continuous' C-m
 tmux select-pane -t 2
