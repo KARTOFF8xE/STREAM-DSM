@@ -106,12 +106,6 @@ int main() {
 
             std::cout << path << std::endl;
 
-            // char *cmd = new char[strlen("babeltrace2 ") + strlen(path) + 1];
-            // strcpy(cmd, "babeltrace2 ");
-            // strcat(cmd, path);
-            // system(cmd);
-            // delete(cmd);
-
             lttng_notification_destroy(notification);
         } else if (status == LTTNG_NOTIFICATION_CHANNEL_STATUS_CLOSED) {
             break;

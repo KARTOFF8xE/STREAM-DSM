@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <memory>
 #include <cstring>
-#include "pipe/pipe.hpp"
 
 #include "pipe/pipe.hpp"
 #include "datamgmt/datamgmt.hpp"

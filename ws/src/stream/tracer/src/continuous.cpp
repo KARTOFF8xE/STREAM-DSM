@@ -1,260 +1,153 @@
-#include <babeltrace2/babeltrace.h>
-#include <stdio.h>
-#include <unistd.h>
+#include <lttng/lttng.h>
 #include <iostream>
+#include <cstring>
+#include <csignal>
+#include <thread>
+#include <chrono>
 #include <vector>
-#include <string>
-#include <filesystem>
+
+#include "threadPool.hpp"
 
 
-int load_Plugin(const char *plugin_name, const bt_plugin **plugin) {
-    bt_plugin_find_status plugin_find_status = bt_plugin_find(
-        plugin_name,
-        BT_FALSE,
-        BT_TRUE,
-        BT_TRUE,
-        BT_TRUE,
-        BT_TRUE,
-        plugin);
-    switch (plugin_find_status) {
-        case BT_PLUGIN_FIND_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-        case BT_PLUGIN_FIND_STATUS_NOT_FOUND: fprintf(stderr, "\033[31;1mPlugin not found\033[0m\n"); break;
-        case BT_PLUGIN_FIND_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of memory\033[0m\n"); break;
-        case BT_PLUGIN_FIND_STATUS_ERROR: fprintf(stderr, "\033[31;1mError\033[0m\n"); break;
-        default: printf("\033[31;1mHopefully never reached\033[0m\n");
-    }
+volatile sig_atomic_t stopFlag = 0;
 
-    return 0;
-}
-
-std::vector<std::string> find_trace_dirs_with_metadata(const std::string& root_path) {
-    std::vector<std::string> result;
-
-    try {
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(root_path)) {
-            if (entry.is_directory()) {
-                std::filesystem::path metadata_path = entry.path() / "metadata";
-                if (std::filesystem::exists(metadata_path) && std::filesystem::is_regular_file(metadata_path)) {
-                    result.push_back(std::filesystem::absolute(entry.path()).string());
-                }
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Fehler beim Durchsuchen des Verzeichnisses: " << e.what() << std::endl;
-    }
-
-    return result;
+void handle_sigint(int) {
+    stopFlag = 1;
 }
 
 
 int main() {
-    const char *pathToTraceDir = "/tmp/foo_traces/archives/20250528T085359+0000-20250528T085404+0000-1";
-    std::vector<std::string> traces = find_trace_dirs_with_metadata(pathToTraceDir);
+    signal(SIGINT, handle_sigint);
 
-    // set log level for debugging:
-    // bt_logging_set_global_level(bt_logging_level::BT_LOGGING_LEVEL_DEBUG);
+    int ret = lttng_create_session("continuousSession", "/tmp/continuous_traces");
+    if (ret < 0) {
+        std::cerr << "Failed to create LTTng session: " << ret << std::endl;
+        return 1;
+    }
+    std::cout << "LTTng session created successfully." << std::endl;
 
-    /***Load Plugin source.ctf.fs***/
-    printf("Load Plugin ctf.fs....."); fflush(stdout);
-    const bt_plugin *ctlFs;
-    load_Plugin("ctf", &ctlFs);
+    lttng_domain lttngDomain {
+        .type       = lttng_domain_type::LTTNG_DOMAIN_UST
+    };
+    lttng_handle *lttngHandle = lttng_create_handle("continuousSession", &lttngDomain);
 
-    const bt_component_class_source *source_class_lttnglive;
-    source_class_lttnglive = bt_plugin_borrow_source_component_class_by_name_const(ctlFs, "fs");
-
-    /***Load Plugin filter.utils.muxer***/
-    printf("Load Plugin utils.muxer....."); fflush(stdout);
-    const bt_plugin *muxer;
-    load_Plugin("utils", &muxer);
-
-    const bt_component_class_filter *filter_class_muxer;
-    filter_class_muxer = bt_plugin_borrow_filter_component_class_by_name_const(muxer, "muxer");
-
-    /***Load Plugin sink.structural.details***/
-    printf("Load Plugin text.details....."); fflush(stdout);
-    const bt_plugin *plugin_text;
-    load_Plugin("text", &plugin_text);
-
-    const bt_component_class_sink *sink_class_text;
-    sink_class_text = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "pretty");
-
-    /***Create Graph and add Components***/
-    printf("Create Graph\n"); fflush(stdout);
-    bt_graph *graph = bt_graph_create(0);
-    if (!graph) {
-        fprintf(stderr, "\033[31;1m.....Error: not able to create Graph\033[0m\n");
+    lttng_channel *lttngChannel = lttng_channel_create(&lttngDomain);
+    strncpy(lttngChannel->name, "STREAMChan", LTTNG_SYMBOL_NAME_LEN);
+    ret = lttng_enable_channel(lttngHandle, lttngChannel);
+    if (ret < 0) {
+        std::cerr << "Failed to enable LTTng channel: " << ret << std::endl;
         return 1;
     }
 
-    printf("Add source Components to Graph....."); fflush(stdout);
-    // const bt_component_source *source_lttnglive;
-    std::vector<const bt_component_source *> sources_fs;
-    for (size_t i = 0; i < traces.size(); i++) {
-        bt_value *array_value = bt_value_array_create();
+    lttng_event *lttngEvent = lttng_event_create();
+        strncpy(lttngEvent->name, "ros2:rcl_publish", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent, lttngChannel->name);
+    lttng_event *lttngEvent2 = lttng_event_create();
+        strncpy(lttngEvent2->name, "ros2:rcl_publisher_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent2, lttngChannel->name);
+    lttng_event *lttngEvent3 = lttng_event_create();
+        strncpy(lttngEvent3->name, "ros2:rcl_node_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent3, lttngChannel->name);
+    lttng_event *lttngEvent4 = lttng_event_create();
+        strncpy(lttngEvent4->name, "ros2:rcl_subscription_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent4, lttngChannel->name);
+    lttng_event *lttngEvent5 = lttng_event_create();
+        strncpy(lttngEvent5->name, "ros2:rcl_service_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent5, lttngChannel->name);
+    lttng_event *lttngEvent6 = lttng_event_create();
+        strncpy(lttngEvent6->name, "ros2:rcl_client_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent6, lttngChannel->name);
+    lttng_event *lttngEvent7 = lttng_event_create();
+        strncpy(lttngEvent7->name, "ros2:rcl_timer_init", LTTNG_SYMBOL_NAME_LEN);
+        lttng_enable_event(lttngHandle, lttngEvent7, lttngChannel->name);
 
-        bt_value *directory = bt_value_string_create();
-        bt_value_string_set_status value_string_set_status = bt_value_string_set(directory, traces.at(i).c_str());
-        switch (value_string_set_status) {
-            case   BT_VALUE_STRING_SET_STATUS_OK: break;
-            case   BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at at configuration\033[0m\n"); break;
-            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        }
-        
-        bt_value_array_append_element_status array_append_element_status = bt_value_array_append_string_element(
-            array_value,
-            bt_value_string_get(directory)
-        );
-        switch (array_append_element_status) {
-            case BT_VALUE_ARRAY_APPEND_ELEMENT_STATUS_OK: break;
-            case BT_VALUE_ARRAY_APPEND_ELEMENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at at configuration\033[0m\n"); break;
-            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        }
 
-        bt_value *map_value = bt_value_map_create();
-        bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "inputs", array_value);
-        switch (map_insert_entry_status) {
-            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: break;
-            case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at at configuration\033[0m\n"); break;
-            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        }
-        const bt_component_source *source_fs;
+    lttng_rotation_schedule *rotationSchedule = lttng_rotation_schedule_periodic_create();
+    lttng_rotation_schedule_periodic_set_period(rotationSchedule, 1000000);
 
-        std::string compName = "fs" + std::to_string(i);
-        bt_graph_add_component_status add_component_status = bt_graph_add_source_component(
-                graph,
-                source_class_lttnglive,
-                compName.c_str(),
-                map_value,
-                BT_LOGGING_LEVEL_WARNING,
-                &source_fs
-            );
-            switch (add_component_status) {
-                case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-                case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
-                case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
-                default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+    lttng_session_add_rotation_schedule("continuousSession", rotationSchedule);
+
+    lttng_start_tracing("continuousSession");
+
+    lttng_condition *condition  = lttng_condition_session_rotation_completed_create();
+    ret = lttng_condition_session_rotation_set_session_name(condition, "continuousSession");
+    if (ret != LTTNG_CONDITION_STATUS_OK) {
+        std::cerr << "lttng_condition_session_rotation_set_session_name failed with code: " << ret << std::endl;
+    }
+    lttng_action    *action     = lttng_action_notify_create();
+    lttng_trigger   *trigger    = lttng_trigger_create(condition, action);
+    ret = lttng_register_trigger_with_automatic_name(trigger);
+    if (ret != LTTNG_OK) {
+        std::cerr << "lttng_register_trigger failed with code: " << ret << std::endl;
+    }
+
+    lttng_notification_channel *notificationChannel = lttng_notification_channel_create(lttng_session_daemon_notification_endpoint);
+    ret = lttng_notification_channel_subscribe(notificationChannel, condition);
+    if (ret != LTTNG_NOTIFICATION_CHANNEL_STATUS_OK) {
+        std::cerr << "lttng_notification_channel_subscribe failed with code: " << ret << std::endl;
+    }
+
+    ThreadPool pool(5);
+
+    while (!stopFlag) {
+        struct lttng_notification *notification;
+        enum lttng_notification_channel_status status;
+
+        status = lttng_notification_channel_get_next_notification(notificationChannel, &notification);
+        if (status == LTTNG_NOTIFICATION_CHANNEL_STATUS_OK) {
+            printf("finalized rotation!\n");
+            const lttng_evaluation *evaluation = lttng_notification_get_evaluation(notification);
+            const lttng_trace_archive_location *location;
+            ret = lttng_evaluation_session_rotation_completed_get_location(evaluation, &location);
+            if (ret != LTTNG_EVALUATION_STATUS_OK) {
+                std::cerr << "lttng_evaluation_session_rotation_completed_get_location failed with code: " << ret << std::endl;
             }
-        sources_fs.push_back(source_fs);
-    }
 
-
-    printf("Add filter Component to Graph....."); fflush(stdout);
-    const bt_component_filter *filter_muxer;
-    {
-        bt_value *map_value = bt_value_map_create();
-        bt_graph_add_component_status add_component_status = bt_graph_add_filter_component(
-            graph,
-            filter_class_muxer,
-            "muxer",
-            map_value,
-            BT_LOGGING_LEVEL_WARNING,
-            &filter_muxer
-        );
-        switch (add_component_status) {
-            case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-            case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
-            case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
-            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        }
-    }
-
-
-    printf("Add sink Component to Graph....."); fflush(stdout);
-    const bt_component_sink *sink_details;
-    {
-        bt_value *map_value = bt_value_map_create();
-
-        // const bt_component_class_sink *sink_class_details;
-        // sink_class_details = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "text");
-
-        bt_graph_add_component_status add_component_status = bt_graph_add_sink_component(
-            graph,
-            sink_class_text,
-            "pretty",
-            map_value,
-            BT_LOGGING_LEVEL_WARNING,
-            &sink_details
-        );
-        switch (add_component_status) {
-            case BT_GRAPH_ADD_COMPONENT_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-            case BT_GRAPH_ADD_COMPONENT_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory\033[0m\n"); break;
-            case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
-            default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        }
-    }
-
-    /***Connect Components***/
-    printf("Get output port fs/out and input port muxer/in and connect\n");
-    size_t muxPort = 0;
-    for (size_t i = 0; i < sources_fs.size(); i++) {
-        for (size_t fsPort = 0; fsPort < bt_component_source_get_output_port_count(sources_fs.at(i)); fsPort++) {
-            const bt_port_output *source_fs_port_out;
-            source_fs_port_out = bt_component_source_borrow_output_port_by_index_const(sources_fs.at(i), fsPort);
-            const bt_port_input *filter_mux_port_in;
-            filter_mux_port_in = bt_component_filter_borrow_input_port_by_index_const(filter_muxer, muxPort++);
-            
-            const bt_connection *connectionlttngdetails;
-            bt_graph_connect_ports_status connect_ports_status = bt_graph_connect_ports(graph, source_fs_port_out, filter_mux_port_in, &connectionlttngdetails);
-            switch (connect_ports_status) {
-                case BT_GRAPH_CONNECT_PORTS_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-                case BT_GRAPH_CONNECT_PORTS_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of memory\033[0m\n"); break;
-                case BT_GRAPH_CONNECT_PORTS_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther Error\033[0m\n"); break;
-                default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+            const char *path;
+            ret = lttng_trace_archive_location_local_get_absolute_path(location, &path);
+            if (ret != LTTNG_TRACE_ARCHIVE_LOCATION_STATUS_OK) {
+                std::cerr << "lttng_trace_archive_location_local_get_absolute_path failed with code: " << ret << std::endl;
             }
+
+            std::cout << path << std::endl;
+            pool.enqueue(path);
+
+            lttng_notification_destroy(notification);
+        } else if (status == LTTNG_NOTIFICATION_CHANNEL_STATUS_CLOSED) {
+            break;
         }
     }
 
-    printf("Get output port muxer/out and input port pretty/in\n");
-    const bt_port_output *filter_mux_port_out;
-    filter_mux_port_out = bt_component_filter_borrow_output_port_by_name_const(filter_muxer, "out");
-    const bt_port_input *source_pretty_port_in;
-    source_pretty_port_in = bt_component_sink_borrow_input_port_by_name_const(sink_details, "in");
-    
-    const bt_connection *connectionmuxerdetails;
-    bt_graph_connect_ports_status connect_ports_status = bt_graph_connect_ports(graph, filter_mux_port_out, source_pretty_port_in, &connectionmuxerdetails);
-    switch (connect_ports_status) {
-        case BT_GRAPH_CONNECT_PORTS_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-        case BT_GRAPH_CONNECT_PORTS_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of memory\033[0m\n"); break;
-        case BT_GRAPH_CONNECT_PORTS_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther Error\033[0m\n"); break;
-        default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
+    std::cout << "finalizing...";
+    lttng_unregister_trigger(trigger);
+    lttng_trigger_destroy(trigger);
+    ret = lttng_notification_channel_unsubscribe(notificationChannel, condition);
+    if (ret != LTTNG_NOTIFICATION_CHANNEL_STATUS_OK) {
+        std::cerr << "lttng_notification_channel_unsubscribe failed with code: " << ret << std::endl;
+    }
+    lttng_notification_channel_destroy(notificationChannel);
+    lttng_action_destroy(action);
+    lttng_condition_destroy(condition);
+    lttng_event_destroy(lttngEvent);
+    lttng_event_destroy(lttngEvent2);
+    lttng_event_destroy(lttngEvent3);
+    lttng_event_destroy(lttngEvent4);
+    lttng_event_destroy(lttngEvent5);
+    lttng_event_destroy(lttngEvent6);
+    lttng_event_destroy(lttngEvent7);
+    ret = lttng_stop_tracing("continuousSession");
+    if (ret != 0) {
+        std::cerr << "lttng_stop_tracing failed with code: " << ret << std::endl;
+    }
+    ret = lttng_destroy_session("continuousSession");
+    if (ret != 0) {
+        std::cerr << "lttng_destroy_session failed with code: " << ret << std::endl;
     }
 
-    // for (size_t i = 0; i < traces.size(); i++) {
-    //     // std::cout << traces.at(i) << std::endl;
-    //     std::cout << "fs" << std::endl;
-    //     const bt_port_output *source_lttnglive_port_out;
-    //     // source_lttnglive_port_out = bt_component_source_borrow_output_port_by_name_const(source_lttnglive, "out");
-    //     source_lttnglive_port_out = bt_component_source_borrow_output_port_by_index_const(source_lttnglive, i);
-    //     std::cout << "port name: " << bt_port_get_name(bt_port_output_as_port_const(source_lttnglive_port_out)) << std::endl;
-
-    //     std::cout << "mux" << std::endl;
-    //     const bt_port_input *filter_mux_port_in;
-    //     // filter_mux_port_in = bt_component_filter_borrow_input_port_by_name_const(filter_muxer, "in");
-    //     filter_mux_port_in = bt_component_filter_borrow_input_port_by_index_const(filter_muxer, i);
-        
-    //     printf("Connect ports fs/out[%ld] -> muxer/in[%ld].....", i, i); fflush(stdout);
-    //     const bt_connection *connectionlttngdetails;
-    //     bt_graph_connect_ports_status connect_ports_status = bt_graph_connect_ports(graph, source_lttnglive_port_out, filter_mux_port_in, &connectionlttngdetails);
-    //     switch (connect_ports_status) {
-    //         case BT_GRAPH_CONNECT_PORTS_STATUS_OK: printf("\033[32;1mSuccess\033[0m\n"); break;
-    //         case BT_GRAPH_CONNECT_PORTS_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of memory\033[0m\n"); break;
-    //         case BT_GRAPH_CONNECT_PORTS_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther Error\033[0m\n"); break;
-    //         default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-    //     }
+    // for (auto &worker : workers) {
+    //     worker.join();
     // }
+    std::cout << "done" << std::endl;
 
-
-
-    /***Run Graph**/
-    printf("Run Graph\n");
-    bt_graph_run_status graph_status;
-    do {
-        graph_status = bt_graph_run(graph);
-    } while (graph_status == BT_GRAPH_RUN_STATUS_AGAIN);
-    switch (graph_status) {
-        case BT_GRAPH_RUN_STATUS_OK: printf("\033[32;1m.....Success\033[0m\n"); break;
-        case BT_GRAPH_RUN_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1m.....Out of memory\033[0m\n"); break;
-        case BT_GRAPH_RUN_STATUS_ERROR: fprintf(stderr, "\033[31;1m.....Other Error\033[0m\n"); break;
-        default: fprintf(stderr, "\033[31;1m.....Hopefully never reached\033[0m\n");
-    }
+    return 0;
 }
