@@ -1,4 +1,6 @@
 #include "threadPool.hpp"
+
+#include "babeltrace.hpp"
 #include <iostream>
 
 
@@ -42,6 +44,7 @@ void ThreadPool::workerThread(size_t worker_id) {
             task = std::move(tasks.front());
             tasks.pop();
         }
-        std::cout << "Worker " << worker_id << "\tpath: " << task << std::endl;
+        std::cout << "\tWorker " << worker_id << "\tpath: " << task << std::endl;
+        createAndExecuteTraceGraph(task.c_str());
     }
 }

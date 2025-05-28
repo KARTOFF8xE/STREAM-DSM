@@ -44,22 +44,22 @@ int main() {
         lttng_enable_event(lttngHandle, lttngEvent, lttngChannel->name);
     lttng_event *lttngEvent2 = lttng_event_create();
         strncpy(lttngEvent2->name, "ros2:rcl_publisher_init", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent2, lttngChannel->name);
+        // lttng_enable_event(lttngHandle, lttngEvent2, lttngChannel->name);
     lttng_event *lttngEvent3 = lttng_event_create();
         strncpy(lttngEvent3->name, "ros2:rcl_node_init", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent3, lttngChannel->name);
+        // lttng_enable_event(lttngHandle, lttngEvent3, lttngChannel->name);
     lttng_event *lttngEvent4 = lttng_event_create();
         strncpy(lttngEvent4->name, "ros2:rcl_subscription_init", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent4, lttngChannel->name);
+        // lttng_enable_event(lttngHandle, lttngEvent4, lttngChannel->name);
     lttng_event *lttngEvent5 = lttng_event_create();
         strncpy(lttngEvent5->name, "ros2:rcl_service_init", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent5, lttngChannel->name);
+        // lttng_enable_event(lttngHandle, lttngEvent5, lttngChannel->name);
     lttng_event *lttngEvent6 = lttng_event_create();
         strncpy(lttngEvent6->name, "ros2:rcl_client_init", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent6, lttngChannel->name);
+        // lttng_enable_event(lttngHandle, lttngEvent6, lttngChannel->name);
     lttng_event *lttngEvent7 = lttng_event_create();
         strncpy(lttngEvent7->name, "ros2:rcl_timer_init", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent7, lttngChannel->name);
+        // lttng_enable_event(lttngHandle, lttngEvent7, lttngChannel->name);
 
 
     lttng_rotation_schedule *rotationSchedule = lttng_rotation_schedule_periodic_create();
@@ -95,7 +95,7 @@ int main() {
 
         status = lttng_notification_channel_get_next_notification(notificationChannel, &notification);
         if (status == LTTNG_NOTIFICATION_CHANNEL_STATUS_OK) {
-            printf("finalized rotation!\n");
+            printf("finalized rotation: ");
             const lttng_evaluation *evaluation = lttng_notification_get_evaluation(notification);
             const lttng_trace_archive_location *location;
             ret = lttng_evaluation_session_rotation_completed_get_location(evaluation, &location);

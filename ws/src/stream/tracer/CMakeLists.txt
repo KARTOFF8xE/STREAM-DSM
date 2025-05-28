@@ -20,7 +20,8 @@ pkg_check_modules(LTTNG REQUIRED lttng-ctl)
 add_executable(structural src/structural.cpp)
 add_executable(continuous
   src/continuous.cpp
-  src/threadPool.cpp)
+  src/threadPool.cpp
+  src/babeltrace.cpp)
 target_include_directories(continuous PRIVATE include/)
 
 
