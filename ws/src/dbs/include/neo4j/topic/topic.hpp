@@ -15,5 +15,6 @@ namespace topic {
      * @returns The Payload for the Query.
      */
     std::string getPayloadRequestByPrimaryKey(pid_t pid);
+    std::string getPayloadSearch(std::string name);
 
 }

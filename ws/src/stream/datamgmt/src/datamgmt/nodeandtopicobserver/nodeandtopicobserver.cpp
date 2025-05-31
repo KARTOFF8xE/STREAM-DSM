@@ -25,7 +25,6 @@ using namespace std::chrono_literals;
 #include "datamgmt/utils.hpp"
 #include "pipe/pipe.hpp"
 
-
 using json = nlohmann::json;
 
 
@@ -669,6 +668,31 @@ void handleClient(RequestingClient &client, std::vector<RequestingClient> &clien
     std::cout << "nrOf supped Clients: " << clients.size() << std::endl;
 }
 
+bool handleSearchRequests(const IpcServer &server) {
+    requestId_t requestId;
+    pid_t pid;
+    std::optional<SearchRequest> search = server.receiveSearchRequest(requestId, pid, false);
+    if (search.has_value()) {
+        SearchRequest payload = search.value();
+        std::string request = (payload.type == payload.NODE) ? node::getPayloadSearch(payload.name) : topic::getPayloadSearch(payload.name);
+        std::string response = curl::push(request, curl::NEO4J);
+
+        json data = nlohmann::json::parse(response);
+        json row = data["results"][0]["data"][0]["row"];
+        if (!row.empty() && !row[0].empty()) {
+            SearchResponse searchResp{
+                .primaryKey = row[0]};
+
+            server.sendSearchResponse(searchResp, pid, false);
+        } else {
+            // TODO: send something that shows that nothing was found
+        }
+
+        return true;        
+    }
+    
+    return false;
+}
 
 void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
     std::cout << "started nodeAndTopicObserver" << std::endl;
@@ -721,11 +745,9 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
                     handleNodeUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::PUBLISHERTRACE:
-                    // if (strstr(msg.subscriber.topicName, "/_action/")) break;
                     handlePublishersUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::SUBSCRIBERTRACE:
-                    // if (strstr(msg.subscriber.topicName, "/_action/")) break;
                     handleSubscribersUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
                     break;
                 case sharedMem::MessageType::SERVICETRACE:
@@ -765,6 +787,8 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
             setNodeOffline(nodeUpdate, clients, server);
             continue;
         }
+
+        if (handleSearchRequests(server)) continue;
 
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);

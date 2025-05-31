@@ -21,4 +21,19 @@ namespace topic {
         )", pid);
     }
 
+    std::string getPayloadSearch(std::string name) {
+        return fmt::format(R"(
+            {{ 
+                "statements":
+                    [
+                        {{ "statement": "MATCH (n:Passive {{name: $name}}) RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                        "parameters": {{
+                            "name": "{}"
+                            }}
+                        }}
+                    ]
+            }}
+        )", name);
+    }
+
 }
