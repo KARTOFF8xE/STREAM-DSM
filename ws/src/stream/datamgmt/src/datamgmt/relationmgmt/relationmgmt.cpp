@@ -67,9 +67,9 @@ std::string getParameterString(std::vector<ProcessData> pdv) {
     std::ostringstream oss;
     oss << "[";
     for (size_t i = 0; i < pdv.size(); i++) {
-        oss << "{\"pid\": \""
+        oss << "{\"pid\": "
             << pdv.at(i).pid
-            << "\", \"name\": \""
+            << ", \"name\": \""
             << pdv.at(i).name
             << "\""
             << "}";
@@ -84,9 +84,9 @@ std::string getParameterString2(std::vector<ProcessData> pdv) {
     std::ostringstream oss;
     oss << "[";
     for (size_t i = 0; i < pdv.size(); i++) {
-        oss << "\""
+        oss << ""
             << pdv.at(i).pid
-            << "\"";
+            << "";
 
         if (i < pdv.size() - 1) oss << ", ";
     }
@@ -105,7 +105,9 @@ std::vector<Pair> extractPIDandID(const std::string& payload) {
     std::vector<Pair> result;
 
     for (const auto& item : j["results"][0]["data"]) {
-        if (item.contains("row") && !item["row"].empty()) {           
+        if (item.contains("row") && !item["row"].empty() &&
+            item["row"][0].contains("pid") && item["row"][0].contains("id") &&
+            !item["row"][0]["pid"].is_null() && !item["row"][0]["id"].is_null()) {
             result.push_back(
                 Pair {
                     .pid        = item["row"][0]["pid"].get<pid_t>(),
@@ -129,9 +131,10 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
     auto then = std::chrono::steady_clock::now();
     while (true) {
 
-        NodeResponse response;
         ssize_t ret = -1;
-        ret = pipe_ns::readT<NodeResponse>(pipes[NODEANDTOPICOBSERVER].read, response);
+        pipe_ns::UnionResponse unionResponse;
+        pipe_ns::MsgType type;
+        ret = pipe_ns::readT<pipe_ns::UnionResponse>(pipes[NODEANDTOPICOBSERVER].read, unionResponse, &type);
         if (ret == -1) {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then);
@@ -144,17 +147,29 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
             continue;
         }
 
+        if (type == pipe_ns::MsgType::TOPICRESPONSE) {
+            {
+            /*** Namespace-Tree ***/
+            curl::push(
+                createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(unionResponse.topicResp.name),
+                curl::NEO4J
+            );
+            }
+
+            continue;
+        }
+
         {
             /*** Namespace-Tree ***/
             curl::push(
-                createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(response.name),
+                createRoot::getPayloadCreateNameSpaceAndLinkPassiveHelpers(unionResponse.nodeResp.name),
                 curl::NEO4J
             );
         }
         {
             /*** Process-Tree ***/
             std::vector<ProcessData> pdv;
-                pid_t pid = response.pid;
+                pid_t pid = unionResponse.nodeResp.pid;
                 while (true) {
                     ProcessData pd = getProcessDatabyPID(pid);
                     if (pd.pid == 0) break;
@@ -165,7 +180,7 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                 reduceProcessData(pdv);
 
             std::string queryResp;
-            if (response.bootCount == 1) {
+            if (unionResponse.nodeResp.bootCount == 1) {
                 queryResp = curl::push(
                     createRoot::getPayloadCreateProcessAndLinkPassiveHelpers(
                         getParameterString(pdv)
@@ -175,7 +190,7 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
             } else {
                 queryResp = curl::push(
                     createRoot::getPayloadCreateProcessAndUpdatePassiveHelpers(
-                        response.name,
+                        unionResponse.nodeResp.name,
                         getParameterString2(pdv)
                     ),
                     curl::NEO4J

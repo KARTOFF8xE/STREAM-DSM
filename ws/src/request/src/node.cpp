@@ -30,8 +30,8 @@ int main() {
           "\n\tprimaryKey: " << resp.primaryKey <<
           "\n\tname: " << resp.name <<
           "\n\tpid: " << resp.pid <<
-          "\n\talive: " << resp.alive <<
-          "\n\taliveChangeTime: " << resp.aliveChangeTime <<
+          "\n\tstate: " << resp.state <<
+          "\n\tstateChangeTime: " << resp.stateChangeTime <<
           "\n\tbootCount: " << resp.bootCount <<
           "\n\tnrOfNeighours: " << resp.nrOfInitialUpdates <<
           std::endl;
@@ -103,6 +103,28 @@ int main() {
           "\n\tprimaryKey: " << resp.primaryKey <<
           "\n\tsrvName: " << resp.srvName <<
           "\n\tactionclientNodeId: " << resp.actionclientNodeId <<
+          "\n\tisUpdate: " << resp.isUpdate <<
+          std::endl;
+      }
+    }
+    {
+     std::optional<NodeTimerToUpdate> optResp = client.receiveNodeTimerToUpdate(false);
+      if (optResp.has_value()) {
+        NodeTimerToUpdate resp = optResp.value();
+        std::cout << "Received Timer:" <<
+          "\n\tprimaryKey: " << resp.primaryKey <<
+          "\n\tfrequency: " << resp.frequency <<
+          "\n\tisUpdate: " << resp.isUpdate <<
+          std::endl;
+      }
+    }
+    {
+     std::optional<NodeStateUpdate> optResp = client.receiveNodeStateUpdate(false);
+      if (optResp.has_value()) {
+        NodeStateUpdate resp = optResp.value();
+        std::cout << "Received State Update:" <<
+          "\n\tprimaryKey: " << resp.primaryKey <<
+          "\n\tstate: " << resp.state <<
           "\n\tisUpdate: " << resp.isUpdate <<
           std::endl;
       }

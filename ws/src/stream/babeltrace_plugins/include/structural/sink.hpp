@@ -1,47 +1,57 @@
 #include <babeltrace2/babeltrace.h>
 
-#include "common.hpp"
-#include "interface.hpp"
+#include "ipc/sharedMem.hpp"
+
+#include <memory>
+#include <unordered_map>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
 
 
-struct publisher {
+struct tracer {
     bt_message_iterator *message_iterator;
-    Communication communication;
-
-    bool sendToNodeObserver = false;
     
-    publisher() : communication{ IpcServer(2), 0, 0 } {}
+    sharedMem::SHMChannel<sharedMem::TraceMessage> channel;
+    
+    std::unordered_map<u_int64_t, u_int32_t>    timerInit;
+    
+    std::chrono::_V2::steady_clock::time_point lastTick = std::chrono::steady_clock::now();
+
+    tracer(const std::string& name)
+        : channel(name.c_str(), true)
+    {}
 };
 
 /**
- * @brief Initializes the publisher component, sets the "topic" parameter, and adds an input port to the sink component.
+ * @brief Initializes the tracer component, sets the "topic" parameter, and adds an input port to the sink component.
  *
  * @param self_component_sink The component being initialized.
  * @param params The configuration parameters.
  * 
  * @return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK on success.
  */
-static bt_component_class_initialize_method_status publisher_initialize(
+static bt_component_class_initialize_method_status tracer_initialize(
         bt_self_component_sink *self_component_sink,
         bt_self_component_sink_configuration *,
         const bt_value *params, void *);
 
 /**
- * @brief Finalizes the publisher component and frees allocated memory.
+ * @brief Finalizes the tracer component and frees allocated memory.
  *
  * @param self_component_sink The component to finalize.
  */
-static void publisher_finalize(bt_self_component_sink *self_component_sink);
+static void tracer_finalize(bt_self_component_sink *self_component_sink);
 
 /**
- * @brief Configures the publisher component's input port and creates a message iterator.
+ * @brief Configures the tracer component's input port and creates a message iterator.
  *
  * @param self_component_sink The component to configure.
  * 
  * @return BT_COMPONENT_CLASS_SINK_GRAPH_IS_CONFIGURED_METHOD_STATUS_OK on success.
  */
 static bt_component_class_sink_graph_is_configured_method_status
-publisher_graph_is_configured(bt_self_component_sink *self_component_sink);
+tracer_graph_is_configured(bt_self_component_sink *self_component_sink);
 
 /**
  * @brief Retrieves and prints the value of a structure field member based on its type.
@@ -75,5 +85,5 @@ static void publish(bt_self_component_sink *self_component_sink, const bt_messag
  * 
  * @return The status of the consume method, indicating success or failure.
  */
-bt_component_class_sink_consume_method_status publisher_consume(
+bt_component_class_sink_consume_method_status tracer_consume(
         bt_self_component_sink *self_component_sink);

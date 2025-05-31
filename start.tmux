@@ -10,20 +10,24 @@ tmux select-pane -t 0
 # tmux split-window -h -t $SESSION
 tmux split-window -v -t $SESSION
 tmux split-window -v -t $SESSION
-# tmux split-window -h -t $SESSION
+tmux split-window -h -t $SESSION
 # tmux split-window -h -t $SESSION
 # tmux split-window -h -t $SESSION
 
 tmux select-layout -t $SESSION tiled
 
+cd ~/stream
+lttng destroy -a
+lttng-sessiond --daemonize
+lttng-relayd -d
 
 tmux select-pane -t 0
-tmux send-keys -t $SESSION 'lttng destroy || clear && ./lttng_startsession.sh && ros2 run tracer babel' C-m
+tmux send-keys -t $SESSION 'clear && ros2 run tracer structural' C-m
 tmux select-pane -t 1
-tmux send-keys -t $SESSION 'clear && echo "ros2 run cpp_pubsub talker"' C-m
+tmux send-keys -t $SESSION 'clear && ros2 run tracer continuous' C-m
 tmux select-pane -t 2
-# tmux send-keys -t $SESSION '' C-m
-# tmux select-pane -t 3
+tmux send-keys -t $SESSION 'clear && ros2 run datamgmt datamgmt' C-m
+tmux select-pane -t 3
 # tmux send-keys -t $SESSION '' C-m
 # tmux select-pane -t 4
 # tmux send-keys -t $SESSION '' C-m

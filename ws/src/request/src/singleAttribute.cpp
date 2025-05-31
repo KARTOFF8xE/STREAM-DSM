@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "common.hpp"
+
 #include <ipc/ipc-client.hpp>
 #include <ipc/sharedMem.hpp>
 
@@ -17,7 +19,7 @@ int main() {
   requestId_t requestId;
   const SingleAttributesRequest request{
     .primaryKey = pKey,
-    .attribute = CPU_UTILIZATION,
+    .attribute = PUBLISHINGRATES,
     .continuous = true,
   };
   std::cout << "send request..." << std::flush;
@@ -32,9 +34,9 @@ int main() {
   while (true) {
     {
       sharedMem::Response sharedMemResponse {};
-      if (!channel.receive(sharedMemResponse)) continue;
+      if (!channel.receive(sharedMemResponse, false)) continue;
 
-      sharedMem::printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
+      printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }
   }
 }

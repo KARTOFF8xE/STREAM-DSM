@@ -63,11 +63,11 @@ target_link_libraries(sendAttributeValues
 install(TARGETS
   node
   topic
-  # singleAttribute
+  singleAttribute
   aggregatedAttribute
-  # customAttribute
-  # aggregatedMember
-  # customMember
+  customAttribute
+  aggregatedMember
+  customMember
   sendAttributeValues
   DESTINATION lib/${PROJECT_NAME})
 

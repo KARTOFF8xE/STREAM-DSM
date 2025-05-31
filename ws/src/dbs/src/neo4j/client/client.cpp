@@ -6,20 +6,20 @@
 
 namespace client {
 
-    std::string getPayload(std::string name, u_int64_t handle) {
+    std::string getPayload(std::string serviceName, u_int64_t nodeHandle) {
         return fmt::format(R"(
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Node {{handle: $node_handle}}) SET n.Clients = COALESCE(n.Clients, []) + $name WITH n MATCH (s:Node) WHERE $name IN s.Services CREATE (s)-[:service_for {{name: $name}}]->(n) RETURN COLLECT(DISTINCT {{ node_id: toInteger(split(elementId(n), \":\")[-1]), server_id: toInteger(split(elementId(s), \":\")[-1]) }}) AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) SET n.Clients = COALESCE(n.ServiceClients, []) + $name WITH n MATCH (s:Active) WHERE $name IN s.Services MERGE (s)-[a:sending {{serviceName: $name, mode: \"responds\"}}]->(n) SET a.active=true WITH n,s MERGE (n)-[a:sending {{serviceName: $name, mode: \"requests\"}}]->(s) SET a.active=true WITH n,s RETURN COLLECT(DISTINCT {{ node_id: toInteger(split(elementId(n), \":\")[-1]), server_id: toInteger(split(elementId(s), \":\")[-1]) }}) AS row ",
                         "parameters": {{
                             "name": "{}",
-                            "node_handle": "{}"
+                            "nodeHandle": {}
                             }}
                         }}
                     ]
             }}
-        )", name, handle);
+        )", serviceName, nodeHandle);
     }
 
 }

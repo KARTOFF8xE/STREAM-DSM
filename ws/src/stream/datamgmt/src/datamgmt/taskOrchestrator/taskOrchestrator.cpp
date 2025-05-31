@@ -36,9 +36,9 @@ bool receiveIPCClientStandardSingleAttributeRequest(const IpcServer &ipcServer, 
 
 void addSingleAttributeTask(const IpcServer &server, SingleAttributeInformationRequest singleAttributeInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
-    std::string memAddress = sharedMem::parseShmName(singleAttributeInformationRequest.pid, singleAttributeInformationRequest.requestID);
+    std::string memAddress = sharedMem::composeShmName(singleAttributeInformationRequest.pid, singleAttributeInformationRequest.requestID);
 
-    SingleAttributesResponse resp;
+    SingleAttributesResponse resp { .requestID = singleAttributeInformationRequest.requestID };
     util::parseString(resp.memAddress, memAddress);
 
     tasks.vec.push_back(Task{
@@ -126,9 +126,9 @@ std::vector<primaryKey_t> parsePrimaryKeys(const std::string& jsonPayload) {
 
 void addAggregatedAttributeTask(const IpcServer &server, AggregatedAttributeInformationRequest aggregatedAttributeInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
-    std::string memAddress = sharedMem::parseShmName(aggregatedAttributeInformationRequest.pid, aggregatedAttributeInformationRequest.requestID);
+    std::string memAddress = sharedMem::composeShmName(aggregatedAttributeInformationRequest.pid, aggregatedAttributeInformationRequest.requestID);
 
-    AggregatedAttributesResponse resp;
+    AggregatedAttributesResponse resp { .requestID = aggregatedAttributeInformationRequest.requestID };
     util::parseString(resp.memAddress, memAddress);
 
     tasks.vec.push_back(Task {
@@ -139,15 +139,15 @@ void addAggregatedAttributeTask(const IpcServer &server, AggregatedAttributeInfo
         .channel    = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
     });
     std::string response = curl::push(tree::getPayloadForTree(
-        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).primaryKey_RootTree1,
-        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).tree1),
+        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).rootedTree1.primaryKey,
+        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).rootedTree1.tree),
         curl::NEO4J
     );
     std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
 
     response = curl::push(tree::getPayloadForTree(
-        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).primaryKey_RootTree2,
-        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).tree2),
+        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).rootedTree2.primaryKey,
+        std::get<AggregatedAttributesRequest>(tasks.vec.back().task).rootedTree2.tree),
         curl::NEO4J
     );
     std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
@@ -187,9 +187,9 @@ bool receiveIPCClientCustomAttributeRequest(const IpcServer &ipcServer, CustomAt
 
 void addCustomAttributeTask(const IpcServer &server, CustomAttributeInformationRequest customAttributeInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
-    std::string memAddress = sharedMem::parseShmName(customAttributeInformationRequest.pid, customAttributeInformationRequest.requestID);
+    std::string memAddress = sharedMem::composeShmName(customAttributeInformationRequest.pid, customAttributeInformationRequest.requestID);
 
-    CustomAttributesResponse resp;
+    CustomAttributesResponse resp { .requestID = customAttributeInformationRequest.requestID };
     util::parseString(resp.memAddress, memAddress);
 
     tasks.vec.push_back(Task{
@@ -225,9 +225,9 @@ bool receiveIPCClientAggregatedMemberRequest(const IpcServer &ipcServer, Aggrega
 
 void addAggregatedMemberTask(const IpcServer &server, AggregatedMemberInformationRequest aggregatedMemberInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
-    std::string memAddress = sharedMem::parseShmName(aggregatedMemberInformationRequest.pid, aggregatedMemberInformationRequest.requestID);
+    std::string memAddress = sharedMem::composeShmName(aggregatedMemberInformationRequest.pid, aggregatedMemberInformationRequest.requestID);
 
-    AggregatedMemberResponse resp;
+    AggregatedMemberResponse resp { .requestID = aggregatedMemberInformationRequest.requestID };
     util::parseString(resp.memAddress, memAddress);
 
     tasks.vec.push_back(Task{
@@ -238,15 +238,15 @@ void addAggregatedMemberTask(const IpcServer &server, AggregatedMemberInformatio
         .channel    = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
     });
     std::string response = curl::push(tree::getPayloadForTree(
-        std::get<AggregatedMemberRequest>(tasks.vec.back().task).primaryKey_RootTree1,
-        std::get<AggregatedMemberRequest>(tasks.vec.back().task).tree1),
+        std::get<AggregatedMemberRequest>(tasks.vec.back().task).rootedTree1.primaryKey,
+        std::get<AggregatedMemberRequest>(tasks.vec.back().task).rootedTree1.tree),
         curl::NEO4J
     );
     std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
 
     response = curl::push(tree::getPayloadForTree(
-        std::get<AggregatedMemberRequest>(tasks.vec.back().task).primaryKey_RootTree2,
-        std::get<AggregatedMemberRequest>(tasks.vec.back().task).tree2),
+        std::get<AggregatedMemberRequest>(tasks.vec.back().task).rootedTree2.primaryKey,
+        std::get<AggregatedMemberRequest>(tasks.vec.back().task).rootedTree2.tree),
         curl::NEO4J
     );
     std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
@@ -286,9 +286,9 @@ bool receiveIPCClientCustomMemberRequest(const IpcServer &ipcServer, CustomMembe
 
 void addCustomMemberTask(const IpcServer &server,CustomMemberInformationRequest customMemberInformationRequest, Tasks &tasks) {
     std::lock_guard<std::mutex> lock(tasks.mutex);
-    std::string memAddress = sharedMem::parseShmName(customMemberInformationRequest.pid, customMemberInformationRequest.requestID);
+    std::string memAddress = sharedMem::composeShmName(customMemberInformationRequest.pid, customMemberInformationRequest.requestID);
 
-    CustomMemberResponse resp;
+    CustomMemberResponse resp { .requestID = customMemberInformationRequest.requestID };
     util::parseString(resp.memAddress, memAddress);
 
     tasks.vec.push_back(Task{

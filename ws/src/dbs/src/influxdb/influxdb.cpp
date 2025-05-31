@@ -10,6 +10,7 @@ namespace influxDB {
         switch (pair.attribute) {
             case CPU_UTILIZATION:   type = "CPU_UTILIZATION"; break;
             case STATECHANGE:       type = "STATECHANGE"; break;
+            case PUBLISHINGRATE:    type = "PUBLISHINGRATE"; break;
             case CLIENT:            type = "CLIENT"; break;
             case ACTIONCLIENT:      type = "ACTIONCLIENT"; break;
             case SERVICE:           type = "SERVICE"; break;
@@ -22,10 +23,10 @@ namespace influxDB {
         return type + "," +
             "primaryKey=" + std::to_string(pair.primaryKey) + " " +
             "value=" + std::to_string(pair.value) + " " +
-            std::to_string(pair.timestamp.count());
+            std::to_string(pair.timestamp);
     }
 
-    std::string createPayloadMultipleValSameTime(std::vector<ValuePairs> pairs) {
+    std::string createPayloadMultipleVal(std::vector<ValuePairs> pairs) {
         std::string type;
         
         std::string payload = "";
@@ -33,6 +34,7 @@ namespace influxDB {
             switch (pair.attribute) {
                 case CPU_UTILIZATION:   type = "CPU_UTILIZATION"; break;
                 case STATECHANGE:       type = "STATECHANGE"; break;
+                case PUBLISHINGRATE:    type = "PUBLISHINGRATE"; break;
                 case CLIENT:            type = "CLIENT"; break;
                 case ACTIONCLIENT:      type = "ACTIONCLIENT"; break;
                 case SERVICE:           type = "SERVICE"; break;
@@ -60,11 +62,12 @@ namespace influxDB {
         return oss.str();
     }
 
-    std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, std::vector<primaryKey_t> primaryKeys) {
+    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, std::vector<primaryKey_t> primaryKeys) {
         std::string attr;
 
         switch (attribute) {
             case CPU_UTILIZATION: attr = "CPU_UTILIZATION"; break;
+            case PUBLISHINGRATES: attr = "PUBLISHINGRATE"; break;
             default: break;
         }
 

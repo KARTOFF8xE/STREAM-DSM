@@ -12,20 +12,18 @@ find_package(fmt REQUIRED)
 find_package(dbs REQUIRED)
 find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
 
-add_library(sink SHARED
-    src/sink.cpp
-    src/participantFactory.cpp
-    src/participants/client.cpp
-    src/participants/node.cpp
-    src/participants/dummy.cpp
-    src/participants/service.cpp
-    src/participants/subscriber.cpp
-    src/participants/publisher.cpp
-    src/participants/subscriber.cpp
+add_library(structuralsink SHARED
+  src/structural/participants.cpp
+  src/structural/sink.cpp
 )
 
-target_include_directories(sink PRIVATE include)
-target_link_libraries(sink
+add_library(continuoussink SHARED
+  src/continuous/participants.cpp
+  src/continuous/sink.cpp
+)
+
+target_include_directories(structuralsink PRIVATE include)
+target_link_libraries(structuralsink
   PRIVATE
     fmt::fmt
     ${babeltrace2_LIBRARIES}
@@ -33,6 +31,16 @@ target_link_libraries(sink
     ipc::ipc_lib
 )
 
-install(TARGETS sink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
+target_include_directories(continuoussink PRIVATE include)
+target_link_libraries(continuoussink
+  PRIVATE
+    fmt::fmt
+    ${babeltrace2_LIBRARIES}
+    dbs::dbs_lib
+    ipc::ipc_lib
+)
+
+install(TARGETS structuralsink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
+install(TARGETS continuoussink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
 
 file(APPEND "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/local_setup.zsh" "")

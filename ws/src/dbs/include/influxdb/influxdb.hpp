@@ -12,6 +12,7 @@ namespace influxDB {
     enum ValueT {
         CPU_UTILIZATION,
         DISK_UTILIZATION,
+        PUBLISHINGRATE,
         STATECHANGE,
         CLIENT,
         ACTIONCLIENT,
@@ -22,10 +23,10 @@ namespace influxDB {
     };
 
     struct ValuePairs {
-        ValueT                      attribute;
-        primaryKey_t                primaryKey;
-        std::chrono::nanoseconds    timestamp;
-        long double                 value;
+        ValueT          attribute;
+        primaryKey_t    primaryKey;
+        time_t          timestamp;
+        long double     value;
     };
 
     /**
@@ -49,10 +50,10 @@ namespace influxDB {
      * 
      * @returns The payload for the Query.
      */
-    std::string createPayloadMultipleValSameTime(std::vector<ValuePairs> pairs);
+    std::string createPayloadMultipleVal(std::vector<ValuePairs> pairs);
 
     // TODO
-    std::string createPayloadGetSingleValue(std::string bucket, Attribute attribute, std::vector<primaryKey_t> primaryKeys);
+    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, std::vector<primaryKey_t> primaryKeys);
 
     // TODO
     double extractValueFromCSV(const std::string& csv);
