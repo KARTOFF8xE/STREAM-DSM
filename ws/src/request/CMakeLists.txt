@@ -17,7 +17,8 @@ add_executable(customAttribute src/customAttribute.cpp)
 add_executable(aggregatedMember src/aggregatedMember.cpp)
 add_executable(customMember src/customMember.cpp)
 add_executable(sendAttributeValues src/sendAttributeValues.cpp)
-
+add_executable(searchNode src/searchNode.cpp)
+add_executable(searchTopic src/searchTopic.cpp)
 
 target_link_libraries(node
   PRIVATE
@@ -54,6 +55,16 @@ target_link_libraries(customMember
     ipc::ipc_lib
 )
 
+target_link_libraries(searchNode
+  PRIVATE
+    ipc::ipc_lib
+)
+
+target_link_libraries(searchTopic
+  PRIVATE
+    ipc::ipc_lib
+)
+
 target_link_libraries(sendAttributeValues
   PRIVATE
     ipc::ipc_lib
@@ -69,6 +80,8 @@ install(TARGETS
   aggregatedMember
   customMember
   sendAttributeValues
+  searchNode
+  searchTopic
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

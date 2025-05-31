@@ -47,6 +47,8 @@ void singleTimeTopicResponse(IpcServer &server, RequestingClient client, primary
  */
 void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running);
 
+bool handleSearchRequests(const IpcServer &server);
+
 /**
  * @brief Receives and processes a NodeIsClientOfUpdate message.
  *
