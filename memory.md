@@ -132,3 +132,52 @@
         ros2:rmw_send_response: { procname = "server", vpid = 19157 }, { rmw_service_handle = 0x5F5A11F31AD0, response = 0x5F5A11F398D0, client_gid = [ [0] = 1, [1] = 15, [2] = 112, [3] = 183, [4] = 237, [5] = 74, [6] = 142, [7] = 220, [8] = 0, [9] = 0, [10] = 0, [11] = 0, [12] = 0, [13] = 0, [14] = 20, [15] = 4 ], sequence_number = 1, timestamp = 1738137710236125455 }
     ```
 ```
+
+rclcpp_service_callback_added:
+    procname:	    talker (string)
+	vpid:	        21937 (Int)
+	service_handle:	103180652850816 (UInt)
+	callback:	    103180652761728 (UInt)
+
+ros2:rclcpp_timer_callback_added
+	procname:	    talker (string)
+	vpid:	        21937 (Int)
+	timer_handle:	103180654336720 (UInt)
+	callback:	    103180654336408 (UInt)
+
+ros2:rclcpp_subscription_callback_added
+	procname:	    listener (string)
+	vpid:	        23990 (Int)
+	subscription:	110871955655872 (UInt)
+	callback:	    110871955656464 (UInt)
+
+ros2:callback_start
+	procname:	        talker (string)
+	vpid:	            24023 (Int)
+	callback:	        108998693658512 (UInt)
+	is_intra_process:	0 (Int)
+
+ros2:callback_end
+	procname:	    talker (string)
+	vpid:	        24023 (Int)
+	callback:	    108998693658512 (UInt)
+
+
+```
+ros2:rcl_subscription_init
+        subscription_handle:    99009915616272 (UInt)
+        node_handle:    99009912842688 (UInt)
+        rmw_subscription_handle:        99009913631808 (UInt)
+        topic_name:     /parameter_events (string)
+        queue_depth:    1000 (UInt)
+
+ros2:rclcpp_subscription_init
+        procname:       listener (string)
+        vpid:   19725 (Int)
+        subscription_handle:    99009915616272 (UInt)
+        subscription:   99009915614992 (UInt)
+
+ros2:rclcpp_subscription_callback_added
+        subscription:   99009915614992 (UInt)
+        callback:       99009915615584 (UInt)
+```

@@ -33,7 +33,7 @@ int main() {
     lttng_handle *lttngHandle = lttng_create_handle("continuousSession", &lttngDomain);
 
     lttng_channel *lttngChannel = lttng_channel_create(&lttngDomain);
-    strncpy(lttngChannel->name, "STREAMChan", LTTNG_SYMBOL_NAME_LEN);
+    strncpy(lttngChannel->name, "continuousChannel", LTTNG_SYMBOL_NAME_LEN);
     ret = lttng_enable_channel(lttngHandle, lttngChannel);
     if (ret < 0) {
         std::cerr << "Failed to enable LTTng channel: " << ret << std::endl;

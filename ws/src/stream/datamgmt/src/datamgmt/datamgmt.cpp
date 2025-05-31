@@ -9,6 +9,8 @@
 #include <condition_variable>
 #include <map>
 #include <bits/stdc++.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 #include <ipc/ipc-server.hpp>
 #include <ipc/ipc-client.hpp>
@@ -25,6 +27,34 @@
 #include "datamgmt/taskExecutor/taskExecutor.hpp"
 #include "datamgmt/datatracer/datatracer.hpp"
 #include "datamgmt/tasks.hpp"
+
+
+struct MsgBuf {
+    long mtype;
+    char mtext[1024];
+};
+
+void clearMsgQueue(int msgQueueId) {
+    MsgBuf msg;
+    while (true) {
+        ssize_t res = msgrcv(msgQueueId, &msg, sizeof(msg.mtext), 0, IPC_NOWAIT);
+        if (res == -1) {
+            if (errno == ENOMSG) {
+                break;
+            } else {
+                std::cerr << "Error while clearing message queue: " << strerror(errno) << std::endl;
+                break;
+            }
+        }
+    }
+}
+
+void handle_sigint(int) {
+    clearMsgQueue(1);
+    clearMsgQueue(4);
+    clearMsgQueue(5);
+    exit(EXIT_SUCCESS);
+}
 
 
 void runModule(Module_t module_t, Module &module) {
@@ -102,6 +132,8 @@ void runModule(Module_t module_t, Module &module, Tasks &tasks) {
 }
 
 int main() {
+    std::signal(SIGINT, handle_sigint);
+
     IpcServer nodeAndTopicObsServer(1);
     IpcServer taskServer(4);
     IpcServer tracerServer(5);

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <lttng/lttng.h>
 #include <csignal>
+#include <vector>
 
 
 void handle_sigint(int) {
@@ -82,6 +83,49 @@ int find_existing_instances_at_ip(const char *ip, bt_component_class_source *sou
     return 0;
 }
 
+std::vector<lttng_event*> enable_events(lttng_handle *handle, const char *channel_name) {
+    const char *event_names[] = {
+        "ros2:rcl_node_init",
+        "ros2:rcl_publisher_init",
+        "ros2:rcl_subscription_init",
+        "ros2:rcl_service_init",
+        "ros2:rcl_client_init",
+        "ros2:rcl_timer_init",
+        "ros2:rclcpp_timer_link_node",
+        "ros2:rcl_lifecycle_state_machine_init",
+        "ros2:rcl_lifecycle_transition",
+        "ros2:rclcpp_subscription_callback_added",
+        "ros2:rclcpp_subscription_init",
+        // "ros2:rclcpp_service_callback_added",
+        // "ros2:rclcpp_timer_callback_added",
+        // "ros2:callback_start",
+        // "ros2:callback_end",
+    };
+
+    std::vector<lttng_event*> enabled_events;
+
+    for (const char *event_name : event_names) {
+        lttng_event *event = lttng_event_create();
+        if (!event) {
+            std::cerr << "Failed to create LTTng event for " << event_name << std::endl;
+            break;
+        }
+
+        std::strncpy(event->name, event_name, LTTNG_SYMBOL_NAME_LEN);
+        int ret = lttng_enable_event(handle, event, channel_name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event '" << event_name << "': " << lttng_strerror(ret) << std::endl;
+            lttng_event_destroy(event);
+            break;
+        }
+
+        enabled_events.push_back(event);
+    }
+
+    return enabled_events;
+}
+
+
 int main() {
     signal(SIGINT, handle_sigint);
     lttng_destroy_session("structuralSession");
@@ -101,63 +145,21 @@ int main() {
 
     lttng_channel *lttngChannel = lttng_channel_create(&lttngDomain);
     lttngChannel->attr.subbuf_size = 524288;
-    strncpy(lttngChannel->name, "channel0", LTTNG_SYMBOL_NAME_LEN);
+    strncpy(lttngChannel->name, "structuralChannel", LTTNG_SYMBOL_NAME_LEN);
     ret = lttng_enable_channel(lttngHandle, lttngChannel);
     if (ret < 0) {
         std::cerr << "Failed to enable LTTng channel: " << lttng_strerror(ret) << std::endl;
         return 1;
     }
 
-    lttng_event *lttngEvent3 = lttng_event_create();
-        strncpy(lttngEvent3->name, "ros2:rcl_node_init", LTTNG_SYMBOL_NAME_LEN);
-        ret = lttng_enable_event(lttngHandle, lttngEvent3, lttngChannel->name);
-        if (ret != 0) {
-            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
-            return 1;
-        }
-
-    lttng_event *lttngEvent2 = lttng_event_create();
-        strncpy(lttngEvent2->name, "ros2:rcl_publisher_init", LTTNG_SYMBOL_NAME_LEN);
-        ret = lttng_enable_event(lttngHandle, lttngEvent2, lttngChannel->name);
-        if (ret != 0) {
-            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
-            return 1;
-        }
-    lttng_event *lttngEvent4 = lttng_event_create();
-        strncpy(lttngEvent4->name, "ros2:rcl_subscription_init", LTTNG_SYMBOL_NAME_LEN);
-        ret = lttng_enable_event(lttngHandle, lttngEvent4, lttngChannel->name);
-        if (ret != 0) {
-            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
-            return 1;
-        }
-    lttng_event *lttngEvent5 = lttng_event_create();
-        strncpy(lttngEvent5->name, "ros2:rcl_service_init", LTTNG_SYMBOL_NAME_LEN);
-        ret = lttng_enable_event(lttngHandle, lttngEvent5, lttngChannel->name);
-        if (ret != 0) {
-            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
-            return 1;
-        }
-    lttng_event *lttngEvent6 = lttng_event_create();
-        strncpy(lttngEvent6->name, "ros2:rcl_client_init", LTTNG_SYMBOL_NAME_LEN);
-        ret = lttng_enable_event(lttngHandle, lttngEvent6, lttngChannel->name);
-        if (ret != 0) {
-            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
-            return 1;
-        }
-    lttng_event *lttngEvent7 = lttng_event_create();
-        strncpy(lttngEvent7->name, "ros2:rcl_timer_init", LTTNG_SYMBOL_NAME_LEN);
-        ret = lttng_enable_event(lttngHandle, lttngEvent7, lttngChannel->name);
-        if (ret != 0) {
-            std::cerr << "Failed to enable event: " << lttng_strerror(ret) << std::endl;
-            return 1;
-        }
+    std::vector<lttng_event *> events = enable_events(lttngHandle, lttngChannel->name);
 
     lttng_event_context ctx;
     ctx.ctx = lttng_event_context_type::LTTNG_EVENT_CONTEXT_PROCNAME;
-    lttng_add_context(lttngHandle, &ctx, "ros2:rcl_node_init", "channel0");
+    lttng_add_context(lttngHandle, &ctx, "ros2:rcl_node_init", "structuralChannel");
     lttng_event_context ctx2;
     ctx2.ctx = lttng_event_context_type::LTTNG_EVENT_CONTEXT_VPID;
-    lttng_add_context(lttngHandle, &ctx2, "ros2:rcl_node_init", "channel0");
+    lttng_add_context(lttngHandle, &ctx2, "ros2:rcl_node_init", "structuralChannel");
 
     ret = lttng_start_tracing("structuralSession");
     if (ret != 0) {
@@ -240,35 +242,7 @@ int main() {
     printf("Add sink Component to Graph....."); fflush(stdout);
     const bt_component_sink *sink_details;
     {
-        // bt_value *arr_value = bt_value_array_create();
-        // {
-        //     bt_value *string_value = bt_value_string_create();
-        //     bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_node_init");
-        //     switch (string_set_status) {
-        //         case BT_VALUE_STRING_SET_STATUS_OK: break;
-        //         case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-        //         default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        //     }
-        //     bt_value_array_append_element(arr_value, string_value);
-        // }
-        // {
-        //     bt_value *string_value = bt_value_string_create();
-        //     bt_value_string_set_status string_set_status = bt_value_string_set(string_value, "ros2:rcl_publisher_init");
-        //     switch (string_set_status) {
-        //         case BT_VALUE_STRING_SET_STATUS_OK: break;
-        //         case BT_VALUE_STRING_SET_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-        //         default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        //     }
-        //     bt_value_array_append_element(arr_value, string_value);
-        // }
-
         bt_value *map_value = bt_value_map_create();
-        // bt_value_map_insert_entry_status map_insert_entry_status = bt_value_map_insert_entry(map_value, "topic", arr_value);
-        // switch (map_insert_entry_status) {
-        //     case BT_VALUE_MAP_INSERT_ENTRY_STATUS_OK: break;
-        //     case BT_VALUE_MAP_INSERT_ENTRY_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1mOut of Memory at configuration\033[0m\n"); break;
-        //     default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
-        // }
 
         const bt_component_class_sink *sink_class_details;
         sink_class_details = bt_plugin_borrow_sink_component_class_by_name_const(plugin_text, "output");
@@ -288,6 +262,7 @@ int main() {
             default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
         }
     }
+
     /***Connect Components***/
     printf("Get output port lttng-live/out\n");
     const bt_port_output *source_lttnglive_port_out;

@@ -50,7 +50,6 @@ std::vector<std::string> find_trace_dirs_with_metadata(const std::string& root_p
 
 
 int createAndExecuteTraceGraph(const char *pathToTraceDir) {
-    // const char *pathToTraceDir = "/tmp/foo_traces/archives/20250528T085359+0000-20250528T085404+0000-1";
     std::vector<std::string> traces = find_trace_dirs_with_metadata(pathToTraceDir);
 
     // set log level for debugging:

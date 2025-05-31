@@ -18,7 +18,8 @@ tmux select-layout -t $SESSION tiled
 
 cd ~/stream
 lttng destroy -a
-
+lttng-sessiond --daemonize
+lttng-relayd -d
 
 tmux select-pane -t 0
 tmux send-keys -t $SESSION 'clear && ros2 run tracer structural' C-m
