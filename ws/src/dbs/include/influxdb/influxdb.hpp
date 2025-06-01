@@ -55,7 +55,11 @@ namespace influxDB {
     // TODO
     std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, std::vector<primaryKey_t> primaryKeys);
 
+    std::string createPayloadForTask(std::string bucket, std::vector<primaryKey_t> primaryKeys, primaryKey_t destPrimaryKey);
+
     // TODO
     double extractValueFromCSV(const std::string& csv);
+
+    std::string getTaskIDByName(const std::string& taskName);
 
 }

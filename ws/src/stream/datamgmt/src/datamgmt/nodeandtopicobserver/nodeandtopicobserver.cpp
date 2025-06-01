@@ -9,6 +9,7 @@ using namespace std::chrono_literals;
 #include <ipc/util.hpp>
 #include <datamgmt/utils.hpp>
 #include <curl/myCurl.hpp>
+#include <influxdb/influxdb.hpp>
 #include <neo4j/node/node.hpp>
 #include <neo4j/topic/topic.hpp>
 #include <neo4j/publisher/publisher.hpp>
@@ -434,6 +435,16 @@ NodePublishersToUpdate queryGraphDbForPublisher(std::string payload) {
     json row = data["results"][0]["data"][0]["row"];
     if (!row.empty() && !row[0]["node_id"].empty())   nodePubToUpdate.primaryKey = row[0]["node_id"];
     if (!row.empty() && !row[0]["topic_id"].empty())  nodePubToUpdate.publishesTo = row[0]["topic_id"];
+    std::vector<primaryKey_t> incomingEdges;
+    if (!row.empty() && row[0].contains("incomingEdges") && row[0]["incomingEdges"].is_array()) {
+        for (const auto& edge : row[0]["incomingEdges"]) {
+            incomingEdges.push_back(edge.get<primaryKey_t>());
+        }
+    }
+
+    std::string taskId = influxDB::getTaskIDByName(std::to_string(nodePubToUpdate.publishesTo) + "_in");
+    std::string taskPayload = influxDB::createPayloadForTask("STREAM", incomingEdges, nodePubToUpdate.publishesTo);
+    (taskId == "") ? curl::push(taskPayload, curl::INFLUXDB_SETTASK) : curl::push(taskPayload, curl::INFLUXDB_UPDATETASK, taskId);
 
     return nodePubToUpdate;
 }
@@ -521,6 +532,10 @@ void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient>
     pipe_ns::UnionResponse unionResp;
     unionResp.nodeResp = nodeResponse;
     pipe_ns::writeT<pipe_ns::UnionResponse>(pipeToRelationMgmt_w, unionResp, pipe_ns::MsgType::NODERESPONSE);
+
+    // std::string taskPayload = influxDB::createPayloadForTask("STREAM", std::vector<primaryKey_t>(), nodeResponse.primaryKey);
+    // std::string response = curl::push(taskPayload, curl::INFLUXDB_SETTASK);
+
     // pipe_ns::writeT<NodeResponse>(pipeToRelationMgmt_w, nodeResponse);
 }
 
@@ -634,7 +649,10 @@ void setNodeOffline( NodeResponse nodeUpdate, std::vector<RequestingClient> clie
                 server.sendNodeStateUpdate(nodeStateUpdate, client.pid, false);
             }
         }
-    }
+
+        std::string taskId = influxDB::getTaskIDByName(std::to_string(nodeStateUpdate.primaryKey) + "_in");
+        if (taskId != "") curl::push(curl::INFLUXDB_DELETETASK, taskId);
+    }   
 }
 
 void handleClient(RequestingClient &client, std::vector<RequestingClient> &clients) {

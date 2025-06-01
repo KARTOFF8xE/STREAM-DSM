@@ -47,12 +47,12 @@ uintptr_t rcl_pub_ptr = reinterpret_cast<uintptr_t>(publisher_base->get_publishe
 int64_t diff_node_to_rcl = static_cast<int64_t>(rcl_pub_ptr - node_ptr);
 int64_t diff_pub_to_rcl = static_cast<int64_t>(rcl_pub_ptr - pub_ptr);
 
-std::ofstream outfile("handle_debug.log", std::ios::app);
-outfile << "Node: " << node_ptr << "\t";
-outfile << "Publisher: " << pub_ptr << "\t";
-outfile << "rcl_publisher_t: " << rcl_pub_ptr << "\t";
-outfile << "Diff (Node -> rcl): " << diff_node_to_rcl << "\t";
-outfile << "Diff (Publisher -> rcl): " << diff_pub_to_rcl << "\n";
+// std::ofstream outfile("handle_debug.log", std::ios::app);
+// outfile << "Node: " << node_ptr << "\t";
+// outfile << "Publisher: " << pub_ptr << "\t";
+// outfile << "rcl_publisher_t: " << rcl_pub_ptr << "\t";
+// outfile << "Diff (Node -> rcl): " << diff_node_to_rcl << "\t";
+// outfile << "Diff (Publisher -> rcl): " << diff_pub_to_rcl << "\n";
   }
 
 private:

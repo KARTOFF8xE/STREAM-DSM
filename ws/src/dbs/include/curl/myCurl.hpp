@@ -8,7 +8,10 @@ namespace curl {
     enum Destination {
         NEO4J,
         INFLUXDB_WRITE,
-        INFLUXDB_READ
+        INFLUXDB_READ,
+        INFLUXDB_SETTASK,
+        INFLUXDB_UPDATETASK,
+        INFLUXDB_DELETETASK
     };
     
 // const Destination neo4j {
@@ -33,5 +36,7 @@ namespace curl {
  *         If there was an error, the response is empty.
  */
 std::string push(std::string payload, const Destination destination);
-
+std::string push(std::string payload, const Destination destination, std::string taskId);
+std::string push(const Destination destination, std::string taskId);
+std::string getTaskIdsForNames();
 }

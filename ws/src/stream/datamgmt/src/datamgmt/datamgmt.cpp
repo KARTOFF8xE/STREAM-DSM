@@ -11,6 +11,7 @@
 #include <bits/stdc++.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/mman.h>
 
 #include <ipc/ipc-server.hpp>
 #include <ipc/ipc-client.hpp>

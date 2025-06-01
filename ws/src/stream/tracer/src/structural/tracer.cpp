@@ -94,8 +94,8 @@ std::vector<lttng_event*> enable_events(lttng_handle *handle, const char *channe
         "ros2:rclcpp_timer_link_node",
         "ros2:rcl_lifecycle_state_machine_init",
         "ros2:rcl_lifecycle_transition",
-        "ros2:rclcpp_subscription_callback_added",
-        "ros2:rclcpp_subscription_init",
+        // "ros2:rclcpp_subscription_callback_added",
+        // "ros2:rclcpp_subscription_init",
         // "ros2:rclcpp_service_callback_added",
         // "ros2:rclcpp_timer_callback_added",
         // "ros2:callback_start",
@@ -166,9 +166,6 @@ int main() {
         std::cerr << "Failed to start tracing: " << lttng_strerror(ret) << std::endl;
         return 1;
     }
-
-
-
 
     // set log level for debugging:
     // bt_logging_set_global_level(bt_logging_level::BT_LOGGING_LEVEL_DEBUG);

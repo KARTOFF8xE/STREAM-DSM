@@ -286,7 +286,7 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
         
         calcCPUUtil(cpuData);
         
-        curl::push(
+        std::string resp = curl::push(
             influxDB::createPayloadSingleVal(influxDB::ValuePairs {
                 .attribute  = influxDB::CPU_UTILIZATION,
                 .primaryKey = cpuData.primaryKey,
@@ -295,6 +295,7 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
             }),
             curl::INFLUXDB_WRITE
         );
+        if (resp != "") std::cout << resp << std::endl;
 
         NodeResponse response;
         ssize_t ret = -1;

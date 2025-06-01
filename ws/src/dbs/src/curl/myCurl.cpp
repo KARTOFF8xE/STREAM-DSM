@@ -18,10 +18,6 @@ struct Request {
 };
 
 
-// static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userp) {
-//     userp->append((char*)contents, size * nmemb);
-//     return size * nmemb;
-// }
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userp) {
     size_t totalSize = size * nmemb;
     try {
@@ -32,6 +28,7 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
     }
     return totalSize;
 }
+
 
 CURL *getCurlNeo4j(Request &request) {
     request.username   = "neo4j";
@@ -105,10 +102,109 @@ CURL *getCurlInfluxDB_read(Request &request) {
     return curl;
 }
 
+CURL *getCurlInfluxDB_setTask(Request &request) {
+    request.url = "http://172.17.0.1:8086/api/v2/tasks";
+    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
+        return NULL;
+    }
+
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
+
+    return curl;
+}
+
+CURL *getCurlInfluxDB_updateTask(Request &request, const std::string& taskId) {
+    const std::string url = "http://172.17.0.1:8086/api/v2/tasks/" + taskId;
+    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+    const std::string org = "TUBAF";
+
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        std::cerr << "Curl Init Fehler" << std::endl;
+        return NULL;
+    }
+
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
+
+    return curl;
+}
+
+CURL* getCurlInfluxDB_deleteTask(Request& request, const std::string& taskId) {
+    const std::string url = "http://172.17.0.1:8086/api/v2/tasks/" + taskId;
+    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        std::cerr << "Curl Init Fehler" << std::endl;
+        return nullptr;
+    }
+
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
+
+    return curl;
+}
+
+std::string getTaskIdsForNames() {
+    const std::string url = "http://172.17.0.1:8086/api/v2/tasks?org=TUBAF";
+    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        std::cerr << "Curl Init Fehler" << std::endl;
+        return "";
+    }
+
+    std::string response;
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    if (res != CURLE_OK) {
+        std::cerr << "CURL Fehler: " << curl_easy_strerror(res) << std::endl;
+        return "";
+    }
+
+    return response;
+}
+
 std::string push(std::string payload, const Destination destination) {
     struct Request request;
 
-    CURL *curl;// = ((destination == NEO4J) ? getCurlNeo4j(request) : getCurlInfluxDB(request));
+    CURL *curl;
     switch (destination)
     {
     case NEO4J:
@@ -119,6 +215,9 @@ std::string push(std::string payload, const Destination destination) {
         break;
     case INFLUXDB_READ:
         curl = getCurlInfluxDB_read(request);
+        break;
+    case INFLUXDB_SETTASK:
+        curl = getCurlInfluxDB_setTask(request);
         break;
     default:
         std::cerr << "unknown request" << std::endl;
@@ -141,6 +240,56 @@ std::string push(std::string payload, const Destination destination) {
                 std::cout << "Error Message: " << message << std::endl;
             }
         }
+        // TODO add errorHandling for InfluxDB
+    }
+
+    return request.query_response;
+}
+
+
+std::string push(std::string payload, const Destination destination, std::string taskId) {
+    struct Request request;
+
+    CURL *curl;
+    switch (destination) {
+    case INFLUXDB_UPDATETASK:
+        curl = getCurlInfluxDB_updateTask(request, taskId);
+        break;
+    default:
+        std::cerr << "unknown request" << std::endl;
+        break;
+    }
+
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+    CURLcode res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+        std::cout << payload << std::endl;
+        std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
+    } else {
+        // TODO add errorHandling for InfluxDB
+    }
+
+    return request.query_response;
+}
+
+std::string push(const Destination destination, std::string taskId) {
+    struct Request request;
+
+    CURL *curl;
+    switch (destination) {
+    case INFLUXDB_DELETETASK:
+        curl = getCurlInfluxDB_deleteTask(request, taskId);
+        break;
+    default:
+        std::cerr << "unknown request" << std::endl;
+        break;
+    }
+
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
+    CURLcode res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+        std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
+    } else {
         // TODO add errorHandling for InfluxDB
     }
 

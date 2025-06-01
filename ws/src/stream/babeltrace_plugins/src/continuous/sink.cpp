@@ -83,8 +83,10 @@ void sendPubDataToTimeSeries(std::unordered_map<u_int64_t, u_int32_t> &pubRates)
         }
     }
 
-    pubRates.clear();
     std::string payload = influxDB::createPayloadMultipleVal(values);
+    std::string response = curl::push(payload, curl::INFLUXDB_WRITE);
+    if (response != "") std::cout << response << std::endl;
+    pubRates.clear();
 }
 
 bt_component_class_sink_consume_method_status tracer_consume(
