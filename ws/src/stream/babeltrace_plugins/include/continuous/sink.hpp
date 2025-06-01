@@ -11,17 +11,13 @@ using namespace std::chrono_literals;
 
 struct tracer {
     bt_message_iterator *message_iterator;
-    
-    sharedMem::SHMChannel<sharedMem::TraceMessage> channel;
 
     std::unordered_map<u_int64_t, u_int32_t>    publishingRate;
     size_t nrOfTraces = 0;
     
     std::chrono::_V2::steady_clock::time_point lastTick = std::chrono::steady_clock::now();
 
-    tracer(const std::string& name)
-        : channel(name.c_str(), true)
-    {}
+    tracer() {}
 };
 
 /**
