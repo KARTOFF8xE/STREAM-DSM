@@ -28,6 +28,7 @@
 #include "datamgmt/taskExecutor/taskExecutor.hpp"
 #include "datamgmt/datatracer/datatracer.hpp"
 #include "datamgmt/tasks.hpp"
+#include "datamgmt/common.hpp"
 
 
 struct MsgBuf {
@@ -51,10 +52,7 @@ void clearMsgQueue(int msgQueueId) {
 }
 
 void handle_sigint(int) {
-    clearMsgQueue(1);
-    clearMsgQueue(4);
-    clearMsgQueue(5);
-    exit(EXIT_SUCCESS);
+    gsRunning = false;
 }
 
 
@@ -133,8 +131,6 @@ void runModule(Module_t module_t, Module &module, Tasks &tasks) {
 }
 
 int main() {
-    std::signal(SIGINT, handle_sigint);
-
     IpcServer nodeAndTopicObsServer(1);
     IpcServer taskServer(4);
     IpcServer tracerServer(5);
@@ -190,7 +186,8 @@ int main() {
         };
     }
 
-
+    sighandler_t stdHandler = std::signal(SIGINT, handle_sigint);
+    gsRunning = true;
     runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
         usleep(250);
     runModule(RELATIONMGMT, modules[RELATIONMGMT]);
@@ -204,19 +201,18 @@ int main() {
         usleep(250);
     runModule(TASKEXECUTOR, modules[TASKEXECUTOR], tasks);
         usleep(250);
+    
+    modules[TASKEXECUTOR].thread->join();
+    modules[TASKORCHESTRATOR].thread->join();
+    modules[DATATRACER].thread->join();
+    modules[NODEANDTOPICOBSERVER].thread->join();
+    modules[PROCESSOBSERVER].thread->join();
+    modules[RELATIONMGMT].thread->join();
+    std::signal(SIGINT, stdHandler);
 
-    auto then = std::chrono::steady_clock::now();
-    while (true) {
+    clearMsgQueue(1);
+    clearMsgQueue(4);
+    clearMsgQueue(5);
 
-        auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now-then).count();
-        auto sleepTime = 1000000000000000 - elapsed;
-        if (sleepTime > 0) {
-            std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
-        }
-        then = std::chrono::steady_clock::now();
-
-        // TODO receive different messages as a server (subscriptions and unsubscriptions)
-        // TODO handle threads that are running
-    }
+    std::cout << "finalized" << std::endl;
 }

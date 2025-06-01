@@ -6,9 +6,11 @@
 #include <lttng/lttng.h>
 #include <csignal>
 #include <vector>
+#include <sys/mman.h>
 
 
 void handle_sigint(int) {
+    shm_unlink("/babeltonato");
     lttng_destroy_session("structuralSession");
     exit(EXIT_SUCCESS);
 }

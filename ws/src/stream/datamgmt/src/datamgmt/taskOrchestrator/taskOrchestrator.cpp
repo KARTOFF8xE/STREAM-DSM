@@ -13,6 +13,7 @@ using namespace std::chrono_literals;
 #include <neo4j/tree/tree.hpp>
 
 #include "datamgmt/taskOrchestrator/taskOrchestrator.hpp"
+#include "datamgmt/common.hpp"
 #include "pipe/pipe.hpp"
 
 
@@ -314,7 +315,7 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe>
     int pipe_r = pipes[RELATIONMGMT].read;
 
     auto then = std::chrono::steady_clock::now();
-    while (true) {
+    while (gsRunning) {
         bool receivedMessage = false;
         SingleAttributeInformationRequest       singleAttributeInformationRequest;
         AggregatedAttributeInformationRequest   aggregatedAttributeInformationRequest;
@@ -354,6 +355,8 @@ void taskOrchestrator(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe>
         }
         then = std::chrono::steady_clock::now();
     }
+
+    std::cout << "finalized taskOrchestrator" << std::endl;
 }
 
 }

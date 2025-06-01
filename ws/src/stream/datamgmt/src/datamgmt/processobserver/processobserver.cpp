@@ -20,6 +20,7 @@ using namespace std::chrono_literals;
 #include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
 #include "datamgmt/utils.hpp"
+#include "datamgmt/common.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
 
@@ -251,7 +252,7 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
 
 
     auto then = std::chrono::steady_clock::now();
-    while (true) {
+    while (gsRunning) {
         std::vector<influxDB::ValuePairs> pairs;
         for (auto it = processVec.begin(); it != processVec.end(); ++it) {
             int index = std::distance(processVec.begin(), it);
@@ -325,6 +326,7 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
     }
 
     running.store(false);
+    std::cout << "finalized Process Observer" << std::endl;
 }
 
 } 

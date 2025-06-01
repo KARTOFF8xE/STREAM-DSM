@@ -7,7 +7,6 @@ using namespace std::chrono_literals;
 #include <ipc/ipc-client.hpp>
 #include <ipc/sharedMem.hpp>
 #include <ipc/util.hpp>
-#include <datamgmt/utils.hpp>
 #include <curl/myCurl.hpp>
 #include <influxdb/influxdb.hpp>
 #include <neo4j/node/node.hpp>
@@ -23,7 +22,8 @@ using namespace std::chrono_literals;
 #include "datamgmt/nodeandtopicobserver/nodeandtopicobserver.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "datamgmt/datamgmt.hpp"
-#include "datamgmt/utils.hpp"
+#include <datamgmt/utils.hpp>
+#include "datamgmt/common.hpp"
 #include "pipe/pipe.hpp"
 
 using json = nlohmann::json;
@@ -722,7 +722,7 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
 
     RequestingClient client;
     auto then = std::chrono::steady_clock::now();
-    while (true) {
+    while (gsRunning) {
         bool receivedMessage = false;
 
         bool gotRequest;
@@ -816,7 +816,8 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
         }
         then = std::chrono::steady_clock::now();
     }
-    std::cout << "shutting down NodeTopicObserver" << std::endl;
 
-    running.store(false);
+    
+    channel.~SHMChannel();
+    std::cout << "finalized NodeTopicObserver" << std::endl;
 }
