@@ -24,7 +24,7 @@ namespace influxDB {
 
     struct ValuePairs {
         ValueT          attribute;
-        primaryKey_t    primaryKey;
+        std::string     primaryKey;
         time_t          timestamp;
         long double     value;
     };
@@ -53,9 +53,9 @@ namespace influxDB {
     std::string createPayloadMultipleVal(std::vector<ValuePairs> pairs);
 
     // TODO
-    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, Direction direction, std::vector<primaryKey_t> primaryKeys);
+    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, Direction direction, std::vector<std::string> primaryKeys);
 
-    std::string createPayloadForTask(std::string bucket, std::vector<primaryKey_t> primaryKeys, primaryKey_t destPrimaryKey);
+    std::string createPayloadForTask(std::string bucket, std::vector<std::string> primaryKeys, std::string destPrimaryKey);
 
     // TODO
     double extractValueFromCSV(const std::string& csv);

@@ -67,34 +67,34 @@ bool receiveIPCClientStandardAggregatedAttributeRequest(const IpcServer &ipcServ
     return false;
 }
 
-std::vector<primaryKey_t> makeUnion(const std::vector<primaryKey_t>& vector1, const std::vector<primaryKey_t>& vector2) {
-    std::unordered_set<primaryKey_t> resultSet(vector1.begin(), vector1.end());
+std::vector<std::string> makeUnion(const std::vector<std::string>& vector1, const std::vector<std::string>& vector2) {
+    std::unordered_set<std::string> resultSet(vector1.begin(), vector1.end());
 
-    for (const primaryKey_t& val : vector2) {
+    for (const std::string& val : vector2) {
         resultSet.insert(val);
     }
 
-    return std::vector<primaryKey_t>(resultSet.begin(), resultSet.end());
+    return std::vector<std::string>(resultSet.begin(), resultSet.end());
 }
 
-std::vector<primaryKey_t> makeIntersection(const std::vector<primaryKey_t>& vector1, const std::vector<primaryKey_t>& vector2) {
-    std::unordered_set<primaryKey_t> set1(vector1.begin(), vector1.end());
-    std::unordered_set<primaryKey_t> resultSet;
+std::vector<std::string> makeIntersection(const std::vector<std::string>& vector1, const std::vector<std::string>& vector2) {
+    std::unordered_set<std::string> set1(vector1.begin(), vector1.end());
+    std::unordered_set<std::string> resultSet;
 
-    for (const primaryKey_t& val : vector2) {
+    for (const std::string& val : vector2) {
         if (set1.find(val) != set1.end()) {
             resultSet.insert(val);
         }
     }
 
-    return std::vector<primaryKey_t>(resultSet.begin(), resultSet.end());
+    return std::vector<std::string>(resultSet.begin(), resultSet.end());
 }
 
-std::vector<primaryKey_t> makeDifference(const std::vector<primaryKey_t>& vector1, const std::vector<primaryKey_t>& vector2) {
-    std::unordered_set<primaryKey_t> toRemove(vector2.begin(), vector2.end());
-    std::vector<primaryKey_t> result;
+std::vector<std::string> makeDifference(const std::vector<std::string>& vector1, const std::vector<std::string>& vector2) {
+    std::unordered_set<std::string> toRemove(vector2.begin(), vector2.end());
+    std::vector<std::string> result;
 
-    for (primaryKey_t val : vector1) {
+    for (std::string val : vector1) {
         if (toRemove.find(val) == toRemove.end()) {
             result.push_back(val);
         }
@@ -103,8 +103,8 @@ std::vector<primaryKey_t> makeDifference(const std::vector<primaryKey_t>& vector
     return result;
 }
 
-std::vector<primaryKey_t> parsePrimaryKeys(const std::string& jsonPayload) {
-    std::vector<primaryKey_t> result;
+std::vector<std::string> parsePrimaryKeys(const std::string& jsonPayload) {
+    std::vector<std::string> result;
 
     auto j = json::parse(jsonPayload);
 
@@ -116,7 +116,7 @@ std::vector<primaryKey_t> parsePrimaryKeys(const std::string& jsonPayload) {
 
             if (!rowArray.empty() && rowArray[0].is_array()) {
                 for (const auto& key : rowArray[0]) {
-                    result.push_back(key.get<primaryKey_t>());
+                    result.push_back(key.get<std::string>());
                 }
             }
         }
@@ -144,16 +144,16 @@ void addAggregatedAttributeTask(const IpcServer &server, AggregatedAttributeInfo
         std::get<AggregatedAttributesRequest>(tasks.vec.back().task).rootedTree1.tree),
         curl::NEO4J
     );
-    std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
+    std::vector<std::string> tree1 = parsePrimaryKeys(response);
 
     response = curl::push(tree::getPayloadForTree(
         std::get<AggregatedAttributesRequest>(tasks.vec.back().task).rootedTree2.primaryKey,
         std::get<AggregatedAttributesRequest>(tasks.vec.back().task).rootedTree2.tree),
         curl::NEO4J
     );
-    std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
+    std::vector<std::string> tree2 = parsePrimaryKeys(response);
 
-    std::vector<primaryKey_t> primaryKeys;
+    std::vector<std::string> primaryKeys;
     switch (aggregatedAttributeInformationRequest.payload.binOperation)
     {
     case UNION:
@@ -243,16 +243,16 @@ void addAggregatedMemberTask(const IpcServer &server, AggregatedMemberInformatio
         std::get<AggregatedMemberRequest>(tasks.vec.back().task).rootedTree1.tree),
         curl::NEO4J
     );
-    std::vector<primaryKey_t> tree1 = parsePrimaryKeys(response);
+    std::vector<std::string> tree1 = parsePrimaryKeys(response);
 
     response = curl::push(tree::getPayloadForTree(
         std::get<AggregatedMemberRequest>(tasks.vec.back().task).rootedTree2.primaryKey,
         std::get<AggregatedMemberRequest>(tasks.vec.back().task).rootedTree2.tree),
         curl::NEO4J
     );
-    std::vector<primaryKey_t> tree2 = parsePrimaryKeys(response);
+    std::vector<std::string> tree2 = parsePrimaryKeys(response);
 
-    std::vector<primaryKey_t> primaryKeys;
+    std::vector<std::string> primaryKeys;
     switch (aggregatedMemberInformationRequest.payload.binOperation)
     {
     case UNION:

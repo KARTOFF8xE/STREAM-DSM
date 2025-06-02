@@ -4,6 +4,7 @@
 
 #include <ipc/ipc-client.hpp>
 #include <ipc/sharedMem.hpp>
+#include <ipc/util.hpp>
 
 #include <chrono>
 #include <thread>
@@ -14,15 +15,15 @@ int main() {
   IpcClient client(4);
   
   std::cout << ">> ";
-  primaryKey_t pKey;
+  std::string pKey;
   std::cin >> pKey;
   requestId_t requestId;
-  const SingleAttributesRequest request {
-    .primaryKey = pKey,
-    .attribute = PUBLISHINGRATES,
+  SingleAttributesRequest request {
+    .attribute = CPU_UTILIZATION,
     .direction = Direction::NONE,
     .continuous = true,
   };
+  util::parseString(request.primaryKey, pKey);
   std::cout << "send request..." << std::flush;
   client.sendSingleAttributesRequest(request, requestId, false);
   std::cout << "done" << std::endl;

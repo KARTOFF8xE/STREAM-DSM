@@ -11,7 +11,7 @@ namespace publisher {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) MERGE (t:Passive {{name: $name}}) MERGE (n)-[p:publishing]->(t) SET p.handle=$pubHandle, p.active=true WITH p,t,n MATCH ()-[p2:publishing]->(t) WITH p,t,n,collect(toInteger(split(elementId(p2), \":\")[-1])) AS incomingEdges RETURN {{node_id: toInteger(split(elementId(n), \":\")[-1]), topic_id: toInteger(split(elementId(t), \":\")[-1]), incomingEdges: incomingEdges}} AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) MERGE (t:Passive {{name: $name}}) ON CREATE SET t.primaryKey=randomUUID() MERGE (n)-[p:publishing]->(t) ON CREATE SET p.primaryKey=randomUUID() SET p.handle=$pubHandle, p.active=true WITH p,t,n MATCH ()-[p2:publishing]->(t) WITH p,t,n,collect(p2.primaryKey) AS incomingEdges RETURN {{node_id: n.primaryKey, topic_id: t.primaryKey, incomingEdges: incomingEdges}} AS row ",
                         "parameters": {{
                             "name": "{}",
                             "nodeHandle": {},
@@ -28,7 +28,7 @@ namespace publisher {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH ()-[p:publishing {{handle: $pubHandle}}]->() RETURN toInteger(last(SPLIT(elementId(p), \":\"))) ",
+                        {{ "statement": "MATCH ()-[p:publishing {{handle: $pubHandle}}]->() RETURN p.primaryKey ",
                         "parameters": {{
                             "pubHandle": {}
                             }}

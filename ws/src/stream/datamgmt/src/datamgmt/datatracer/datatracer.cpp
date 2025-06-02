@@ -51,10 +51,10 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
             sharedMem::InputValue msg;
             if(!channel->receive(msg, false)) continue;
             influxDB::ValuePairs v {
-                    .primaryKey = msg.primaryKey,
                     .timestamp  = msg.timestamp,
                     .value      = msg.value,
             };
+            v.primaryKey = util::parseString(msg.primaryKey);
             valuePairs.push_back(v);
             switch (msg.type) {
                 case sharedMem::MessageType::CPU:

@@ -19,11 +19,11 @@ int main() {
   requestId_t requestId;
   const AggregatedMemberRequest request{
     .rootedTree1 {
-      .primaryKey = 4,
+      .primaryKey = "d3ce1aa3-d48f-4b20-9c59-e3f4f10e0f05",
       .tree       = PROCESSDRIVEN,
     },
     .rootedTree2 {
-      .primaryKey = 11,
+      .primaryKey = "8524d310-3dff-4248-abef-5f12ab5d6b24",
       .tree       = PROCESSDRIVEN
     },
     .binOperation = DIFFERENCE,
@@ -45,7 +45,7 @@ int main() {
       sharedMem::Response sharedMemResponse {};
       if (!channel.receive(sharedMemResponse, false)) continue;
 
-      printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
+      printResponse<sharedMem::TextualResponse>(sharedMemResponse);
     }
   }
 }

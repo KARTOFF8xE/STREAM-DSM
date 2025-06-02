@@ -6,19 +6,19 @@
 
 namespace topic {
 
-    std::string getPayloadRequestByPrimaryKey(pid_t pid) {
+    std::string getPayloadRequestByPrimaryKey(std::string primaryKey) {
         return fmt::format(R"(
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n) WITH n, toInteger(last(SPLIT(elementId(n), \":\"))) AS extractedId WHERE extractedId = $primaryKey OPTIONAL MATCH (n)-[:subscribing]->(subscriber) WITH n, extractedId, collect(toInteger(last(SPLIT(elementId(subscriber), \":\")))) AS subscribers OPTIONAL MATCH (publisher)-[:publishing]->(n) WITH n, extractedId, subscribers, collect(toInteger(last(SPLIT(elementId(publisher), \":\")))) AS publishers RETURN {{ id: extractedId, name: n.name, publishers: publishers, subscribers: subscribers }} AS result ",
+                        {{ "statement": "MATCH (n:Passive {{primaryKey: $primaryKey}}) OPTIONAL MATCH (n)-[:subscribing]->(subscriber) WITH n, collect(subscriber.primaryKey) AS subscribers OPTIONAL MATCH (publisher)-[:publishing]->(n) WITH n, subscribers, collect(publisher.primaryKey) AS publishers RETURN {{ id: n.primaryKey, name: n.name, publishers: publishers, subscribers: subscribers }} AS result ",
                         "parameters": {{
-                            "primaryKey": {}
+                            "primaryKey": "{}"
                             }}
                         }}
                     ]
             }}
-        )", pid);
+        )", primaryKey);
     }
 
     std::string getPayloadSearch(std::string name) {
@@ -26,7 +26,7 @@ namespace topic {
             {{ 
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Passive {{name: $name}}) RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                        {{ "statement": "MATCH (n:Passive {{name: $name}}) RETURN n.primaryKey ",
                         "parameters": {{
                             "name": "{}"
                             }}

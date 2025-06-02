@@ -30,7 +30,7 @@ using namespace std::chrono_literals;
 using json = nlohmann::json;
 
 
-void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, primaryKey_t primaryKey) {
+void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, std::string primaryKey) {
     std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -54,45 +54,35 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, p
         while (item[counter].contains("relationship")) {
             if (item[counter]["relationship"] == "publishing") {
                 for (const json & node: item[counter]["nodes"]) {
-                    pubs.push_back(
-                        NodePublishersToUpdate {
-                            .primaryKey     = primaryKey,
-                            .publishesTo    = node["id"],
-                            .isUpdate       = false,
-                        }
-                    );
+                    NodePublishersToUpdate tmp { .isUpdate = false};
+                    util::parseString(tmp.primaryKey, primaryKey);
+                    util::parseString(tmp.publishesTo, node["id"].get<std::string>());
+                    pubs.push_back(tmp);
                 }
             }
             if (item[counter]["relationship"] == "subscribing") {
                 for (const json & node: item[counter]["nodes"]) {
-                    subs.push_back(
-                        NodeSubscribersToUpdate {
-                            .primaryKey     = primaryKey,
-                            .subscribesTo   = node["id"],
-                            .isUpdate       = false,
-                        }
-                    );
+                    NodeSubscribersToUpdate tmp { .isUpdate = false };
+                    util::parseString(tmp.primaryKey, primaryKey);
+                    util::parseString(tmp.subscribesTo, node["id"].get<std::string>());
+                    subs.push_back(tmp);
                 }
             }
             if (item[counter]["relationship"] == "sending") {       // concept of Services
                 for (const json & node: item[counter]["nodes"]) {
                     if (!node["actionName"].is_null() || node["direction"] != "outgoing") { continue; }
                     if (node["mode"] == "responds") {               // Service for...
-                        NodeIsServerForUpdate tmp {
-                        .primaryKey     = primaryKey,
-                        .clientNodeId   = node["id"],
-                        .isUpdate       = false,
-                        };
+                        NodeIsServerForUpdate tmp { .isUpdate = false };
                         util::parseString(tmp.srvName, node["serviceName"].get<std::string>());
+                        util::parseString(tmp.primaryKey, primaryKey);
+                        util::parseString(tmp.clientNodeId, node["id"].get<std::string>());
 
                         isServerFor.push_back(tmp);
                     } else {                                        // Client of...
-                        NodeIsClientOfUpdate tmp {
-                            .primaryKey     = primaryKey,
-                            .serverNodeId   = node["id"],
-                            .isUpdate       = false,
-                        };
+                        NodeIsClientOfUpdate tmp { .isUpdate = false };
                         util::parseString(tmp.srvName, node["serviceName"].get<std::string>());
+                        util::parseString(tmp.primaryKey, primaryKey);
+                        util::parseString(tmp.serverNodeId, node["id"].get<std::string>());
 
                         isClientOf.push_back(tmp);
                     }
@@ -102,21 +92,17 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, p
                 for (const json & node: item[counter]["nodes"]) {
                     if (node["actionName"].is_null() || node["direction"] != "outgoing" || node["serviceName"] != "send_goal") { continue; }
                     if (node["mode"] == "responds") {          // ActionService for...
-                        NodeIsActionServerForUpdate tmp {
-                        .primaryKey         = primaryKey,
-                        .actionclientNodeId = node["id"],
-                        .isUpdate           = false,
-                        };
+                        NodeIsActionServerForUpdate tmp { .isUpdate = false };
                         util::parseString(tmp.srvName, node["actionName"].get<std::string>());
+                        util::parseString(tmp.primaryKey, primaryKey);
+                        util::parseString(tmp.actionclientNodeId, node["id"].get<std::string>());
 
                         isActionServerFor.push_back(tmp);
                     } else {                                        // ActionClient of...
-                        NodeIsActionClientOfUpdate tmp {
-                            .primaryKey         = primaryKey,
-                            .actionserverNodeId = node["id"],
-                            .isUpdate           = false,
-                        };
+                        NodeIsActionClientOfUpdate tmp { .isUpdate = false };
                         util::parseString(tmp.srvName, node["actionName"].get<std::string>());
+                        util::parseString(tmp.primaryKey, primaryKey);
+                        util::parseString(tmp.actionserverNodeId, node["id"].get<std::string>());
 
                         isActionClientOf.push_back(tmp);
                     }
@@ -126,10 +112,10 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, p
                 for (const json & node: item[counter]["nodes"]) {
                     if (node["direction"] == "incoming") {
                         NodeTimerToUpdate tmp {
-                        .primaryKey = primaryKey,
-                        .frequency  = node["frequency"],
-                        .isUpdate   = false,
+                            .frequency  = node["frequency"],
+                            .isUpdate   = false,
                         };
+                        util::parseString(tmp.primaryKey, primaryKey);
 
                         timers.push_back(tmp);
                     }
@@ -140,7 +126,6 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, p
     }
 
     NodeResponse nodeResponse {
-        .primaryKey         = primaryKey,
         .state              = requestedNode["state"],
         .stateChangeTime    = requestedNode["stateChangeTime"],
         .bootCount          = requestedNode["bootcounter"],
@@ -149,6 +134,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, p
             isClientOf.size() + isServerFor.size() +
             isActionClientOf.size() + isActionServerFor.size(),
     };
+    util::parseString(nodeResponse.primaryKey, primaryKey);
     util::parseString(nodeResponse.name, requestedNode["name"].get<std::string>());
     server.sendNodeResponse(nodeResponse, client.pid);
 
@@ -175,7 +161,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, p
     }
 }
 
-void singleTimeTopicResponse(const IpcServer &server, RequestingClient &client, primaryKey_t primaryKey) {
+void singleTimeTopicResponse(const IpcServer &server, RequestingClient &client, std::string primaryKey) {
     std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -183,30 +169,21 @@ void singleTimeTopicResponse(const IpcServer &server, RequestingClient &client, 
 
     std::vector<TopicPublishersUpdate>  pubs;
     std::vector<TopicSubscribersUpdate> subs;
-
-    for (const primaryKey_t item : row[0]["publishers"]) {
-        pubs.push_back(
-            TopicPublishersUpdate {
-                .primaryKey = primaryKey,
-                .publisher = item,
-                .isUpdate = false
-            }
-        );
+    for (const std::string item : row[0]["publishers"]) {
+        TopicPublishersUpdate tmp { .isUpdate = false };
+        util::parseString(tmp.primaryKey, primaryKey);
+        util::parseString(tmp.publisher, item);
+        pubs.push_back(tmp);
     }
-    for (const primaryKey_t item : row[0]["subscribers"]) {
-        subs.push_back(
-            TopicSubscribersUpdate {
-                .primaryKey = primaryKey,
-                .subscriber = item,
-                .isUpdate = false
-            }
-        );
+    for (const std::string item : row[0]["subscribers"]) {
+        TopicSubscribersUpdate tmp { .isUpdate = false };
+        util::parseString(tmp.primaryKey, primaryKey);
+        util::parseString(tmp.subscriber, item);
+        subs.push_back(tmp);
     }
 
-    TopicResponse topicResponse {
-        .primaryKey         = primaryKey,
-        .nrOfInitialUpdates = pubs.size() + subs.size(),
-    };
+    TopicResponse topicResponse { .nrOfInitialUpdates = pubs.size() + subs.size() };
+    util::parseString(topicResponse.primaryKey, primaryKey);
     util::parseString(topicResponse.name, row[0]["name"].get<std::string>());
 
     server.sendTopicResponse(topicResponse, client.pid);
@@ -230,7 +207,7 @@ std::vector<NodeIsClientOfUpdate> queryGraphDbForClient(std::string payload, std
     
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
-    if (!row.empty() && !row[0].empty() && !row[0][0]["node_id"].empty()) nodeIsClientOfUpdateBlueprint.primaryKey = row[0][0]["node_id"];
+    if (!row.empty() && !row[0].empty() && !row[0][0]["node_id"].empty()) util::parseString(nodeIsClientOfUpdateBlueprint.primaryKey, row[0][0]["node_id"]);
     
     size_t counter = 0;
     while (!row.empty() &&
@@ -238,7 +215,7 @@ std::vector<NodeIsClientOfUpdate> queryGraphDbForClient(std::string payload, std
         !row[0][counter].empty() &&
         !row[0][counter]["server_id"].empty()
         ) {
-            nodeIsClientOfUpdateBlueprint.serverNodeId = row[0][counter]["server_id"];
+            util::parseString(nodeIsClientOfUpdateBlueprint.serverNodeId, row[0][counter]["server_id"]);
             nodeIsClientOfUpdate.push_back(nodeIsClientOfUpdateBlueprint);
         counter++;
     }
@@ -256,11 +233,9 @@ void handleIsClientToUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
                 server.sendNodeIsClientOfUpdate(item, client.pid, false);
             }
             if (client.primaryKey == item.serverNodeId) {
-                NodeIsClientOfUpdate msg{
-                    .primaryKey     = item.serverNodeId,
-                    .serverNodeId   = item.primaryKey,
-                    .isUpdate       = true,
-                };
+                NodeIsClientOfUpdate msg { .isUpdate = true };
+                util::parseString(msg.primaryKey, item.serverNodeId);
+                util::parseString(msg.serverNodeId, item.primaryKey);
                 util::parseString(msg.srvName, item.srvName);
 
                 server.sendNodeIsClientOfUpdate(msg, client.pid, false);
@@ -280,7 +255,7 @@ std::vector<NodeIsServerForUpdate> queryGraphDbForService(std::string payload, s
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
 
-    if (!row.empty() && !row[0].empty() && !row[0][0]["node_id"].empty()) nodeIsServerForUpdateBlueprint.primaryKey = row[0][0]["node_id"];
+    if (!row.empty() && !row[0].empty() && !row[0][0]["node_id"].empty()) util::parseString(nodeIsServerForUpdateBlueprint.primaryKey, row[0][0]["node_id"]);
 
     size_t counter = 0;
     while (!row.empty() &&
@@ -288,7 +263,7 @@ std::vector<NodeIsServerForUpdate> queryGraphDbForService(std::string payload, s
         !row[0][counter].empty() &&
         !row[0][counter]["client_id"].empty()
         ) {
-            nodeIsServerForUpdateBlueprint.clientNodeId = row[0][counter]["client_id"];
+            util::parseString(nodeIsServerForUpdateBlueprint.clientNodeId, row[0][counter]["client_id"]);
             nodeIsServerForUpdate.push_back(nodeIsServerForUpdateBlueprint);
         counter++;
     }
@@ -305,11 +280,9 @@ void handleIsServerForUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
                 server.sendNodeIsServerForUpdate(item, client.pid, false);
             }
             if (client.primaryKey == item.clientNodeId) {
-                NodeIsClientOfUpdate msg{
-                    .primaryKey     = item.clientNodeId,
-                    .serverNodeId   = item.primaryKey,
-                    .isUpdate       = true,
-                };
+                NodeIsClientOfUpdate msg{ .isUpdate = true };
+                util::parseString(msg.primaryKey, item.clientNodeId);
+                util::parseString(msg.serverNodeId, item.primaryKey);
                 util::parseString(msg.srvName, item.srvName);
 
                 server.sendNodeIsClientOfUpdate(msg, client.pid, false);
@@ -336,11 +309,9 @@ void handleActionClientToUpdate(sharedMem::TraceMessage msg, std::vector<Request
                     server.sendNodeIsClientOfUpdate(item, client.pid, false);
                 }
                 if (client.primaryKey == item.serverNodeId) {
-                    NodeIsClientOfUpdate msg{
-                        .primaryKey     = item.serverNodeId,
-                        .serverNodeId   = item.primaryKey,
-                        .isUpdate       = true,
-                    };
+                    NodeIsClientOfUpdate msg{ .isUpdate = true };
+                    util::parseString(msg.primaryKey, item.serverNodeId);
+                    util::parseString(msg.serverNodeId, item.primaryKey);
                     util::parseString(msg.srvName, item.srvName);
 
                     server.sendNodeIsClientOfUpdate(msg, client.pid, false);
@@ -368,11 +339,9 @@ void handleActionServerForUpdate(sharedMem::TraceMessage msg, std::vector<Reques
                     server.sendNodeIsServerForUpdate(item, client.pid, false);
                 }
                 if (client.primaryKey == item.clientNodeId) {
-                    NodeIsClientOfUpdate msg{
-                        .primaryKey     = item.clientNodeId,
-                        .serverNodeId   = item.primaryKey,
-                        .isUpdate       = true,
-                    };
+                    NodeIsClientOfUpdate msg{ .isUpdate = true };
+                    util::parseString(msg.primaryKey, item.clientNodeId);
+                    util::parseString(msg.serverNodeId, item.primaryKey);
                     util::parseString(msg.srvName, item.srvName);
 
                     server.sendNodeIsClientOfUpdate(msg, client.pid, false);
@@ -389,8 +358,8 @@ NodeSubscribersToUpdate queryGraphDbForSubscriber(std::string payload) {
 
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
-    if (!row.empty() && !row[0]["node_id"].empty())   nodeSubToUpdate.primaryKey = row[0]["node_id"];
-    if (!row.empty() && !row[0]["topic_id"].empty())  nodeSubToUpdate.subscribesTo = row[0]["topic_id"];
+    if (!row.empty() && !row[0]["node_id"].empty())   util::parseString(nodeSubToUpdate.primaryKey, row[0]["node_id"].get<std::string>());
+    if (!row.empty() && !row[0]["topic_id"].empty())  util::parseString(nodeSubToUpdate.subscribesTo, row[0]["topic_id"].get<std::string>());
 
     return nodeSubToUpdate;
 }
@@ -408,11 +377,9 @@ void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
             }
         }
 
-        TopicSubscribersUpdate payloadTopic {
-            .primaryKey = nodeSubToUpdate.subscribesTo,
-            .subscriber = nodeSubToUpdate.primaryKey,
-            .isUpdate = true
-        };
+        TopicSubscribersUpdate payloadTopic { .isUpdate = true };
+        util::parseString(payloadTopic.primaryKey, nodeSubToUpdate.subscribesTo);
+        util::parseString(payloadTopic.subscriber, nodeSubToUpdate.primaryKey);
         for (RequestingClient &client : clients)
         {
             if (client.primaryKey == payloadTopic.primaryKey)
@@ -434,16 +401,16 @@ NodePublishersToUpdate queryGraphDbForPublisher(std::string payload) {
 
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
-    if (!row.empty() && !row[0]["node_id"].empty())   nodePubToUpdate.primaryKey = row[0]["node_id"];
-    if (!row.empty() && !row[0]["topic_id"].empty())  nodePubToUpdate.publishesTo = row[0]["topic_id"];
-    std::vector<primaryKey_t> incomingEdges;
+    if (!row.empty() && !row[0]["node_id"].empty())     util::parseString(nodePubToUpdate.primaryKey, row[0]["node_id"].get<std::string>());
+    if (!row.empty() && !row[0]["topic_id"].empty())    util::parseString(nodePubToUpdate.publishesTo, row[0]["topic_id"].get<std::string>());
+    std::vector<std::string> incomingEdges;
     if (!row.empty() && row[0].contains("incomingEdges") && row[0]["incomingEdges"].is_array()) {
         for (const auto& edge : row[0]["incomingEdges"]) {
-            incomingEdges.push_back(edge.get<primaryKey_t>());
+            incomingEdges.push_back(edge.get<std::string>());
         }
     }
 
-    std::string taskId = influxDB::getTaskIDByName(std::to_string(nodePubToUpdate.publishesTo) + "_in");
+    std::string taskId = influxDB::getTaskIDByName(std::string(nodePubToUpdate.publishesTo) + "_in");
     std::string taskPayload = influxDB::createPayloadForTask("STREAM", incomingEdges, nodePubToUpdate.publishesTo);
     (taskId == "") ? curl::push(taskPayload, curl::INFLUXDB_SETTASK) : curl::push(taskPayload, curl::INFLUXDB_UPDATETASK, taskId);
 
@@ -462,11 +429,9 @@ void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
             }
         }
 
-        TopicPublishersUpdate payloadTopic {
-            .primaryKey = nodePubToUpdate.publishesTo,
-            .publisher = nodePubToUpdate.primaryKey,
-            .isUpdate = true
-        };
+        TopicPublishersUpdate payloadTopic { .isUpdate = true };
+        util::parseString(payloadTopic.primaryKey, nodePubToUpdate.publishesTo);
+        util::parseString(payloadTopic.publisher, nodePubToUpdate.primaryKey);
         for (RequestingClient &client : clients) {
             if (client.primaryKey == payloadTopic.primaryKey)
             {
@@ -488,9 +453,9 @@ NodeResponse queryGraphDbForNode(std::string payloadNeo4j) {
     nlohmann::json data = nlohmann::json::parse(responseNeo4J);
     if (!data["results"].empty() &&
         !data["results"][0]["data"].empty() && 
-        !data["results"][0]["data"][0]["meta"].empty())
+        !data["results"][0]["data"][0]["row"].empty())
         {
-        nodeResponse.primaryKey = static_cast<primaryKey_t>(data["results"][0]["data"][0]["meta"][0]["id"]);
+        util::parseString(nodeResponse.primaryKey, data["results"][0]["data"][0]["row"][0]["primaryKey"].get<std::string>());
     } else {
         std::cout << "Failed parsing JSON (wanted ID):" << std::endl;
         std::cout << payloadNeo4j << std::endl;
@@ -533,11 +498,6 @@ void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient>
     pipe_ns::UnionResponse unionResp;
     unionResp.nodeResp = nodeResponse;
     pipe_ns::writeT<pipe_ns::UnionResponse>(pipeToRelationMgmt_w, unionResp, pipe_ns::MsgType::NODERESPONSE);
-
-    // std::string taskPayload = influxDB::createPayloadForTask("STREAM", std::vector<primaryKey_t>(), nodeResponse.primaryKey);
-    // std::string response = curl::push(taskPayload, curl::INFLUXDB_SETTASK);
-
-    // pipe_ns::writeT<NodeResponse>(pipeToRelationMgmt_w, nodeResponse);
 }
 
 NodeTimerToUpdate queryGraphDbForTimer(std::string payloadNeo4j) {
@@ -550,7 +510,7 @@ NodeTimerToUpdate queryGraphDbForTimer(std::string payloadNeo4j) {
     if (!data["results"].empty() &&
         !data["results"][0]["data"].empty() && 
         !data["results"][0]["data"][0]["row"].empty()) {
-            nodeTimerToUpdate.primaryKey = data["results"][0]["data"][0]["row"][0].get<u_int32_t>();
+            util::parseString(nodeTimerToUpdate.primaryKey, data["results"][0]["data"][0]["row"][0].get<std::string>());
     } else {
         std::cout << "Failed parsing JSON (wanted ID):" << std::endl;
         std::cout << payloadNeo4j << std::endl;
@@ -587,7 +547,7 @@ NodeStateUpdate queryGraphDbForStateChange(std::string payloadNeo4j) {
     if (!data["results"].empty() &&
         !data["results"][0]["data"].empty() && 
         !data["results"][0]["data"][0]["row"].empty()) {
-            nodeStateUpdate.primaryKey = data["results"][0]["data"][0]["row"][0].get<u_int64_t>();
+            util::parseString(nodeStateUpdate.primaryKey, data["results"][0]["data"][0]["row"][0].get<std::string>());
     } else {
         std::cout << "Failed parsing JSON (wanted ID):" << std::endl;
         std::cout << payloadNeo4j << std::endl;
@@ -621,7 +581,7 @@ std::vector<NodeStateUpdate> extractNodeInfo(std::string response) {
             for (auto item : row) {
                 NodeStateUpdate nodeStateUpdate;
                 if (item.contains("primaryKey")) {
-                    nodeStateUpdate.primaryKey = item["primaryKey"];
+                    util::parseString(nodeStateUpdate.primaryKey, item["primaryKey"].get<std::string>());
                 }
                 if (item.contains("state")) {
                     nodeStateUpdate.state = item["state"];
@@ -651,7 +611,7 @@ void setNodeOffline( NodeResponse nodeUpdate, std::vector<RequestingClient> &cli
             }
         }
 
-        std::string taskId = influxDB::getTaskIDByName(std::to_string(nodeStateUpdate.primaryKey) + "_in");
+        std::string taskId = influxDB::getTaskIDByName(std::string(nodeStateUpdate.primaryKey) + "_in");
         if (taskId != "") curl::push(curl::INFLUXDB_DELETETASK, taskId);
     }   
 }
@@ -698,15 +658,14 @@ bool handleSearchRequests(const IpcServer &server) {
 
         json data = nlohmann::json::parse(response);
         json row = data["results"][0]["data"][0]["row"];
+        SearchResponse searchResp;
         if (!row.empty() && !row[0].empty()) {
-            SearchResponse searchResp{
-                .primaryKey = row[0]};
-
-            server.sendSearchResponse(searchResp, pid, false);
+            util::parseString(searchResp.primaryKey, row[0].get<std::string>());
         } else {
-            // TODO: send something that shows that nothing was found
+            util::parseString(searchResp.primaryKey, "");
         }
-
+        server.sendSearchResponse(searchResp, pid, false);
+        
         return true;        
     }
     

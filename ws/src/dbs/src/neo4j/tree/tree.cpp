@@ -6,7 +6,7 @@
 
 namespace tree {
 
-    std::string getPayloadForTree(primaryKey_t root, Tree tree) {
+    std::string getPayloadForTree(std::string root, Tree tree) {
         std::string edge;
         switch (tree)
         {
@@ -19,9 +19,9 @@ namespace tree {
         {{
             "statements": [
                 {{
-                    "statement": "MATCH (root) WITH root, toInteger(last(SPLIT(elementId(root), \":\"))) AS extractedId WHERE extractedId = $primKey MATCH path = (root)-[:{}*0..]->(n) RETURN collect(toInteger(last(SPLIT(elementId(n), \":\")))) AS primaryKeys",
+                    "statement": "MATCH (root {{primaryKey: $primKey}}) WITH root MATCH path = (root)-[:{}*0..]->(n) RETURN collect(n.primaryKey) AS primaryKeys",
                     "parameters": {{
-                        "primKey": {}
+                        "primKey": "{}"
                     }}
                 }}
             ]

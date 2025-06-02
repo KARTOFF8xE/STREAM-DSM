@@ -38,10 +38,10 @@ using TaskVariant = std::variant<
 >;
 
 struct Task {
-    pid_t                                                       pid;
-    requestId_t                                                 requestId;
-    TaskType                                                    type;
-    std::vector<primaryKey_t>                                   primaryKeys;
+    pid_t                       pid;
+    requestId_t                 requestId;
+    TaskType                    type;
+    std::vector<std::string>    primaryKeys;
 
     TaskVariant                                                 task;
     std::unique_ptr<sharedMem::SHMChannel<sharedMem::Response>> channel;

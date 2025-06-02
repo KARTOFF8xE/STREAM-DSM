@@ -40,12 +40,12 @@ public:
     auto publisher_base = std::static_pointer_cast<rclcpp::PublisherBase>(publisher_);
 
 // pointer address:
-uintptr_t node_ptr = reinterpret_cast<uintptr_t>(this);
-uintptr_t pub_ptr = reinterpret_cast<uintptr_t>(publisher_.get());
-uintptr_t rcl_pub_ptr = reinterpret_cast<uintptr_t>(publisher_base->get_publisher_handle().get());
+// uintptr_t node_ptr = reinterpret_cast<uintptr_t>(this);
+// uintptr_t pub_ptr = reinterpret_cast<uintptr_t>(publisher_.get());
+// uintptr_t rcl_pub_ptr = reinterpret_cast<uintptr_t>(publisher_base->get_publisher_handle().get());
 
-int64_t diff_node_to_rcl = static_cast<int64_t>(rcl_pub_ptr - node_ptr);
-int64_t diff_pub_to_rcl = static_cast<int64_t>(rcl_pub_ptr - pub_ptr);
+// int64_t diff_node_to_rcl = static_cast<int64_t>(rcl_pub_ptr - node_ptr);
+// int64_t diff_pub_to_rcl = static_cast<int64_t>(rcl_pub_ptr - pub_ptr);
 
 // std::ofstream outfile("handle_debug.log", std::ios::app);
 // outfile << "Node: " << node_ptr << "\t";

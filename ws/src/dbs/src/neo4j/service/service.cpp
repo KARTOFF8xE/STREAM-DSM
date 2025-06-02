@@ -11,7 +11,7 @@ namespace service {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) SET n.Services = COALESCE(n.Services, []) + $name WITH n MATCH (c:Active) WHERE $name IN c.Clients WITH n, c MERGE (n)-[s:sending {{serviceName: $name, mode: \"responds\"}}]->(c) SET s.active=true WITH n,c MERGE (c)-[s:sending {{serviceName: $name, mode: \"requests\"}}]->(n) SET s.active=true WITH n,c RETURN COLLECT(DISTINCT {{ client_id: toInteger(split(elementId(c), \":\")[-1]), node_id: toInteger(split(elementId(n), \":\")[-1]) }}) AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $nodeHandle}}) SET n.Services = COALESCE(n.Services, []) + $name WITH n MATCH (c:Active) WHERE $name IN c.Clients WITH n, c MERGE (n)-[s:sending {{serviceName: $name, mode: \"responds\"}}]->(c) ON CREATE SET s.primaryKey=randomUUID() SET s.active=true WITH n,c MERGE (c)-[s:sending {{serviceName: $name, mode: \"requests\"}}]->(n) ON CREATE SET s.primaryKey=randomUUID() SET s.active=true WITH n,c RETURN COLLECT(DISTINCT {{ client_id: c.primaryKey, node_id: n.primaryKey }}) AS row ",
                         "parameters": {{
                             "name": "{}",
                             "nodeHandle": {}

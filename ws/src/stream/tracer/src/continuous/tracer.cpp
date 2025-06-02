@@ -74,6 +74,7 @@ int main() {
 
     ThreadPool pool(5);
 
+    std::string lastPath = "";
     while (!stopFlag) {
         struct lttng_notification *notification;
         enum lttng_notification_channel_status status;
@@ -93,7 +94,10 @@ int main() {
                 std::cerr << "lttng_trace_archive_location_local_get_absolute_path failed with code: " << ret << std::endl;
             }
 
-            pool.enqueue(path);
+            if (lastPath != path) {
+                pool.enqueue(path);
+                lastPath = path;
+            }
 
             lttng_notification_destroy(notification);
         } else if (status == LTTNG_NOTIFICATION_CHANNEL_STATUS_CLOSED) {

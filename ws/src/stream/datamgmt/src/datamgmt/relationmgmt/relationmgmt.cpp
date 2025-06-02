@@ -10,6 +10,7 @@ using namespace std::chrono_literals;
 #include <nlohmann/json.hpp>
 
 #include <ipc/ipc-client.hpp>
+#include <ipc/util.hpp>
 #include <neo4j/roots/roots.hpp>
 #include <curl/myCurl.hpp>
 
@@ -96,8 +97,8 @@ std::string getParameterString2(std::vector<ProcessData> pdv) {
 }
 
 struct Pair {
-    pid_t           pid;
-    primaryKey_t    primaryKey;
+    pid_t       pid;
+    std::string primaryKey;
 };
 
 std::vector<Pair> extractPIDandID(const std::string& payload) {
@@ -112,7 +113,7 @@ std::vector<Pair> extractPIDandID(const std::string& payload) {
             result.push_back(
                 Pair {
                     .pid        = item["row"][0]["pid"].get<pid_t>(),
-                    .primaryKey = item["row"][0]["id"].get<primaryKey_t>()
+                    .primaryKey = item["row"][0]["id"].get<std::string>()
                 }
             );
         }
@@ -202,12 +203,12 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
 
             for (auto pair : pairs) {
                 if (pair.pid == 0) continue;
+
+                NodeResponse tmp { .pid = pair.pid };
+                util::parseString(tmp.primaryKey, pair.primaryKey);
                 pipe_ns::writeT<NodeResponse>(
                     pipeToProcessobserver_w,
-                    NodeResponse{
-                        .primaryKey = pair.primaryKey,
-                        .pid        = pair.pid,
-                    }
+                    tmp
                 );
             }
         }
