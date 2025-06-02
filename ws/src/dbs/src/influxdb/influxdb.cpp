@@ -152,27 +152,32 @@ namespace influxDB {
     }
 
     std::string createPayloadForTask(std::string bucket, std::vector<std::string> primaryKeys, std::string destPrimaryKey) {
+        std::string attributes[] = {"PUBLISHINGRATE", "CPU_UTILIZATION"};
         primaryKeys.push_back(destPrimaryKey);
-        std::string fluxScript = fmt::format(R"(
-        option task = {{name: "{}_in", every: 1s}}
-        pkList = {}
-        from(bucket: "{}")
-        |> range(start: -task.every)
-        |> filter(fn: (r) => r._measurement == "PUBLISHINGRATE" and r._field == "value" and contains(value: r.primaryKey, set: pkList))
-        |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
-        |> group(columns: ["_time"])
-        |> sum()
-        |> map(fn: (r) => ({{
-            _time: r._time,
-            _value: r._value,
-            _field: "value",
-            _measurement: "PUBLISHINGRATE",
-            primaryKey: "{}",
-            direction: "{}"
-        }}))
-        |> to(bucket: "{}", org: "TUBAF")
-        )", destPrimaryKey, makeFluxStringList(primaryKeys), bucket, destPrimaryKey, "in", bucket);
 
+        std::string fluxScript = fmt::format(R"(
+            option task = {{name: "{}_in", every: 1s}}
+            pkList = {})", destPrimaryKey, makeFluxStringList(primaryKeys));
+        for (const std::string &attribute : attributes) {
+            fluxScript += fmt::format(R"(
+            
+            from(bucket: "{}")
+            |> range(start: -task.every)
+            |> filter(fn: (r) => r._measurement == "{}" and r._field == "value" and not exists r.direction and contains(value: r.primaryKey, set: pkList))
+            |> aggregateWindow(every: 900ms, fn: mean, createEmpty: false)
+            |> group(columns: ["_time"])
+            |> sum()
+            |> map(fn: (r) => ({{
+                _time: r._time,
+                _value: r._value,
+                _field: "value",
+                _measurement: "{}",
+                primaryKey: "{}",
+                direction: "{}"
+            }}))
+            |> to(bucket: "{}", org: "TUBAF")
+            )", bucket, attribute, attribute, destPrimaryKey, "in", bucket);
+        }
         std::string escapedFlux = jsonEscape(fluxScript);
 
         return std::string("{") +
