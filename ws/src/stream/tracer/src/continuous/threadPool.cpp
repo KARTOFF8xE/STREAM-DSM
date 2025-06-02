@@ -1,7 +1,9 @@
 #include "threadPool.hpp"
 
 #include "babeltrace.hpp"
+
 #include <iostream>
+#include <filesystem>
 
 
 ThreadPool::ThreadPool(size_t num_workers) : stopFlag(false) {
@@ -45,5 +47,6 @@ void ThreadPool::workerThread(size_t worker_id) {
             tasks.pop();
         }
         createAndExecuteTraceGraph(task.c_str());
+        std::filesystem::remove_all(task);
     }
 }
