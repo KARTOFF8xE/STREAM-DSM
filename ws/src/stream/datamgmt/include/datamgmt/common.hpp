@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <mutex>
 
 #include <ipc/common.hpp>
 #include <ipc/ipc-server.hpp>
