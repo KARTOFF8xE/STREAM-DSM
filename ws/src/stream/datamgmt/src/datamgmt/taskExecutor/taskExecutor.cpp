@@ -30,6 +30,7 @@ double getValueStandardQueryInfluxDB(Task &task) {
             influxDB::createPayloadGetSingleValue(
                 "STREAM",
                 std::get<SingleAttributesRequest>(task.task).attribute,
+                std::get<SingleAttributesRequest>(task.task).direction,
                 task.primaryKeys);
     }
     if (std::holds_alternative<AggregatedAttributesRequest>(task.task)) {
@@ -37,6 +38,7 @@ double getValueStandardQueryInfluxDB(Task &task) {
             influxDB::createPayloadGetSingleValue(
                 "STREAM",
                 std::get<AggregatedAttributesRequest>(task.task).attribute,
+                std::get<SingleAttributesRequest>(task.task).direction,
                 task.primaryKeys);
     }
 

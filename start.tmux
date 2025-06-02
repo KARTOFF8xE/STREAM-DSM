@@ -20,7 +20,7 @@ cd ~/stream
 lttng destroy -a
 lttng-sessiond --daemonize
 lttng-relayd -d
-rm /dev/shm/babeltonato
+rm -rf /tmp/continuous_traces
 sleep 1
 
 tmux select-pane -t 0
