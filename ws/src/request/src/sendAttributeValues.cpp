@@ -14,12 +14,11 @@ int main() {
   IpcClient client(5);
 
   std::cout << ">> ";
-  primaryKey_t pKey;
+  std::string pKey;
   std::cin >> pKey;
   requestId_t requestId;
-  const SHMAddressRequest request{
-    .primaryKey = pKey
-  };
+  SHMAddressRequest request;
+  util::parseString(request.primaryKey, pKey);
 
   std::cout << "send request..." << std::flush;
   client.sendSHMAddressRequest(request, requestId, false);
@@ -39,10 +38,11 @@ int main() {
   while (true) {
     sharedMem::InputValue msg {
       .timestamp  = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()),
-      .primaryKey = pKey,
       .value      = counter++,
       .type       = sharedMem::MessageType::DISK,
     };
+    util::parseString(msg.primaryKey, pKey);
+
     if (counter > 1000) counter = 0;
     channel.send(msg);
     // std::cout << "send " << msg.value << std::endl;

@@ -17,7 +17,7 @@
  * @param client The client requesting the node response.
  * @param primaryKey The unique identifier of the node to retrieve information for.
  */
-void singleTimeNodeResponse(IpcServer &server, RequestingClient &client, primaryKey_t primaryKey);
+void singleTimeNodeResponse(IpcServer &server, RequestingClient &client, std::string primaryKey);
 
 /**
  * @brief Retrieves and sends a one-time topic response to a client.
@@ -31,7 +31,7 @@ void singleTimeNodeResponse(IpcServer &server, RequestingClient &client, primary
  * @param client The client requesting the topic response.
  * @param primaryKey The unique identifier of the topic to retrieve information for.
  */
-void singleTimeTopicResponse(IpcServer &server, RequestingClient &client, primaryKey_t primaryKey);
+void singleTimeTopicResponse(IpcServer &server, RequestingClient &client, std::string primaryKey);
 
 /**
  * @brief Monitors nodes and topics, handling client updates.

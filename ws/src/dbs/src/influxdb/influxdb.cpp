@@ -23,7 +23,7 @@ namespace influxDB {
         }
 
         return type + "," +
-            "primaryKey=" + std::to_string(pair.primaryKey) + " value=" + std::to_string(pair.value) + "\n";
+            "primaryKey=" + pair.primaryKey + " value=" + std::to_string(pair.value) + "\n";
     }
 
     std::string createPayloadMultipleVal(std::vector<ValuePairs> pairs) {
@@ -43,13 +43,13 @@ namespace influxDB {
                 case SUBSCRIBER:        type = "SUBSCRIBER"; break;
                 default:                type = "misc";
             }
-            payload += type + "," + "primaryKey=" + std::to_string(pair.primaryKey) + " value=" + std::to_string(pair.value) + "\n";
+            payload += type + "," + "primaryKey=" + pair.primaryKey + " value=" + std::to_string(pair.value) + "\n";
         }
 
         return payload;
     }
 
-    std::string vectorToString(const std::vector<primaryKey_t>& vec) {
+    std::string vectorToString(const std::vector<std::string>& vec) {
         std::ostringstream oss;
         oss << "[";
         for (size_t i = 0; i < vec.size(); ++i) {
@@ -62,7 +62,7 @@ namespace influxDB {
         return oss.str();
     }
 
-    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, Direction direction, std::vector<primaryKey_t> primaryKeys) {
+    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, Direction direction, std::vector<std::string> primaryKeys) {
         std::string attr;
 
         switch (attribute) {
@@ -116,7 +116,7 @@ namespace influxDB {
         return -1;
     }
 
-    std::string makeFluxStringList(const std::vector<primaryKey_t>& items) {
+    std::string makeFluxStringList(const std::vector<std::string>& items) {
         std::ostringstream oss;
         oss << "[";
         for (size_t i = 0; i < items.size(); ++i) {
@@ -151,7 +151,7 @@ namespace influxDB {
         return o.str();
     }
 
-    std::string createPayloadForTask(std::string bucket, std::vector<primaryKey_t> primaryKeys, primaryKey_t destPrimaryKey) {
+    std::string createPayloadForTask(std::string bucket, std::vector<std::string> primaryKeys, std::string destPrimaryKey) {
         primaryKeys.push_back(destPrimaryKey);
         std::string fluxScript = fmt::format(R"(
         option task = {{name: "{}_in", every: 1s}}

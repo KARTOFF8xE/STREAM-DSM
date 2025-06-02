@@ -8,6 +8,6 @@
 namespace tree {
     
     // TODO
-    std::string getPayloadForTree(primaryKey_t root, Tree tree);
+    std::string getPayloadForTree(std::string root, Tree tree);
 
 }

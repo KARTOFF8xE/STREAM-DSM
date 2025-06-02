@@ -38,7 +38,7 @@ double getValueStandardQueryInfluxDB(Task &task) {
             influxDB::createPayloadGetSingleValue(
                 "STREAM",
                 std::get<AggregatedAttributesRequest>(task.task).attribute,
-                std::get<SingleAttributesRequest>(task.task).direction,
+                std::get<AggregatedAttributesRequest>(task.task).direction,
                 task.primaryKeys);
     }
 
@@ -167,18 +167,17 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                 {
                     u_int16_t counter = 0;
                     for (auto primKey: task.primaryKeys) {
-                        task.channel->send (
-                                sharedMem::Response {
-                                .header {
-                                    .type           = sharedMem::NUMERICAL
-                                },
-                                .numerical  {
-                                    .number = ++counter,
-                                    .total  = task.primaryKeys.size(),
-                                    .value  = double(primKey)
-                                }
+                        sharedMem::Response tmp {
+                            .header {
+                                .type = sharedMem::TEXTUAL
+                            },
+                            .textual  {
+                                .number = ++counter,
+                                .total  = task.primaryKeys.size()
                             }
-                        );
+                        };
+                        util::parseString(tmp.textual.line, primKey);
+                        task.channel->send (tmp);
                     }
 
                     if (!std::get<AggregatedMemberRequest>(task.task).continuous) {

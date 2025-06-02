@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <ipc/ipc-client.hpp>
+#include <ipc/util.hpp>
 
 #include <chrono>
 #include <thread>
@@ -11,13 +12,11 @@ int main() {
   IpcClient client(1);
   
   std::cout << ">> ";
-  primaryKey_t pKey;
+  std::string pKey;
   std::cin >> pKey;
   requestId_t requestId;
-  const NodeRequest request{
-    .primaryKey = pKey,
-    .updates = true
-  };
+  NodeRequest request { .updates = true };
+  util::parseString(request.primaryKey, pKey);
   client.sendNodeRequest(request, requestId, true);
   
   while (true) {

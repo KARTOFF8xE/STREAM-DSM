@@ -11,7 +11,7 @@ namespace node {
             {{ 
                 "statements":
                     [
-                        {{ "statement": "MERGE (n:Active{{name:$name}}) ON CREATE SET n.handle=$handle, n.state=$state, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=$state, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() SET r.active=false WITH n RETURN DISTINCT n ",
+                        {{ "statement": "MERGE (n:Active{{name:$name}}) ON CREATE SET n.primaryKey=randomUUID(), n.handle=$handle, n.state=$state, n.stateChangeTime = $timestamp, n.pid=$pid, n.bootcounter = 1 ON MATCH SET n.handle=$handle, n.state=$state, n.stateChangeTime = TIMESTAMP(), n.pid=$pid, n.bootcounter = n.bootcounter+1, n.Services=[], n.Clients=[], n.ActionServices=[], n.ActionClients=[] WITH n OPTIONAL MATCH (n)-[r]-() SET r.active=false WITH n RETURN DISTINCT n ",
                         "parameters": {{
                             "name": "{}",
                             "handle": {},
@@ -30,7 +30,7 @@ namespace node {
             {{ 
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Active {{name: $name}}) RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                        {{ "statement": "MATCH (n:Active {{name: $name}}) RETURN n.primaryKey ",
                         "parameters": {{
                             "name": "{}"
                             }}
@@ -41,19 +41,19 @@ namespace node {
     }
 
 
-    std::string getPayloadRequestByPrimaryKey(pid_t pid) {
+    std::string getPayloadRequestByPrimaryKey(std::string primaryKey) {
         return fmt::format(R"(
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n) WITH n, toInteger(last(SPLIT(elementId(n), \":\"))) AS extractedId WHERE extractedId = $primaryKey OPTIONAL MATCH (n)-[r]->(outgoingNeighbor) WITH n, elementId(n) AS fullElementId, extractedId, toInteger(n.pid) AS pid, type(r) AS outgoingRelType, collect({{id: toInteger(last(SPLIT(elementId(outgoingNeighbor), \":\"))), serviceName: r.serviceName, direction: 'outgoing', frequency: r.frequency, actionName: r.actionName, mode: r.mode}}) AS outgoingNeighbors OPTIONAL MATCH (n)<-[r2]-(incomingNeighbor) WITH n, fullElementId, extractedId, pid, outgoingNeighbors, outgoingRelType, type(r2) AS incomingRelType, collect({{id: toInteger(last(SPLIT(elementId(incomingNeighbor), \":\"))), serviceName: r2.serviceName, direction: 'incoming', frequency: r2.frequency, actionName: r2.actionName, mode: r2.mode}}) AS incomingNeighbors RETURN DISTINCT n {{.*, pid: pid}}, collect(DISTINCT {{relationship: outgoingRelType, nodes: outgoingNeighbors}}) AS outgoing, collect(DISTINCT {{relationship: incomingRelType, nodes: incomingNeighbors}}) AS incoming  ",
+                        {{ "statement": "MATCH (n) WITH n, n.primaryKey AS extractedId WHERE extractedId = $primaryKey OPTIONAL MATCH (n)-[r]->(outgoingNeighbor) WITH n, elementId(n) AS fullElementId, extractedId, toInteger(n.pid) AS pid, type(r) AS outgoingRelType, collect({{id: outgoingNeighbor.primaryKey, serviceName: r.serviceName, direction: 'outgoing', frequency: r.frequency, actionName: r.actionName, mode: r.mode}}) AS outgoingNeighbors OPTIONAL MATCH (n)<-[r2]-(incomingNeighbor) WITH n, fullElementId, extractedId, pid, outgoingNeighbors, outgoingRelType, type(r2) AS incomingRelType, collect({{id: incomingNeighbor.primaryKey, serviceName: r2.serviceName, direction: 'incoming', frequency: r2.frequency, actionName: r2.actionName, mode: r2.mode}}) AS incomingNeighbors RETURN DISTINCT n {{.*, pid: pid}}, collect(DISTINCT {{relationship: outgoingRelType, nodes: outgoingNeighbors}}) AS outgoing, collect(DISTINCT {{relationship: incomingRelType, nodes: incomingNeighbors}}) AS incoming  ",
                         "parameters": {{
                             "primaryKey": {}
                             }}
                         }}
                     ]
             }}
-        )", pid);
+        )", primaryKey);
     }
 
     std::string getPayloadSetNodeStateByPID(pid_t pid, time_t timestamp, sharedMem::State state) {
@@ -61,7 +61,7 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n MATCH (n)-[e]->() SET e.active=$edgeActive WITH n MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN DISTINCT {{ stateChangeTime: n.stateChangeTime, state: n.state, primaryKey: toInteger(last(SPLIT(elementId(n), \":\"))) }} ",
+                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n MATCH (n)-[e]->() SET e.active=$edgeActive WITH n MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN DISTINCT {{ stateChangeTime: n.stateChangeTime, state: n.state, primaryKey: n.primaryKey }} ",
                     "parameters": {{
                         "pid": {},
                         "timestamp": {},
@@ -96,7 +96,7 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Active {{stateMachine: $statemachine}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n MATCH (n)-[e]->() SET e.active=$edgeActive WITH n MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN toInteger(last(SPLIT(elementId(n), \":\"))) ",
+                    {{ "statement": "MATCH (n:Active {{stateMachine: $statemachine}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n MATCH (n)-[e]->() SET e.active=$edgeActive WITH n MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN n.primaryKey ",
                     "parameters": {{
                         "statemachine": {},
                         "state": {},

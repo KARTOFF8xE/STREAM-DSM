@@ -75,7 +75,7 @@ void sendPubDataToTimeSeries(std::unordered_map<u_int64_t, u_int32_t> &pubRates)
             !data["results"][0]["data"][0]["row"].empty()) {
             influxDB::ValuePairs value {
                 .attribute  = influxDB::PUBLISHINGRATE,
-                .primaryKey = data["results"][0]["data"][0]["row"][0].get<primaryKey_t>(),
+                .primaryKey = data["results"][0]["data"][0]["row"][0].get<std::string>(),
                 .timestamp  = timestamp,
                 .value      = double(pubRate.second)
             };

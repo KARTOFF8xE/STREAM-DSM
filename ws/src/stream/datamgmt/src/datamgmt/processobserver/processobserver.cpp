@@ -26,18 +26,18 @@ using namespace std::chrono_literals;
 
 
 struct FullProcessData {
-    primaryKey_t    primaryKey;
-    pid_t           pid;
-    pid_t           ppid;
-    std::string     exe_filename;
-    std::string     process_state;
-    long            usr_cpu_clocks;
-    long            krnl_cpu_clocks;
-    long            logged_clock_time;
-    double          cpu_utilisation;
-    int             process_priority;
-    long            v_mem_size;
-    int             last_cpu;
+    std::string primaryKey;
+    pid_t       pid;
+    pid_t       ppid;
+    std::string exe_filename;
+    std::string process_state;
+    long        usr_cpu_clocks;
+    long        krnl_cpu_clocks;
+    long        logged_clock_time;
+    double      cpu_utilisation;
+    int         process_priority;
+    long        v_mem_size;
+    int         last_cpu;
 };
 typedef struct _IO_FILE FILE;
 
@@ -46,13 +46,13 @@ struct CPUData;
 void readCPUUtil(CPUData &cd);
 
 struct CPUData {
-    primaryKey_t    primaryKey;
+    std::string primaryKey;
 
-    long            totalJiffiesThen;
-    long            totalJiffiesNow;
-    long            workJiffiesThen;
-    long            workJiffiesNow;
-    double          utilization;
+    long        totalJiffiesThen;
+    long        totalJiffiesNow;
+    long        workJiffiesThen;
+    long        workJiffiesNow;
+    double      utilization;
 
     CPUData() {
         readCPUUtil(*this);

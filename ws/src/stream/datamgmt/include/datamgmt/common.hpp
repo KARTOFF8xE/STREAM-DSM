@@ -14,7 +14,7 @@ extern bool gsRunning;
 struct RequestingClient {
     pid_t           pid;
     requestId_t     requestId;
-    primaryKey_t    primaryKey;
+    std::string     primaryKey;
     bool            updates;
 
     bool operator==(const RequestingClient& other) const {
