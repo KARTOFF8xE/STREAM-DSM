@@ -2,6 +2,7 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 #include <chrono>
+#include <thread>
 using namespace std::chrono_literals;
 
 #include <ipc/ipc-client.hpp>
@@ -29,7 +30,7 @@ using namespace std::chrono_literals;
 using json = nlohmann::json;
 
 
-void singleTimeNodeResponse(const IpcServer &server, RequestingClient client, primaryKey_t primaryKey) {
+void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, primaryKey_t primaryKey) {
     std::string response = curl::push(node::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -174,7 +175,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient client, pr
     }
 }
 
-void singleTimeTopicResponse(const IpcServer &server, RequestingClient client, primaryKey_t primaryKey) {
+void singleTimeTopicResponse(const IpcServer &server, RequestingClient &client, primaryKey_t primaryKey) {
     std::string response = curl::push(topic::getPayloadRequestByPrimaryKey(primaryKey), curl::NEO4J);
 
     json payload = json::parse(response);
@@ -249,7 +250,7 @@ void handleIsClientToUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
     std::string payloadNeo4j = client::getPayload(msg.client.srvName, msg.client.nodeHandle);
     std::vector<NodeIsClientOfUpdate> nodeIsCliToUpdate = queryGraphDbForClient(payloadNeo4j, msg.service.name);
 
-    for (RequestingClient client: clients) {
+    for (RequestingClient &client: clients) {
         for (NodeIsClientOfUpdate item : nodeIsCliToUpdate) {
             if (client.primaryKey == item.primaryKey) {
                 server.sendNodeIsClientOfUpdate(item, client.pid, false);
@@ -298,7 +299,7 @@ std::vector<NodeIsServerForUpdate> queryGraphDbForService(std::string payload, s
 void handleIsServerForUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient> &clients, const IpcServer &server) {
     std::string payloadNeo4j = service::getPayload(msg.service.name, msg.service.nodeHandle);
     std::vector<NodeIsServerForUpdate> nodeIsSrvForUpdate = queryGraphDbForService(payloadNeo4j, msg.service.name);
-    for (RequestingClient client: clients) {
+    for (RequestingClient &client: clients) {
         for (NodeIsServerForUpdate item : nodeIsSrvForUpdate) {
             if (client.primaryKey == item.primaryKey) {
                 server.sendNodeIsServerForUpdate(item, client.pid, false);
@@ -329,7 +330,7 @@ void handleActionClientToUpdate(sharedMem::TraceMessage msg, std::vector<Request
     std::vector<NodeIsClientOfUpdate> nodeIsCliToUpdate = queryGraphDbForClient(payloadNeo4j, msg.service.name);
     
     if (strcmp(serviceName, "send_goal")) {
-        for (RequestingClient client: clients) {
+        for (RequestingClient &client: clients) {
             for (NodeIsClientOfUpdate item : nodeIsCliToUpdate) {
                 if (client.primaryKey == item.primaryKey) {
                     server.sendNodeIsClientOfUpdate(item, client.pid, false);
@@ -361,7 +362,7 @@ void handleActionServerForUpdate(sharedMem::TraceMessage msg, std::vector<Reques
     std::vector<NodeIsServerForUpdate> nodeIsSrvForUpdate = queryGraphDbForService(payloadNeo4j, msg.service.name);
 
     if (strcmp(serviceName, "send_goal")) {
-        for (RequestingClient client: clients) {
+        for (RequestingClient &client: clients) {
             for (NodeIsServerForUpdate item : nodeIsSrvForUpdate) {
                 if (client.primaryKey == item.primaryKey) {
                     server.sendNodeIsServerForUpdate(item, client.pid, false);
@@ -399,7 +400,7 @@ void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
     NodeSubscribersToUpdate nodeSubToUpdate = queryGraphDbForSubscriber(payloadNeo4j);
 
     if (!strstr(msg.subscriber.topicName, "/_action/")) {
-        for (RequestingClient client : clients)
+        for (RequestingClient &client : clients)
         {
             if (client.primaryKey == nodeSubToUpdate.primaryKey)
             {
@@ -412,7 +413,7 @@ void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
             .subscriber = nodeSubToUpdate.primaryKey,
             .isUpdate = true
         };
-        for (RequestingClient client : clients)
+        for (RequestingClient &client : clients)
         {
             if (client.primaryKey == payloadTopic.primaryKey)
             {
@@ -454,7 +455,7 @@ void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
     NodePublishersToUpdate nodePubToUpdate = queryGraphDbForPublisher(payloadNeo4j);
 
     if (!strstr(msg.subscriber.topicName, "/_action/")) {
-        for (RequestingClient client : clients) {
+        for (RequestingClient &client : clients) {
             if (client.primaryKey == nodePubToUpdate.primaryKey)
             {
                 server.sendNodePublishersToUpdate(nodePubToUpdate, client.pid, false);
@@ -466,7 +467,7 @@ void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
             .publisher = nodePubToUpdate.primaryKey,
             .isUpdate = true
         };
-        for (RequestingClient client : clients) {
+        for (RequestingClient &client : clients) {
             if (client.primaryKey == payloadTopic.primaryKey)
             {
                 server.sendTopicPublishersUpdate(payloadTopic, client.pid, false);
@@ -521,7 +522,7 @@ void handleNodeUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClient>
     util::parseString(nodeResponse.name, fqName);
 
 
-    for (RequestingClient client : clients)
+    for (RequestingClient &client : clients)
     {
         if (client.primaryKey == nodeResponse.primaryKey)
         {
@@ -564,7 +565,7 @@ void handleTimerToUpdate(sharedMem::TraceMessage msg, std::vector<RequestingClie
     NodeTimerToUpdate nodeTimerToUpdate = queryGraphDbForTimer(payloadNeo4j);
     nodeTimerToUpdate.frequency = msg.timer.frequency;
 
-    for (RequestingClient client : clients) {
+    for (RequestingClient &client : clients) {
         if (client.primaryKey == nodeTimerToUpdate.primaryKey) {
             server.sendNodeTimerToUpdate(nodeTimerToUpdate, client.pid, false);
         }
@@ -602,7 +603,7 @@ void handleStateTransitionToUpdate(sharedMem::TraceMessage msg, std::vector<Requ
     nodeStateUpdate.state = msg.lcTrans.state;
     nodeStateUpdate.stateChangeTime = msg.lcTrans.stateChangeTime;
 
-    for (RequestingClient client : clients) {
+    for (RequestingClient &client : clients) {
         if (client.primaryKey == nodeStateUpdate.primaryKey) {
             server.sendNodeStateUpdate(nodeStateUpdate, client.pid, false);
         }
@@ -638,13 +639,13 @@ std::vector<NodeStateUpdate> extractNodeInfo(std::string response) {
     return nodeStateUpdates;
 }
 
-void setNodeOffline( NodeResponse nodeUpdate, std::vector<RequestingClient> clients, const IpcServer &server) {
+void setNodeOffline( NodeResponse nodeUpdate, std::vector<RequestingClient> &clients, const IpcServer &server) {
     std::string payload = node::getPayloadSetNodeStateByPID(nodeUpdate.pid, nodeUpdate.stateChangeTime, sharedMem::State::INACTIVE);
     std::string response = curl::push(payload, curl::NEO4J);
     std::vector<NodeStateUpdate> NodeStateUpdates = extractNodeInfo(response);
 
     for (NodeStateUpdate nodeStateUpdate : NodeStateUpdates) {
-        for (RequestingClient client : clients) {
+        for (RequestingClient &client : clients) {
             if (client.primaryKey == nodeStateUpdate.primaryKey) {
                 server.sendNodeStateUpdate(nodeStateUpdate, client.pid, false);
             }
@@ -663,7 +664,7 @@ void handleClient(RequestingClient &client, std::vector<RequestingClient> &clien
 
     if (client.updates) {
         bool contains = false;
-        for (RequestingClient item : clients)
+        for (RequestingClient &item : clients)
         {
             if (item.pid == client.pid &&
                 item.requestId == client.requestId)
@@ -712,52 +713,10 @@ bool handleSearchRequests(const IpcServer &server) {
     return false;
 }
 
-void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
-    std::cout << "started nodeAndTopicObserver" << std::endl;
-    int pipe_r = pipes[MAIN].read;
-    sharedMem::SHMChannel<sharedMem::TraceMessage> channel("/babeltonato");
-
-    std::vector<RequestingClient> clients;
-    std::vector<pid_t> pids;
-
-    RequestingClient client;
-    auto then = std::chrono::steady_clock::now();
+void listenToStructuralTracer(sharedMem::SHMChannel<sharedMem::TraceMessage> &channel, std::vector<RequestingClient> &clients, const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes) {
     while (gsRunning) {
-        bool receivedMessage = false;
-
-        bool gotRequest;
-        do {
-            gotRequest = false;
-            {
-                std::optional<NodeRequest> request = server.receiveNodeRequest(client.requestId, client.pid, false);
-                if (request.has_value()) {
-                    NodeRequest payload = request.value();
-                    client.primaryKey   = payload.primaryKey;
-                    client.updates      = payload.updates;
-
-                    if (client.updates)  handleClient(client, clients);
-
-                    singleTimeNodeResponse(server, client, payload.primaryKey);
-                    gotRequest = true;
-                }
-            }
-            {
-                std::optional<TopicRequest> request = server.receiveTopicRequest(client.requestId, client.pid, false);
-                if (request.has_value()) {
-                    TopicRequest payload = request.value();
-                    client.primaryKey   = payload.primaryKey;
-                    client.updates      = payload.updates;
-                    
-                    if (client.updates) handleClient(client, clients);
-
-                    singleTimeTopicResponse(server, client, payload.primaryKey);
-                    gotRequest = true;
-                }
-            }
-        } while (gotRequest);
-
         sharedMem::TraceMessage msg(sharedMem::MessageType::NONE);
-        if (channel.receive(msg, false)) {
+        if (channel.receive(msg, true)) {
             switch (msg.header.type) {
                 case sharedMem::MessageType::NODETRACE:
                     handleNodeUpdate(msg, clients, server, pipes[RELATIONMGMT].write);
@@ -795,9 +754,56 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
                     std::cout << "unknown Type" << std::endl;
                     break;
             }
-
-            continue;
         }
+    }
+}
+
+
+void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running) {
+    std::cout << "started nodeAndTopicObserver" << std::endl;
+    int pipe_r = pipes[MAIN].read;
+
+    std::vector<RequestingClient> clients;
+    std::vector<pid_t> pids;
+
+    sharedMem::SHMChannel<sharedMem::TraceMessage> channel("/babeltonato");
+    std::thread structuralListener = std::thread(listenToStructuralTracer, std::ref(channel), std::ref(clients), std::cref(server), pipes);
+
+    RequestingClient client;
+    auto then = std::chrono::steady_clock::now();
+    while (gsRunning) {
+        bool receivedMessage = false;
+
+        bool gotRequest;
+        do {
+            gotRequest = false;
+            {
+                std::optional<NodeRequest> request = server.receiveNodeRequest(client.requestId, client.pid, false);
+                if (request.has_value()) {
+                    NodeRequest payload = request.value();
+                    client.primaryKey   = payload.primaryKey;
+                    client.updates      = payload.updates;
+
+                    if (client.updates)  handleClient(client, clients);
+
+                    singleTimeNodeResponse(server, client, payload.primaryKey);
+                    gotRequest = true;
+                }
+            }
+            {
+                std::optional<TopicRequest> request = server.receiveTopicRequest(client.requestId, client.pid, false);
+                if (request.has_value()) {
+                    TopicRequest payload = request.value();
+                    client.primaryKey   = payload.primaryKey;
+                    client.updates      = payload.updates;
+                    
+                    if (client.updates) handleClient(client, clients);
+
+                    singleTimeTopicResponse(server, client, payload.primaryKey);
+                    gotRequest = true;
+                }
+            }
+        } while (gotRequest);
 
         NodeResponse nodeUpdate;
         ssize_t ret = pipe_ns::readT<NodeResponse>(pipes[PROCESSOBSERVER].read, nodeUpdate);
@@ -817,7 +823,6 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
         then = std::chrono::steady_clock::now();
     }
 
-    
     channel.~SHMChannel();
     std::cout << "finalized NodeTopicObserver" << std::endl;
 }

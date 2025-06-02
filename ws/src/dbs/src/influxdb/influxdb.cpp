@@ -152,6 +152,7 @@ namespace influxDB {
     }
 
     std::string createPayloadForTask(std::string bucket, std::vector<primaryKey_t> primaryKeys, primaryKey_t destPrimaryKey) {
+        primaryKeys.push_back(destPrimaryKey);
         std::string fluxScript = fmt::format(R"(
         option task = {{name: "{}_in", every: 1s}}
         pkList = {}
