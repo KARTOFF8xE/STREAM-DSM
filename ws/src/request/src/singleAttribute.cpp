@@ -17,9 +17,10 @@ int main() {
   primaryKey_t pKey;
   std::cin >> pKey;
   requestId_t requestId;
-  const SingleAttributesRequest request{
+  const SingleAttributesRequest request {
     .primaryKey = pKey,
     .attribute = PUBLISHINGRATES,
+    .direction = Direction::NONE,
     .continuous = true,
   };
   std::cout << "send request..." << std::flush;

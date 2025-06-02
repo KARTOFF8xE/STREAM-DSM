@@ -14,6 +14,7 @@ find_package(nlohmann_json 3.11.3 REQUIRED)
 add_executable(datamgmt
   src/datamgmt/datamgmt.cpp
   src/datamgmt/utils.cpp
+  src/datamgmt/common.cpp
   src/datamgmt/nodeandtopicobserver/nodeandtopicobserver.cpp
   src/datamgmt/processobserver/processobserver.cpp
   src/datamgmt/relationmgmt/relationmgmt.cpp

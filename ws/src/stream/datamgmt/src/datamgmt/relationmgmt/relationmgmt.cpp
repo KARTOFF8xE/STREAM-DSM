@@ -14,6 +14,7 @@ using namespace std::chrono_literals;
 #include <curl/myCurl.hpp>
 
 #include "datamgmt/utils.hpp"
+#include "datamgmt/common.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
 
@@ -129,7 +130,7 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
     int pipeToProcessobserver_w = pipes[PROCESSOBSERVER].write;
     
     auto then = std::chrono::steady_clock::now();
-    while (true) {
+    while (gsRunning) {
 
         ssize_t ret = -1;
         pipe_ns::UnionResponse unionResponse;
@@ -213,6 +214,7 @@ void relationMgmt(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
     }
 
     running.store(false);
+    std::cout << "finalized relationMgmt" << std::endl;
 }
 
 } 

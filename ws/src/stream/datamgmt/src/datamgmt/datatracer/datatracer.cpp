@@ -13,6 +13,7 @@ using namespace std::chrono_literals;
 #include <influxdb/influxdb.hpp>
 #include <curl/myCurl.hpp>
 #include "datamgmt/utils.hpp"
+#include "datamgmt/common.hpp"
 #include "datamgmt/relationmgmt/relationmgmt.hpp"
 #include "pipe/pipe.hpp"
 
@@ -28,7 +29,7 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
     auto start = std::chrono::high_resolution_clock::now();
     size_t counter = 0;
     std::vector<influxDB::ValuePairs> valuePairs;
-    while (true) {
+    while (gsRunning) {
         requestId_t requestID;
         pid_t pid;
         std::optional<SHMAddressRequest> request = server.receiveSHMAddressRequest(requestID, pid, false);
@@ -86,6 +87,7 @@ void datatracer(const IpcServer &server,  std::map<Module_t, pipe_ns::Pipe> pipe
         then = std::chrono::steady_clock::now();
     }
 
+    std::cout << "finalized Tracer (Endpoint)" << std::endl;
 }
 
 } 

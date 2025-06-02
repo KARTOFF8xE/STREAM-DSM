@@ -30,6 +30,7 @@ double getValueStandardQueryInfluxDB(Task &task) {
             influxDB::createPayloadGetSingleValue(
                 "STREAM",
                 std::get<SingleAttributesRequest>(task.task).attribute,
+                std::get<SingleAttributesRequest>(task.task).direction,
                 task.primaryKeys);
     }
     if (std::holds_alternative<AggregatedAttributesRequest>(task.task)) {
@@ -37,6 +38,7 @@ double getValueStandardQueryInfluxDB(Task &task) {
             influxDB::createPayloadGetSingleValue(
                 "STREAM",
                 std::get<AggregatedAttributesRequest>(task.task).attribute,
+                std::get<SingleAttributesRequest>(task.task).direction,
                 task.primaryKeys);
     }
 
@@ -90,7 +92,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
     std::cout << "started taskExecutor" << std::endl;
 
     auto then = std::chrono::steady_clock::now();
-    while (true) {
+    while (gsRunning) {
         {
             std::lock_guard<std::mutex> lock(tasks.mutex);
             for (Task &task : tasks.vec) {
@@ -224,6 +226,8 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
         }
         then = std::chrono::steady_clock::now();
     }
+
+    std::cout << "finalized taskExecutor" << std::endl;
 }
 
 }

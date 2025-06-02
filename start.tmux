@@ -20,7 +20,7 @@ cd ~/stream
 lttng destroy -a
 lttng-sessiond --daemonize
 lttng-relayd -d
-rm /dev/shm/babeltonato
+rm -rf /tmp/continuous_traces
 sleep 1
 
 tmux select-pane -t 0
@@ -28,14 +28,14 @@ tmux send-keys -t $SESSION 'clear && ros2 run tracer structural' C-m
 tmux select-pane -t 1
 tmux send-keys -t $SESSION 'clear && ros2 run tracer continuous' C-m
 tmux select-pane -t 2
-tmux send-keys -t $SESSION 'clear && echo "starting in 3s" && sleep 3  && ros2 run datamgmt datamgmt' C-m
+tmux send-keys -t $SESSION 'clear && echo "starting in 3s" && sleep 3 && clear && ros2 run datamgmt datamgmt' C-m
 tmux select-pane -t 3
 # tmux send-keys -t $SESSION '' C-m
 # tmux select-pane -t 4
 # tmux send-keys -t $SESSION '' C-m
 # tmux select-pane -t 5
 tmux send-keys -t $SESSION 'watch -n 1 ipcs -' C-m
-
+tmux select-pane -t 2
 
 # tmux send-keys -t $SESSION 'watch -n 1 ipcs -q' C-m
 # Split horizontal

@@ -8,6 +8,8 @@
 #define STRINGSIZE 16
 
 
+extern bool gsRunning;
+
 struct RequestingClient {
     pid_t           pid;
     requestId_t     requestId;
@@ -18,7 +20,6 @@ struct RequestingClient {
         return this->pid == other.pid;
     }
 };
-// #define MSGSIZE sizeof(Client)
 
 
 struct SingleAttributeInformationRequest {

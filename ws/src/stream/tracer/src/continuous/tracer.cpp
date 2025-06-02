@@ -5,9 +5,11 @@
 #include <thread>
 #include <chrono>
 #include <vector>
+#include <filesystem>
 
 #include "threadPool.hpp"
 
+#define PATH "/tmp/continuous_traces"
 
 volatile sig_atomic_t stopFlag = 0;
 
@@ -20,7 +22,7 @@ int main() {
     signal(SIGINT, handle_sigint);
     lttng_destroy_session("continuousSession");
 
-    int ret = lttng_create_session("continuousSession", "/tmp/continuous_traces");
+    int ret = lttng_create_session("continuousSession", PATH);
     if (ret < 0) {
         std::cerr << "Failed to create LTTng session: " << ret << std::endl;
         return 1;
@@ -118,6 +120,8 @@ int main() {
     if (ret != 0) {
         std::cerr << "lttng_destroy_session failed with code: " << ret << std::endl;
     }
+
+    std::filesystem::remove_all(PATH); 
 
     std::cout << "done" << std::endl;
 

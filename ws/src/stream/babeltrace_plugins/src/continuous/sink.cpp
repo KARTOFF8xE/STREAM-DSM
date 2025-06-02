@@ -22,7 +22,7 @@ static bt_component_class_initialize_method_status tracer_initialize(
         bt_self_component_sink_configuration *,
         const bt_value *params, void *) {
 
-    struct tracer *tracer = new struct tracer("/babeltonato");
+    struct tracer *tracer = new struct tracer();
 
     bt_self_component_set_data(
         bt_self_component_sink_as_self_component(self_component_sink),
