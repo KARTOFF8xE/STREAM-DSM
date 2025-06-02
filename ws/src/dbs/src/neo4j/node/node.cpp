@@ -61,7 +61,7 @@ namespace node {
         {{
             "statements":
                 [
-                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n MATCH (n)-[e]->() SET e.active=$edgeActive WITH n MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN DISTINCT {{ stateChangeTime: n.stateChangeTime, state: n.state, primaryKey: n.primaryKey }} ",
+                    {{ "statement": "MATCH (n:Active {{pid:$pid}}) SET n.state = $state, n.stateChangeTime = $timestamp WITH n OPTIONAL MATCH (n)-[e]->() SET e.active=$edgeActive WITH n OPTIONAL MATCH (n)<-[e:subscribing]-() SET e.active=$edgeActive RETURN DISTINCT {{ stateChangeTime: n.stateChangeTime, state: n.state, primaryKey: n.primaryKey }} ",
                     "parameters": {{
                         "pid": {},
                         "timestamp": {},
