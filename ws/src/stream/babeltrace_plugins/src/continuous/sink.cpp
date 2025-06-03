@@ -123,7 +123,7 @@ bt_component_class_sink_consume_method_status tracer_consume(
             tracer->nrOfTraces++;
         }
         if (bt_message_get_type(message) == BT_MESSAGE_TYPE_STREAM_END && --tracer->nrOfTraces == 0) {
-            sendPubDataToTimeSeries(tracer->publishingRate);
+            if (!tracer->publishingRate.empty()) sendPubDataToTimeSeries(tracer->publishingRate);
         }
  
         bt_message_put_ref(message);

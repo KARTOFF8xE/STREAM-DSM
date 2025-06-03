@@ -26,13 +26,13 @@ int main() {
   
   IpcClient client(4);
 
-  std::string query = "MATCH (n) RETURN n ";
+  std::string query = "OPTIONAL MATCH (a:Active) WHERE (a)-[:publishing]->() OR ()-[:subscribing]->(a) OR (a)-[:sending]->() OR ()-[:sending]->(a) OR (a)-[:timer]->() WITH a OPTIONAL MATCH (p:Passive) WHERE ()-[:publishing]->(p) OR (p)-[:subscribing]->() WITH a,p OPTIONAL MATCH (a)-[pub:publishing]->(p) WITH a,p,pub OPTIONAL MATCH (p)-[sub:subscribing]->(a) WITH a,p,pub,sub OPTIONAL MATCH (a)-[send:sending]->(target) RETURN { active: collect(DISTINCT a), passive: collect(DISTINCT p), pub: collect(DISTINCT { from: startNode(pub), to: endNode(pub), rel: pub}), sub: collect(DISTINCT { from: startNode(sub), to: endNode(sub), rel: sub}), send: collect(DISTINCT { from: startNode(send), to: endNode(send), rel: send}) } AS result ";
 
   requestId_t requestId;
   std::vector<std::string> lines = getCustomResponseQuery(query);
     
   CustomMemberRequest request {
-    .continuous = true,
+    .continuous = false,
   };
   util::parseStringArray(request.query, lines);
 

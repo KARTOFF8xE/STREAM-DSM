@@ -410,10 +410,11 @@ NodePublishersToUpdate queryGraphDbForPublisher(std::string payload) {
         }
     }
 
+    #ifdef TASK
     std::string taskId = influxDB::getTaskIDByName(std::string(nodePubToUpdate.publishesTo) + "_in");
     std::string taskPayload = influxDB::createPayloadForTask("STREAM", incomingEdges, nodePubToUpdate.publishesTo);
     (taskId == "") ? curl::push(taskPayload, curl::INFLUXDB_SETTASK) : curl::push(taskPayload, curl::INFLUXDB_UPDATETASK, taskId);
-
+    #endif
     return nodePubToUpdate;
 }
 
@@ -611,8 +612,10 @@ void setNodeOffline( NodeResponse nodeUpdate, std::vector<RequestingClient> &cli
             }
         }
 
+        #ifdef TASK
         std::string taskId = influxDB::getTaskIDByName(std::string(nodeStateUpdate.primaryKey) + "_in");
         if (taskId != "") curl::push(curl::INFLUXDB_DELETETASK, taskId);
+        #endif
     }   
 }
 
