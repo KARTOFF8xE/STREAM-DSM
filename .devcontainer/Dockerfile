@@ -76,7 +76,7 @@ RUN apt-get update && apt-get install -y wget tar
 RUN wget https://github.com/ncabatoff/process-exporter/releases/download/v0.7.7/process-exporter-0.7.7.linux-amd64.tar.gz -O /tmp/process-exporter.tar.gz \
  && tar -xzf /tmp/process-exporter.tar.gz -C /usr/local/bin --strip-components=1 process-exporter-0.7.7.linux-amd64/process-exporter \
  && rm /tmp/process-exporter.tar.gz
-COPY process-exporter.yml /etc/process-exporter.yml
+COPY configs/process-exporter.yml /etc/process-exporter.yml
 # RUN apt-get install -y tini
 
 # other stuff

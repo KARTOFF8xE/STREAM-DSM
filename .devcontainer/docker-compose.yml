@@ -72,6 +72,11 @@ services:
       - prometheus
     volumes:
       - grafana-storage:/var/lib/grafana
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./configs/grafana/provisionings:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
 
 volumes:
   grafana-storage:
