@@ -21,10 +21,11 @@ lttng destroy -a
 lttng-sessiond --daemonize
 lttng-relayd -d
 rm -rf /tmp/continuous_traces
+rm -rf /tmp/structural_traces
 sleep 1
 
 tmux select-pane -t 0
-tmux send-keys -t $SESSION 'clear && ros2 run tracer structural' C-m
+tmux send-keys -t $SESSION 'clear && ros2 run tracer structuralLO' C-m
 tmux select-pane -t 1
 tmux send-keys -t $SESSION 'clear && ros2 run tracer continuous' C-m
 tmux select-pane -t 2

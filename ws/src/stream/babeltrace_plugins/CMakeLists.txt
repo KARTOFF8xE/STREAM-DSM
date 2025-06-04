@@ -22,8 +22,22 @@ add_library(continuoussink SHARED
   src/continuous/sink.cpp
 )
 
+add_library(structuralLOsink SHARED
+  src/structuralLO/participants.cpp
+  src/structuralLO/sink.cpp
+)
+
 target_include_directories(structuralsink PRIVATE include)
 target_link_libraries(structuralsink
+  PRIVATE
+    fmt::fmt
+    ${babeltrace2_LIBRARIES}
+    dbs::dbs_lib
+    ipc::ipc_lib
+)
+
+target_include_directories(structuralLOsink PRIVATE include)
+target_link_libraries(structuralLOsink
   PRIVATE
     fmt::fmt
     ${babeltrace2_LIBRARIES}
@@ -41,6 +55,7 @@ target_link_libraries(continuoussink
 )
 
 install(TARGETS structuralsink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
+install(TARGETS structuralLOsink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
 install(TARGETS continuoussink DESTINATION "$ENV{HOME}/.local/lib/babeltrace2/plugins")
 
 file(APPEND "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/local_setup.zsh" "")

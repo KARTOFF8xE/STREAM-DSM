@@ -1,29 +1,79 @@
 #include <lttng/lttng.h>
 #include <iostream>
 #include <cstring>
-#include <csignal>
 #include <string.h>
+#include <csignal>
 #include <thread>
 #include <chrono>
 #include <vector>
 #include <filesystem>
+#include <sys/mman.h>
 
+#include "ipc/sharedMem.hpp"
 #include "threadPool.hpp"
 
-#define PATH "/tmp/continuous_traces"
+#define PATH "/tmp/structural_traces"
+
 
 volatile sig_atomic_t stopFlag = 0;
 
 void handle_sigint(int) {
+    shm_unlink("/babeltonato");
+    lttng_destroy_session("structuralSession");
+    exit(EXIT_SUCCESS);
     stopFlag = 1;
 }
 
+std::vector<lttng_event*> enable_events(lttng_handle *handle, const char *channel_name) {
+    const char *event_names[] = {
+        "ros2:rcl_node_init",
+        "ros2:rcl_publisher_init",
+        "ros2:rcl_subscription_init",
+        "ros2:rcl_service_init",
+        "ros2:rcl_client_init",
+        "ros2:rcl_timer_init",
+        "ros2:rclcpp_timer_link_node",
+        "ros2:rcl_lifecycle_state_machine_init",
+        "ros2:rcl_lifecycle_transition",
+        // "ros2:rclcpp_subscription_callback_added",
+        // "ros2:rclcpp_subscription_init",
+        // "ros2:rclcpp_service_callback_added",
+        // "ros2:rclcpp_timer_callback_added",
+        // "ros2:callback_start",
+        // "ros2:callback_end",
+    };
+
+    std::vector<lttng_event*> enabled_events;
+
+    for (const char *event_name : event_names) {
+        lttng_event *event = lttng_event_create();
+        if (!event) {
+            std::cerr << "Failed to create LTTng event for " << event_name << std::endl;
+            break;
+        }
+
+        std::strncpy(event->name, event_name, LTTNG_SYMBOL_NAME_LEN);
+        int ret = lttng_enable_event(handle, event, channel_name);
+        if (ret != 0) {
+            std::cerr << "Failed to enable event '" << event_name << "': " << lttng_strerror(ret) << std::endl;
+            lttng_event_destroy(event);
+            break;
+        }
+
+        enabled_events.push_back(event);
+    }
+
+    return enabled_events;
+}
 
 int main() {
     signal(SIGINT, handle_sigint);
-    lttng_destroy_session("continuousSession");
 
-    int ret = lttng_create_session("continuousSession", PATH);
+    lttng_destroy_session("structuralSession");
+
+    sharedMem::SHMChannel<sharedMem::TraceMessage> channel("/babeltonato");
+
+    int ret = lttng_create_session("structuralSession", PATH);
     if (ret < 0) {
         std::cerr << "Failed to create LTTng session: " << ret << std::endl;
         return 1;
@@ -33,30 +83,37 @@ int main() {
     lttng_domain lttngDomain {
         .type       = lttng_domain_type::LTTNG_DOMAIN_UST
     };
-    lttng_handle *lttngHandle = lttng_create_handle("continuousSession", &lttngDomain);
+    lttng_handle *lttngHandle = lttng_create_handle("structuralSession", &lttngDomain);
 
     lttng_channel *lttngChannel = lttng_channel_create(&lttngDomain);
-    strncpy(lttngChannel->name, "continuousChannel", LTTNG_SYMBOL_NAME_LEN);
+    strncpy(lttngChannel->name, "structuralChannel", LTTNG_SYMBOL_NAME_LEN);
     ret = lttng_enable_channel(lttngHandle, lttngChannel);
     if (ret < 0) {
         std::cerr << "Failed to enable LTTng channel: " << ret << std::endl;
         return 1;
     }
 
-    lttng_event *lttngEvent = lttng_event_create();
-        strncpy(lttngEvent->name, "ros2:rcl_publish", LTTNG_SYMBOL_NAME_LEN);
-        lttng_enable_event(lttngHandle, lttngEvent, lttngChannel->name);
-
+    std::vector<lttng_event *> events = enable_events(lttngHandle, lttngChannel->name);
+    lttng_event_context ctx;
+    ctx.ctx = lttng_event_context_type::LTTNG_EVENT_CONTEXT_PROCNAME;
+    lttng_add_context(lttngHandle, &ctx, "ros2:rcl_node_init", "structuralChannel");
+    lttng_event_context ctx2;
+    ctx2.ctx = lttng_event_context_type::LTTNG_EVENT_CONTEXT_VPID;
+    lttng_add_context(lttngHandle, &ctx2, "ros2:rcl_node_init", "structuralChannel");
 
     lttng_rotation_schedule *rotationSchedule = lttng_rotation_schedule_periodic_create();
     lttng_rotation_schedule_periodic_set_period(rotationSchedule, 1000000);
 
-    lttng_session_add_rotation_schedule("continuousSession", rotationSchedule);
+    lttng_session_add_rotation_schedule("structuralSession", rotationSchedule);
 
-    lttng_start_tracing("continuousSession");
+    ret = lttng_start_tracing("structuralSession");
+    if (ret != 0) {
+        std::cerr << "Failed to start tracing: " << lttng_strerror(ret) << std::endl;
+        return 1;
+    }
 
     lttng_condition *condition  = lttng_condition_session_rotation_completed_create();
-    ret = lttng_condition_session_rotation_set_session_name(condition, "continuousSession");
+    ret = lttng_condition_session_rotation_set_session_name(condition, "structuralSession");
     if (ret != LTTNG_CONDITION_STATUS_OK) {
         std::cerr << "lttng_condition_session_rotation_set_session_name failed with code: " << ret << std::endl;
     }
@@ -116,12 +173,11 @@ int main() {
     lttng_notification_channel_destroy(notificationChannel);
     lttng_action_destroy(action);
     lttng_condition_destroy(condition);
-    lttng_event_destroy(lttngEvent);
-    ret = lttng_stop_tracing("continuousSession");
+    ret = lttng_stop_tracing("structuralSession");
     if (ret != 0) {
         std::cerr << "lttng_stop_tracing failed with code: " << ret << std::endl;
     }
-    ret = lttng_destroy_session("continuousSession");
+    ret = lttng_destroy_session("structuralSession");
     if (ret != 0) {
         std::cerr << "lttng_destroy_session failed with code: " << ret << std::endl;
     }
