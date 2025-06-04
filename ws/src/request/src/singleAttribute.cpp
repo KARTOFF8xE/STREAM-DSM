@@ -19,8 +19,8 @@ int main() {
   std::cin >> pKey;
   requestId_t requestId;
   SingleAttributesRequest request {
-    .attribute = CPU_UTILIZATION,
-    .direction = Direction::NONE,
+    .attribute = PUBLISHINGRATES,
+    .direction = Direction::EDGEOUTGOING,
     .continuous = true,
   };
   util::parseString(request.primaryKey, pKey);

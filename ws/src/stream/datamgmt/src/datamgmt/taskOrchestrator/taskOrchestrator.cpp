@@ -42,13 +42,75 @@ void addSingleAttributeTask(const IpcServer &server, SingleAttributeInformationR
     SingleAttributesResponse resp { .requestID = singleAttributeInformationRequest.requestID };
     util::parseString(resp.memAddress, memAddress);
 
-    tasks.vec.push_back(Task{
-        .pid            = singleAttributeInformationRequest.pid,
-        .requestId      = singleAttributeInformationRequest.requestID,
-        .type           = SINGLEATTRIBUTE,
-        .task           = singleAttributeInformationRequest.payload,
-        .channel        = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
-    });
+    if (singleAttributeInformationRequest.payload.direction == Direction::NONE) {
+        tasks.vec.push_back(Task{
+            .pid            = singleAttributeInformationRequest.pid,
+            .requestId      = singleAttributeInformationRequest.requestID,
+            .type           = SINGLEATTRIBUTE,
+            .task           = singleAttributeInformationRequest.payload,
+            .channel        = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
+        });
+    } else if (singleAttributeInformationRequest.payload.direction == Direction::EDGEINCOMING) {
+        std::string payload = node::getAdjacentIncomingEdges(singleAttributeInformationRequest.payload.primaryKey);
+        std::string response = curl::push(payload, curl::NEO4J);
+
+        std::vector<std::string> primaryKeys;
+        nlohmann::json j = nlohmann::json::parse(response);
+        if (j.contains("results") && j["results"].is_array() && !j["results"].empty() &&
+            j["results"][0].contains("data") && j["results"][0]["data"].is_array() && !j["results"][0]["data"].empty() &&
+            j["results"][0]["data"][0].contains("row") && j["results"][0]["data"][0]["row"].is_array())
+        {
+            for (const auto& inner_array : j["results"][0]["data"][0]["row"]) {
+                for (const auto& key : inner_array) {
+                    primaryKeys.push_back(key.get<std::string>());
+                }
+            }
+        }
+
+        RelationTask relationTask {
+            .attribute      = singleAttributeInformationRequest.payload.attribute,
+            .direction      = singleAttributeInformationRequest.payload.direction,
+            .continuous     = singleAttributeInformationRequest.payload.continuous
+        };
+        tasks.vec.push_back(Task{
+            .pid            = singleAttributeInformationRequest.pid,
+            .requestId      = singleAttributeInformationRequest.requestID,
+            .type           = RELATION,
+            .primaryKeys    = primaryKeys,
+            .task           = relationTask,
+            .channel        = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
+        });
+    } else if (singleAttributeInformationRequest.payload.direction == Direction::EDGEOUTGOING) {
+        std::string payload = node::getAdjacentOutgoingEdges(singleAttributeInformationRequest.payload.primaryKey);
+        std::string response = curl::push(payload, curl::NEO4J);
+
+        std::vector<std::string> primaryKeys;
+        nlohmann::json j = nlohmann::json::parse(response);
+        if (j.contains("results") && j["results"].is_array() && !j["results"].empty() &&
+            j["results"][0].contains("data") && j["results"][0]["data"].is_array() && !j["results"][0]["data"].empty() &&
+            j["results"][0]["data"][0].contains("row") && j["results"][0]["data"][0]["row"].is_array())
+        {
+            for (const auto& inner_array : j["results"][0]["data"][0]["row"]) {
+                for (const auto& key : inner_array) {
+                    primaryKeys.push_back(key.get<std::string>());
+                }
+            }
+        }
+
+        RelationTask relationTask {
+            .attribute      = singleAttributeInformationRequest.payload.attribute,
+            .direction      = singleAttributeInformationRequest.payload.direction,
+            .continuous     = singleAttributeInformationRequest.payload.continuous
+        };
+        tasks.vec.push_back(Task{
+            .pid            = singleAttributeInformationRequest.pid,
+            .requestId      = singleAttributeInformationRequest.requestID,
+            .type           = RELATION,
+            .primaryKeys    = primaryKeys,
+            .task           = relationTask,
+            .channel        = std::make_unique<sharedMem::SHMChannel<sharedMem::Response>>(resp.memAddress, true)
+        });
+    }
 
     tasks.vec.back().primaryKeys.push_back(singleAttributeInformationRequest.payload.primaryKey);
     server.sendSingleAttributesResponse(resp, singleAttributeInformationRequest.pid, false);
