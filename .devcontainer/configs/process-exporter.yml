@@ -1,0 +1,16 @@
+process_names:
+  - name: "ros2talker"
+    cmdline:
+      - "talker"
+  - name: "ros2listener"
+    cmdline:
+      - "listener"
+  - name: "datamgmt"
+    cmdline:
+      - "/lib/datamgmt/datamgmt"
+  - name: "continuous"
+    cmdline:
+      - "/lib/tracer/continuous"
+  - name: "structural"
+    cmdline:
+      - "/lib/tracer/structural"
