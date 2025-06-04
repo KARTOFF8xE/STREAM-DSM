@@ -7,6 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 find_library(babeltrace2_LIBRARIES NAMES babeltrace2 REQUIRED)
+find_package(ipc REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(PkgConfig 0.29 REQUIRED)
 pkg_check_modules(LTTNG REQUIRED lttng-ctl)
@@ -30,7 +31,10 @@ target_link_libraries(continuous PRIVATE ${LTTNG_LIBRARIES})
 target_include_directories(structural PRIVATE ${LTTNG_INCLUDE_DIRS})
 target_link_libraries(structural PRIVATE ${LTTNG_LIBRARIES})
 target_include_directories(structuralLO PRIVATE ${LTTNG_INCLUDE_DIRS})
-target_link_libraries(structuralLO PRIVATE ${LTTNG_LIBRARIES})
+target_link_libraries(structuralLO PRIVATE
+  ${LTTNG_LIBRARIES}
+  ipc::ipc_lib  
+)
 
 target_link_libraries(structuralLO PRIVATE ${babeltrace2_LIBRARIES})
 target_link_libraries(structural PRIVATE ${babeltrace2_LIBRARIES})

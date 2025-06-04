@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <sys/mman.h>
 
+#include "ipc/sharedMem.hpp"
 #include "threadPool.hpp"
 
 #define PATH "/tmp/structural_traces"
@@ -67,7 +68,10 @@ std::vector<lttng_event*> enable_events(lttng_handle *handle, const char *channe
 
 int main() {
     signal(SIGINT, handle_sigint);
+
     lttng_destroy_session("structuralSession");
+
+    sharedMem::SHMChannel<sharedMem::TraceMessage> channel("/babeltonato");
 
     int ret = lttng_create_session("structuralSession", PATH);
     if (ret < 0) {
