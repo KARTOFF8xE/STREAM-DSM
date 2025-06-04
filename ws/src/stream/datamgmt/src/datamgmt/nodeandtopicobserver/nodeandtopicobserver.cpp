@@ -676,7 +676,9 @@ bool handleSearchRequests(const IpcServer &server) {
 }
 
 void listenToStructuralTracer(sharedMem::SHMChannel<sharedMem::TraceMessage> &channel, std::vector<RequestingClient> &clients, const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes) {
+    std::cout << "channel before Loop" << std::endl;
     while (gsRunning) {
+        std::cout << "channel in Loop" << std::endl;
         sharedMem::TraceMessage msg(sharedMem::MessageType::NONE);
         if (channel.receive(msg, true)) {
             switch (msg.header.type) {
@@ -718,6 +720,8 @@ void listenToStructuralTracer(sharedMem::SHMChannel<sharedMem::TraceMessage> &ch
             }
         }
     }
+    std::cout << "channel behind" << std::endl;
+
 }
 
 
@@ -730,7 +734,7 @@ void nodeAndTopicObserver(const IpcServer &server, std::map<Module_t, pipe_ns::P
 
     sharedMem::SHMChannel<sharedMem::TraceMessage> channel("/babeltonato");
     std::thread structuralListener = std::thread(listenToStructuralTracer, std::ref(channel), std::ref(clients), std::cref(server), pipes);
-
+    std::cout << "startet listening" << std::endl;
     RequestingClient client;
     auto then = std::chrono::steady_clock::now();
     while (gsRunning) {

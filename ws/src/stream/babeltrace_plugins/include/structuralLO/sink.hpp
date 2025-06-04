@@ -12,8 +12,8 @@ using namespace std::chrono_literals;
 struct tracer {
     bt_message_iterator *message_iterator;
     
-    sharedMem::SHMChannel<sharedMem::TraceMessage> channel;
-    std::unordered_map<u_int64_t, u_int32_t>    timerInit;
+    sharedMem::SHMChannel<sharedMem::TraceMessage>  channel;
+    std::unordered_map<u_int64_t, u_int32_t>        timerInit;
     
     std::chrono::_V2::steady_clock::time_point lastTick = std::chrono::steady_clock::now();
 
