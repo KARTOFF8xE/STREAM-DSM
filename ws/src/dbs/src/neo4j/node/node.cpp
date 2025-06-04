@@ -46,9 +46,9 @@ namespace node {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n) WITH n, n.primaryKey AS extractedId WHERE extractedId = $primaryKey OPTIONAL MATCH (n)-[r]->(outgoingNeighbor) WITH n, elementId(n) AS fullElementId, extractedId, toInteger(n.pid) AS pid, type(r) AS outgoingRelType, collect({{id: outgoingNeighbor.primaryKey, serviceName: r.serviceName, direction: 'outgoing', frequency: r.frequency, actionName: r.actionName, mode: r.mode}}) AS outgoingNeighbors OPTIONAL MATCH (n)<-[r2]-(incomingNeighbor) WITH n, fullElementId, extractedId, pid, outgoingNeighbors, outgoingRelType, type(r2) AS incomingRelType, collect({{id: incomingNeighbor.primaryKey, serviceName: r2.serviceName, direction: 'incoming', frequency: r2.frequency, actionName: r2.actionName, mode: r2.mode}}) AS incomingNeighbors RETURN DISTINCT n {{.*, pid: pid}}, collect(DISTINCT {{relationship: outgoingRelType, nodes: outgoingNeighbors}}) AS outgoing, collect(DISTINCT {{relationship: incomingRelType, nodes: incomingNeighbors}}) AS incoming  ",
+                        {{ "statement": "MATCH (n) WITH n, n.primaryKey AS extractedId WHERE extractedId = $primaryKey OPTIONAL MATCH (n)-[r]->(outgoingNeighbor) WITH n, elementId(n) AS fullElementId, extractedId, toInteger(n.pid) AS pid, type(r) AS outgoingRelType, collect({{id: outgoingNeighbor.primaryKey, edge_id: r.primaryKey, serviceName: r.serviceName, direction: 'outgoing', frequency: r.frequency, actionName: r.actionName, mode: r.mode}}) AS outgoingNeighbors OPTIONAL MATCH (n)<-[r2]-(incomingNeighbor) WITH n, fullElementId, extractedId, pid, outgoingNeighbors, outgoingRelType, type(r2) AS incomingRelType, collect({{id: incomingNeighbor.primaryKey, edge_id: r2.primaryKey, serviceName: r2.serviceName, direction: 'incoming', frequency: r2.frequency, actionName: r2.actionName, mode: r2.mode}}) AS incomingNeighbors RETURN DISTINCT n {{.*, pid: pid}}, collect(DISTINCT {{relationship: outgoingRelType, nodes: outgoingNeighbors}}) AS outgoing, collect(DISTINCT {{relationship: incomingRelType, nodes: incomingNeighbors}}) AS incoming ",
                         "parameters": {{
-                            "primaryKey": {}
+                            "primaryKey": "{}"
                             }}
                         }}
                     ]

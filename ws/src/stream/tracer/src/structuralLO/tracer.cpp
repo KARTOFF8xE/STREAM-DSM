@@ -71,7 +71,7 @@ int main() {
 
     lttng_destroy_session("structuralSession");
 
-    sharedMem::SHMChannel<sharedMem::TraceMessage> channel("/babeltonato");
+    sharedMem::SHMChannel<sharedMem::TraceMessage> channel("/babeltonato", true);
 
     int ret = lttng_create_session("structuralSession", PATH);
     if (ret < 0) {
