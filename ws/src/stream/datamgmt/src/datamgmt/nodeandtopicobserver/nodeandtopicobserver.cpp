@@ -676,9 +676,7 @@ bool handleSearchRequests(const IpcServer &server) {
 }
 
 void listenToStructuralTracer(sharedMem::SHMChannel<sharedMem::TraceMessage> &channel, std::vector<RequestingClient> &clients, const IpcServer &server, std::map<Module_t, pipe_ns::Pipe> pipes) {
-    std::cout << "channel before Loop" << std::endl;
     while (gsRunning) {
-        std::cout << "channel in Loop" << std::endl;
         sharedMem::TraceMessage msg(sharedMem::MessageType::NONE);
         if (channel.receive(msg, true)) {
             switch (msg.header.type) {

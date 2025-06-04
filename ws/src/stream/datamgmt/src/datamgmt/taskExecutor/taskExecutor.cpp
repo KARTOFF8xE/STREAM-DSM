@@ -30,7 +30,6 @@ double getValueStandardQueryInfluxDB(Task &task) {
             influxDB::createPayloadGetSingleValue(
                 "STREAM",
                 std::get<SingleAttributesRequest>(task.task).attribute,
-                std::get<SingleAttributesRequest>(task.task).direction,
                 task.primaryKeys);
     }
     if (std::holds_alternative<AggregatedAttributesRequest>(task.task)) {
@@ -38,7 +37,13 @@ double getValueStandardQueryInfluxDB(Task &task) {
             influxDB::createPayloadGetSingleValue(
                 "STREAM",
                 std::get<AggregatedAttributesRequest>(task.task).attribute,
-                std::get<AggregatedAttributesRequest>(task.task).direction,
+                task.primaryKeys);
+    }
+    if (std::holds_alternative<RelationTask>(task.task)) {
+        request =
+            influxDB::createPayloadGetSingleValue(
+                "STREAM",
+                std::get<RelationTask>(task.task).attribute,
                 task.primaryKeys);
     }
 
@@ -207,6 +212,26 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     }
 
                     if (!std::get<CustomMemberTask>(task.task).continuous) {
+                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                    }
+                    break;
+                }
+                case RELATION:
+                {
+                       task.channel->send(
+                        sharedMem::Response {
+                            .header {
+                                .type           = sharedMem::NUMERICAL
+                            },
+                            .numerical {
+                                .number = 1,
+                                .total  = 1,
+                                .value  = getValueStandardQueryInfluxDB(task)
+                            }
+                        }
+                    );
+
+                    if (!std::get<RelationTask>(task.task).continuous) {
                         tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
                     }
                     break;

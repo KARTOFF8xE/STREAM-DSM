@@ -53,7 +53,7 @@ namespace influxDB {
     std::string createPayloadMultipleVal(std::vector<ValuePairs> pairs);
 
     // TODO
-    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, Direction direction, std::vector<std::string> primaryKeys);
+    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, std::vector<std::string> primaryKeys);
 
     std::string createPayloadForTask(std::string bucket, std::vector<std::string> primaryKeys, std::string destPrimaryKey);
 

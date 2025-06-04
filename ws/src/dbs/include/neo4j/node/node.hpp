@@ -21,4 +21,6 @@ namespace node {
     std::string getPayloadSetNodeStateByPID(pid_t pid, time_t timestamp, sharedMem::State state);
     std::string getPayloadSetStateMachine(u_int64_t handle, u_int64_t stateMachine, sharedMem::State state);
     std::string getPayloadSetStateTransition(u_int64_t stateMachine, sharedMem::State state, time_t timestamp);
+    std::string getAdjacentIncomingEdges(std::string primaryKey);
+    std::string getAdjacentOutgoingEdges(std::string primaryKey);
 }

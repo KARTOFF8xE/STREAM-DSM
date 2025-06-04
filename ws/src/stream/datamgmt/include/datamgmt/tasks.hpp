@@ -21,12 +21,19 @@ struct CustomMemberTask {
     bool        continuous;
 };
 
+struct RelationTask {
+  AttributeName             attribute;
+  Direction                 direction;
+  bool                      continuous;    
+};
+
 enum TaskType {
     SINGLEATTRIBUTE,
     AGGREGATEDATTRIBUTE,
     CUSTOMATTRIBUTE,
     AGGREGATEDMEMBER,
     CUSTOMMEMBER,
+    RELATION,
 };
 
 using TaskVariant = std::variant<
@@ -34,7 +41,8 @@ using TaskVariant = std::variant<
     AggregatedAttributesRequest,
     CustomAttributesTask,
     AggregatedMemberRequest,
-    CustomMemberTask
+    CustomMemberTask,
+    RelationTask
 >;
 
 struct Task {

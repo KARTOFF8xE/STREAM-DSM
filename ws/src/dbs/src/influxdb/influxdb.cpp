@@ -62,7 +62,7 @@ namespace influxDB {
         return oss.str();
     }
 
-    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, Direction direction, std::vector<std::string> primaryKeys) {
+    std::string createPayloadGetSingleValue(std::string bucket, AttributeName attribute, std::vector<std::string> primaryKeys) {
         std::string attr;
 
         switch (attribute) {
@@ -71,23 +71,16 @@ namespace influxDB {
             default: break;
         }
 
-        std::string dirRequest = "";
-        switch (direction) {
-            case Direction::EDGEINCOMING: dirRequest = R"(and r["direction"] == "in")"; break;
-            case Direction::EDGEOUTGOING: dirRequest = R"(and r["direction"] == "out")"; break;
-            default: break;
-        }
-
         return fmt::format(R"(from(bucket: "{}")
   |> range(start: -1s)
   |> filter(fn: (r) => r["_measurement"] == "{}")
-  |> filter(fn: (r) => r["_field"] == "value" {})
+  |> filter(fn: (r) => r["_field"] == "value")
   |> filter(fn: (r) => contains(value: r["primaryKey"], set: {}))
   |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
   |> group()
   |> sum(column: "_value")
   |> yield(name: "sum_of_means")
-)", bucket, attr, dirRequest, vectorToString(primaryKeys));
+)", bucket, attr, vectorToString(primaryKeys));
     }
 
 

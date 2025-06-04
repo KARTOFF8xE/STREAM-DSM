@@ -109,4 +109,35 @@ namespace node {
         )", stateMachine, state, timestamp, state==sharedMem::State::ACTIVE);       
     }
 
+    std::string getAdjacentIncomingEdges(std::string primaryKey) {
+        return fmt::format(R"(
+        {{
+            "statements":
+                [
+                    {{ "statement": "MATCH ()-[edge]->(n {{primaryKey: $primaryKey}}) WHERE edge.primaryKey IS NOT NULL RETURN collect(DISTINCT edge.primaryKey) ",
+                    "parameters": {{
+                        "primaryKey": "{}"
+                        }}
+                    }}
+                ]
+        }}
+        )", primaryKey);       
+    }
+
+
+    std::string getAdjacentOutgoingEdges(std::string primaryKey) {
+        return fmt::format(R"(
+        {{
+            "statements":
+                [
+                    {{ "statement": "MATCH (n {{primaryKey: $primaryKey}})-[edge]->() WHERE edge.primaryKey IS NOT NULL RETURN collect(DISTINCT edge.primaryKey) ",
+                    "parameters": {{
+                        "primaryKey": "{}"
+                        }}
+                    }}
+                ]
+        }}
+        )", primaryKey);       
+    }
+
 }
