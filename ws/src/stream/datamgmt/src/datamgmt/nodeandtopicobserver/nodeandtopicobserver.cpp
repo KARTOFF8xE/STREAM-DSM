@@ -35,7 +35,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, s
 
     json payload = json::parse(response);
     json row = payload["results"][0]["data"][0]["row"];
-    std::cout << row << std::endl;
+
     json requestedNode;
     std::vector<NodePublishersToUpdate>         pubs;
     std::vector<NodeSubscribersToUpdate>        subs;
@@ -57,6 +57,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, s
                     NodePublishersToUpdate tmp { .isUpdate = false};
                     util::parseString(tmp.primaryKey, primaryKey);
                     util::parseString(tmp.publishesTo, node["id"].get<std::string>());
+                    util::parseString(tmp.edge, node["edge_id"].get<std::string>());
                     pubs.push_back(tmp);
                 }
             }
@@ -65,6 +66,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, s
                     NodeSubscribersToUpdate tmp { .isUpdate = false };
                     util::parseString(tmp.primaryKey, primaryKey);
                     util::parseString(tmp.subscribesTo, node["id"].get<std::string>());
+                    util::parseString(tmp.edge, node["edge_id"].get<std::string>());
                     subs.push_back(tmp);
                 }
             }
@@ -169,17 +171,27 @@ void singleTimeTopicResponse(const IpcServer &server, RequestingClient &client, 
 
     std::vector<TopicPublishersUpdate>  pubs;
     std::vector<TopicSubscribersUpdate> subs;
-    for (const std::string item : row[0]["publishers"]) {
+    for (const auto item : row[0]["publishers"]) {
         TopicPublishersUpdate tmp { .isUpdate = false };
         util::parseString(tmp.primaryKey, primaryKey);
-        util::parseString(tmp.publisher, item);
-        pubs.push_back(tmp);
+        std::cout << item << std::endl;
+        if (!item["node_id"].is_null()) {
+            std::cout << "pub" << std::endl;
+            util::parseString(tmp.publisher, item["node_id"].get<std::string>());
+            util::parseString(tmp.edge, item["edge_id"].get<std::string>());
+            pubs.push_back(tmp);
+        }
     }
-    for (const std::string item : row[0]["subscribers"]) {
+    for (const auto item : row[0]["subscribers"]) {
         TopicSubscribersUpdate tmp { .isUpdate = false };
         util::parseString(tmp.primaryKey, primaryKey);
-        util::parseString(tmp.subscriber, item);
-        subs.push_back(tmp);
+        std::cout << item << std::endl;
+        if (!item["node_id"].is_null()) {
+            std::cout << "sub" << std::endl;
+            util::parseString(tmp.subscriber, item["node_id"].get<std::string>());
+            util::parseString(tmp.edge, item["edge_id"].get<std::string>());
+            subs.push_back(tmp);
+        }
     }
 
     TopicResponse topicResponse { .nrOfInitialUpdates = pubs.size() + subs.size() };
@@ -360,6 +372,7 @@ NodeSubscribersToUpdate queryGraphDbForSubscriber(std::string payload) {
     json row = data["results"][0]["data"][0]["row"];
     if (!row.empty() && !row[0]["node_id"].empty())   util::parseString(nodeSubToUpdate.primaryKey, row[0]["node_id"].get<std::string>());
     if (!row.empty() && !row[0]["topic_id"].empty())  util::parseString(nodeSubToUpdate.subscribesTo, row[0]["topic_id"].get<std::string>());
+    if (!row.empty() && !row[0]["edge_id"].empty())   util::parseString(nodeSubToUpdate.edge, row[0]["edge_id"].get<std::string>());
 
     return nodeSubToUpdate;
 }
@@ -380,6 +393,7 @@ void handleSubscribersUpdate(sharedMem::TraceMessage msg, std::vector<Requesting
         TopicSubscribersUpdate payloadTopic { .isUpdate = true };
         util::parseString(payloadTopic.primaryKey, nodeSubToUpdate.subscribesTo);
         util::parseString(payloadTopic.subscriber, nodeSubToUpdate.primaryKey);
+        util::parseString(payloadTopic.edge, nodeSubToUpdate.edge);
         for (RequestingClient &client : clients)
         {
             if (client.primaryKey == payloadTopic.primaryKey)
@@ -398,11 +412,12 @@ NodePublishersToUpdate queryGraphDbForPublisher(std::string payload) {
     NodePublishersToUpdate nodePubToUpdate;
 
     std::string response = curl::push(payload, curl::NEO4J);
-
     json data = nlohmann::json::parse(response);
     json row = data["results"][0]["data"][0]["row"];
-    if (!row.empty() && !row[0]["node_id"].empty())     util::parseString(nodePubToUpdate.primaryKey, row[0]["node_id"].get<std::string>());
-    if (!row.empty() && !row[0]["topic_id"].empty())    util::parseString(nodePubToUpdate.publishesTo, row[0]["topic_id"].get<std::string>());
+
+    if (!row.empty() && !row[0]["node_id"].empty())     util::parseString(nodePubToUpdate.primaryKey,   row[0]["node_id"].get<std::string>());
+    if (!row.empty() && !row[0]["topic_id"].empty())    util::parseString(nodePubToUpdate.publishesTo,  row[0]["topic_id"].get<std::string>());
+    if (!row.empty() && !row[0]["edge_id"].empty())     util::parseString(nodePubToUpdate.edge,         row[0]["edge_id"].get<std::string>());
     std::vector<std::string> incomingEdges;
     if (!row.empty() && row[0].contains("incomingEdges") && row[0]["incomingEdges"].is_array()) {
         for (const auto& edge : row[0]["incomingEdges"]) {
@@ -433,6 +448,7 @@ void handlePublishersUpdate(sharedMem::TraceMessage msg, std::vector<RequestingC
         TopicPublishersUpdate payloadTopic { .isUpdate = true };
         util::parseString(payloadTopic.primaryKey, nodePubToUpdate.publishesTo);
         util::parseString(payloadTopic.publisher, nodePubToUpdate.primaryKey);
+        util::parseString(payloadTopic.edge, nodePubToUpdate.edge);
         for (RequestingClient &client : clients) {
             if (client.primaryKey == payloadTopic.primaryKey)
             {

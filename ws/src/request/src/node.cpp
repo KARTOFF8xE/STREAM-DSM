@@ -43,6 +43,7 @@ int main() {
         std::cout << "Received PublishersUpdate" <<
           "\n\tprimaryKey: " << resp.primaryKey <<
           "\n\tpublishesTo: " << resp.publishesTo <<
+          "\n\tedge: " <<   resp.edge <<
           "\n\tisUpdate: " << resp.isUpdate <<
           std::endl;
       }
@@ -54,6 +55,7 @@ int main() {
         std::cout << "Received SubscribersUpdate" <<
           "\n\tprimaryKey: " << resp.primaryKey <<
           "\n\tsubscribesTo: " << resp.subscribesTo <<
+          "\n\tedge: " <<   resp.edge <<
           "\n\tisUpdate: " << resp.isUpdate <<
           std::endl;
       }
