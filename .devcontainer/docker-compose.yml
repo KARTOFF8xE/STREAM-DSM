@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ..:/home/ubuntu/stream:cached
+    ports:
+      - "9256:9256"
     command: sleep infinity
     depends_on:
       - neo4j
@@ -52,7 +54,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus:/etc/prometheus
+      - ./configs:/etc/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     restart: always

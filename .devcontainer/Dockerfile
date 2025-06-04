@@ -71,11 +71,20 @@ RUN git clone https://github.com/nlohmann/json.git /home/$USERNAME/json && \
   cmake .. && \
   make install
 
+# install process exporter
+RUN apt-get update && apt-get install -y wget tar
+RUN wget https://github.com/ncabatoff/process-exporter/releases/download/v0.7.7/process-exporter-0.7.7.linux-amd64.tar.gz -O /tmp/process-exporter.tar.gz \
+ && tar -xzf /tmp/process-exporter.tar.gz -C /usr/local/bin --strip-components=1 process-exporter-0.7.7.linux-amd64/process-exporter \
+ && rm /tmp/process-exporter.tar.gz
+COPY process-exporter.yml /etc/process-exporter.yml
+# RUN apt-get install -y tini
+
 # other stuff
 RUN apt install nano -y
 RUN apt install openssh-client -y
 RUN apt install terminator -y
 RUN apt install tmux -y
+RUN apt install htop -y
 RUN apt install gdb -y
 RUN apt install python3-requests -y
 RUN apt update && apt upgrade -y
