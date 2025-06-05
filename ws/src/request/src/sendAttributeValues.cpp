@@ -11,7 +11,7 @@
 int main() {
   std::cout << "Make a Aggregated Attribute Request..." << std::endl;
 
-  IpcClient client(5);
+  IpcClient client(1);
 
   std::cout << ">> ";
   std::string pKey;

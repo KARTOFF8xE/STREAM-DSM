@@ -24,7 +24,7 @@ std::vector<std::string> getCustomResponseQuery(std::string str) {
 int main() {
   std::cout << "Make a Custom Member Request..." << std::endl;
   
-  IpcClient client(4);
+  IpcClient client(1);
 
   std::string query = "OPTIONAL MATCH (a:Active) WHERE (a)-[:publishing]->() OR ()-[:subscribing]->(a) OR (a)-[:sending]->() OR ()-[:sending]->(a) OR (a)-[:timer]->() WITH a OPTIONAL MATCH (p:Passive) WHERE ()-[:publishing]->(p) OR (p)-[:subscribing]->() WITH a,p OPTIONAL MATCH (a)-[pub:publishing]->(p) WITH a,p,pub OPTIONAL MATCH (p)-[sub:subscribing]->(a) WITH a,p,pub,sub OPTIONAL MATCH (a)-[send:sending]->(target) RETURN { active: collect(DISTINCT a), passive: collect(DISTINCT p), pub: collect(DISTINCT { from: startNode(pub), to: endNode(pub), rel: pub}), sub: collect(DISTINCT { from: startNode(sub), to: endNode(sub), rel: sub}), send: collect(DISTINCT { from: startNode(send), to: endNode(send), rel: send}) } AS result ";
 

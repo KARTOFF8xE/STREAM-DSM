@@ -14,7 +14,7 @@
 int main() {
   std::cout << "Make a Custom Attribute Request..." << std::endl;
   
-  IpcClient client(4);
+  IpcClient client(1);
 
   std::string query = R"(from(bucket: "STREAM")
   |> range(start: 0)

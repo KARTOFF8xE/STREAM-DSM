@@ -12,7 +12,7 @@
 int main() {
   std::cout << "Make a Single Attribute Request..." << std::endl;
   
-  IpcClient client(4);
+  IpcClient client(1);
   
   std::cout << ">> ";
   std::string pKey;
