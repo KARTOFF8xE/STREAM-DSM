@@ -38,7 +38,8 @@ static void tracer_finalize(bt_self_component_sink *self_component_sink) {
     struct tracer *tracer = (struct tracer *)bt_self_component_get_data(
         bt_self_component_sink_as_self_component(self_component_sink));
  
-    free(tracer);
+    tracer->publishingRate.clear();
+    delete(tracer);
 }
 
 static bt_component_class_sink_graph_is_configured_method_status

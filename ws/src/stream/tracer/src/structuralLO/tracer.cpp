@@ -20,7 +20,6 @@ volatile sig_atomic_t stopFlag = 0;
 void handle_sigint(int) {
     shm_unlink("/babeltonato");
     lttng_destroy_session("structuralSession");
-    exit(EXIT_SUCCESS);
     stopFlag = 1;
 }
 
@@ -183,6 +182,8 @@ int main() {
     }
 
     std::filesystem::remove_all(PATH); 
+
+    pool.~ThreadPool();
 
     std::cout << "done" << std::endl;
 

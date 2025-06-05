@@ -15,6 +15,7 @@
 volatile sig_atomic_t stopFlag = 0;
 
 void handle_sigint(int) {
+    lttng_destroy_session("continuousSession");
     stopFlag = 1;
 }
 
@@ -127,6 +128,8 @@ int main() {
     }
 
     std::filesystem::remove_all(PATH); 
+
+    pool.~ThreadPool();
 
     std::cout << "done" << std::endl;
 
