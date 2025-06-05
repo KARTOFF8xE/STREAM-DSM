@@ -131,9 +131,10 @@ void runModule(Module_t module_t, Module &module, Tasks &tasks) {
 }
 
 int main() {
-    IpcServer nodeAndTopicObsServer(1);
-    IpcServer taskServer(4);
-    IpcServer tracerServer(5);
+    // IpcServer nodeAndTopicObsServer(1);
+    // IpcServer taskServer(4);
+    // IpcServer tracerServer(5);
+    IpcServer ipcServer(1);
 
     std::map<Module_t, Module> modules;
     for (int i = NODEANDTOPICOBSERVER; i < LASTOPTION; i++) {
@@ -188,16 +189,16 @@ int main() {
 
     sighandler_t stdHandler = std::signal(SIGINT, handle_sigint);
     gsRunning = true;
-    runModule(nodeAndTopicObsServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
+    runModule(ipcServer, NODEANDTOPICOBSERVER, modules[NODEANDTOPICOBSERVER]);
         usleep(250);
     runModule(RELATIONMGMT, modules[RELATIONMGMT]);
         usleep(250);
     runModule(PROCESSOBSERVER, modules[PROCESSOBSERVER]);
         usleep(250);
-    runModule(tracerServer, DATATRACER, modules[DATATRACER]);
+    runModule(ipcServer, DATATRACER, modules[DATATRACER]);
         usleep(250);
     Tasks tasks;
-    runModule(taskServer, TASKORCHESTRATOR, modules[TASKORCHESTRATOR], tasks);
+    runModule(ipcServer, TASKORCHESTRATOR, modules[TASKORCHESTRATOR], tasks);
         usleep(250);
     runModule(TASKEXECUTOR, modules[TASKEXECUTOR], tasks);
         usleep(250);
@@ -210,9 +211,10 @@ int main() {
     modules[RELATIONMGMT].thread->join();
     std::signal(SIGINT, stdHandler);
 
-    clearMsgQueue(1);
-    clearMsgQueue(4);
-    clearMsgQueue(5);
+    // clearMsgQueue(1);
+    // clearMsgQueue(4);
+    // clearMsgQueue(5);
+    clearMsgQueue(0);
 
     std::cout << "finalized" << std::endl;
 }
