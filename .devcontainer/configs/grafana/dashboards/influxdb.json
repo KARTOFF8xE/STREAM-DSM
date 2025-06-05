@@ -76,7 +76,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percentunit"
         },
         "overrides": []
       },
@@ -106,7 +107,7 @@
         {
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "rate(http_api_request_duration_seconds_count{method=\"POST\"}[$__rate_interval])",
+          "expr": "rate(http_api_request_duration_seconds_sum{method=\"POST\"}[$__rate_interval])",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
@@ -415,5 +416,5 @@
   "timezone": "browser",
   "title": "InfluxDB",
   "uid": "1cabee13-053d-46d2-a95a-35c507fc9b2a",
-  "version": 6
+  "version": 7
 }
