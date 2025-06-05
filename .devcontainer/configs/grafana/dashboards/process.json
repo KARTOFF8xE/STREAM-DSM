@@ -195,7 +195,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "decbytes"
         },
         "overrides": []
       },
@@ -229,7 +230,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "rate(namedprocess_namegroup_memory_bytes{groupname=\"$Process\"}[$__rate_interval])",
+          "expr": "namedprocess_namegroup_memory_bytes{groupname=\"$Process\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "{{memtype}}",
@@ -276,5 +277,5 @@
   "timezone": "browser",
   "title": "Process",
   "uid": "84d235df-a1bf-4a67-914a-b82d0281602b",
-  "version": 10
+  "version": 11
 }

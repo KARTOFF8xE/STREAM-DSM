@@ -136,6 +136,10 @@ int createAndExecuteTraceGraph(const char *pathToTraceDir) {
                 default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
             }
         sources_fs.push_back(source_fs);
+
+        bt_value_put_ref(map_value);
+        bt_value_put_ref(directory);
+        bt_value_put_ref(array_value);
     }
 
 
@@ -157,6 +161,8 @@ int createAndExecuteTraceGraph(const char *pathToTraceDir) {
             case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
             default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
         }
+
+        bt_value_put_ref(map_value);
     }
 
 
@@ -182,6 +188,8 @@ int createAndExecuteTraceGraph(const char *pathToTraceDir) {
             case BT_GRAPH_ADD_COMPONENT_STATUS_ERROR: fprintf(stderr, "\033[31;1mOther error\033[0m\n"); break;
             default: fprintf(stderr, "\033[31;1mHopefully never reached\033[0m\n");
         }
+
+        bt_value_put_ref(map_value);
     }
 
     /***Connect Components***/
@@ -230,7 +238,12 @@ int createAndExecuteTraceGraph(const char *pathToTraceDir) {
         case BT_GRAPH_RUN_STATUS_MEMORY_ERROR: fprintf(stderr, "\033[31;1m.....Out of memory\033[0m\n"); break;
         case BT_GRAPH_RUN_STATUS_ERROR: fprintf(stderr, "\033[31;1m.....Other Error\033[0m\n"); break;
         default: fprintf(stderr, "\033[31;1m.....Hopefully never reached\033[0m\n");
-    }
+    }    
+
+    bt_plugin_put_ref(ctlFs);
+    bt_plugin_put_ref(muxer);
+    bt_plugin_put_ref(plugin_text);
+    bt_graph_put_ref(graph);
 
     return 0;
 }

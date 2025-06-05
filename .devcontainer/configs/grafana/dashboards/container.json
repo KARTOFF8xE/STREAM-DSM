@@ -209,7 +209,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "s"
         },
         "overrides": []
       },
@@ -242,11 +243,12 @@
             "uid": "eenth7tsp5nnkd"
           },
           "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "rate(container_fs_io_current{name=\"$Container\"}[$__rate_interval]) * 100",
+          "editorMode": "builder",
+          "expr": "rate(container_fs_write_seconds_total{name=\"$Container\"}[$__rate_interval])",
           "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "legendFormat": "FS IO Current",
+          "hide": false,
+          "includeNullMetadata": false,
+          "legendFormat": "FS IO write rate",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -257,12 +259,148 @@
             "uid": "eenth7tsp5nnkd"
           },
           "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "rate(container_fs_io_time_seconds_total{name=\"$Container\"}[$__rate_interval]) * 100",
+          "editorMode": "builder",
+          "expr": "rate(container_fs_io_time_seconds_total{name=\"$Container\"}[$__rate_interval])",
           "fullMetaSearch": false,
           "hide": false,
-          "includeNullMetadata": true,
-          "legendFormat": "FS IO rate",
+          "includeNullMetadata": false,
+          "legendFormat": "FS IO total rate",
+          "range": true,
+          "refId": "B",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eenth7tsp5nnkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "rate(container_fs_read_seconds_total{name=\"$Container\"}[$__rate_interval])",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "legendFormat": "FS IO read rate",
+          "range": true,
+          "refId": "C",
+          "useBackend": false
+        }
+      ],
+      "title": "FileSystem (cAdvisor)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eenth7tsp5nnkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 6,
+      "interval": "1s",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eenth7tsp5nnkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "rate(container_fs_writes_bytes_total{name=\"$Container\"}[$__rate_interval])",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "legendFormat": "FS IO write rate",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eenth7tsp5nnkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "rate(container_fs_reads_bytes_total{name=\"$Container\"}[$__rate_interval])",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "legendFormat": "FS IO read rate",
           "range": true,
           "refId": "B",
           "useBackend": false
@@ -326,7 +464,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "decbytes"
         },
         "overrides": []
       },
@@ -334,7 +473,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 27
       },
       "id": 3,
       "interval": "1s",
@@ -361,13 +500,30 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rate(container_memory_usage_bytes{name=\"$Container\"}[$__rate_interval])",
+          "expr": "container_memory_usage_bytes{name=\"$Container\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "memory usage",
+          "legendFormat": "memory usage (bytes)",
           "range": true,
           "refId": "A",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eenth7tsp5nnkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "container_memory_swap{name=\"$Container\"}",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "memory usage (swap)",
+          "range": true,
+          "refId": "B",
           "useBackend": false
         }
       ],
@@ -437,7 +593,111 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 36
+      },
+      "id": 5,
+      "interval": "1s",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eenth7tsp5nnkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "container_memory_failures_total{name=\"$Container\"}",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Memory (cAdvisor)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eenth7tsp5nnkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 45
       },
       "id": 4,
       "interval": "1s",
@@ -544,5 +804,5 @@
   "timezone": "browser",
   "title": "Container",
   "uid": "9668b711-5c10-4649-bbf5-abea8b1e9f1a",
-  "version": 18
+  "version": 21
 }

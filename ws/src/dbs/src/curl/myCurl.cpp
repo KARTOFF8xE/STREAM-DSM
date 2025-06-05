@@ -3,9 +3,7 @@
 #include <curl/curl.h>
 #include <iostream>
 #include <fmt/core.h>
-
 #include <nlohmann/json.hpp>
-
 
 namespace curl {
 
@@ -17,6 +15,11 @@ struct Request {
     std::string query_response;
 };
 
+// Hilfsstruktur, um CURL* und Header-Liste gemeinsam zu verwalten
+struct CurlHandleWithHeaders {
+    CURL* curl;
+    struct curl_slist* headers;
+};
 
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userp) {
     size_t totalSize = size * nmemb;
@@ -29,8 +32,17 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
     return totalSize;
 }
 
+// Hilfsfunktion: Führt Request aus, gibt Header und CURL frei
+static CURLcode performAndCleanup(CurlHandleWithHeaders& handle) {
+    CURLcode res = curl_easy_perform(handle.curl);
+    if (handle.headers) {
+        curl_slist_free_all(handle.headers); // Header-Liste freigeben
+    }
+    curl_easy_cleanup(handle.curl); // CURL-Handle freigeben
+    return res;
+}
 
-CURL *getCurlNeo4j(Request &request) {
+CurlHandleWithHeaders getCurlNeo4j(Request &request) {
     request.username   = "neo4j";
     request.password   = "123456789";
     request.url        = "http://172.17.0.1:7474/db/neo4j/tx/commit";
@@ -38,7 +50,7 @@ CURL *getCurlNeo4j(Request &request) {
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
-        return NULL;
+        return {nullptr, nullptr};
     }
 
     const std::string auth = fmt::format("{}:{}", request.username, request.password);
@@ -55,18 +67,17 @@ CURL *getCurlNeo4j(Request &request) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(request.query_response));
 
-    return curl;
+    return {curl, headers};
 }
 
-
-CURL *getCurlInfluxDB_write(Request &request) {
+CurlHandleWithHeaders getCurlInfluxDB_write(Request &request) {
     request.url = "http://172.17.0.1:8086/api/v2/write?org=TUBAF&bucket=STREAM&precision=ns";
     const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
-        return NULL;
+        return {nullptr, nullptr};
     }
 
     struct curl_slist* headers = nullptr;
@@ -75,19 +86,20 @@ CURL *getCurlInfluxDB_write(Request &request) {
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
     curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
 
-    return curl;
+    return {curl, headers};
 }
 
-CURL *getCurlInfluxDB_read(Request &request) {
+CurlHandleWithHeaders getCurlInfluxDB_read(Request &request) {
     request.url = "http://172.17.0.1:8086/api/v2/query?org=TUBAF&bucket=STREAM&precision=ns";
     const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
-        return NULL;
+        return {nullptr, nullptr};
     }
 
     struct curl_slist* headers = nullptr;
@@ -99,17 +111,17 @@ CURL *getCurlInfluxDB_read(Request &request) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
     curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
 
-    return curl;
+    return {curl, headers};
 }
 
-CURL *getCurlInfluxDB_setTask(Request &request) {
+CurlHandleWithHeaders getCurlInfluxDB_setTask(Request &request) {
     request.url = "http://172.17.0.1:8086/api/v2/tasks";
     const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Fehler beim Initialisieren von libcurl." << std::endl;
-        return NULL;
+        return {nullptr, nullptr};
     }
 
     struct curl_slist* headers = nullptr;
@@ -121,18 +133,17 @@ CURL *getCurlInfluxDB_setTask(Request &request) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
 
-    return curl;
+    return {curl, headers};
 }
 
-CURL *getCurlInfluxDB_updateTask(Request &request, const std::string& taskId) {
+CurlHandleWithHeaders getCurlInfluxDB_updateTask(Request &request, const std::string& taskId) {
     const std::string url = "http://172.17.0.1:8086/api/v2/tasks/" + taskId;
     const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
-    const std::string org = "TUBAF";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Curl Init Fehler" << std::endl;
-        return NULL;
+        return {nullptr, nullptr};
     }
 
     struct curl_slist* headers = nullptr;
@@ -145,17 +156,17 @@ CURL *getCurlInfluxDB_updateTask(Request &request, const std::string& taskId) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
 
-    return curl;
+    return {curl, headers};
 }
 
-CURL* getCurlInfluxDB_deleteTask(Request& request, const std::string& taskId) {
+CurlHandleWithHeaders getCurlInfluxDB_deleteTask(Request& request, const std::string& taskId) {
     const std::string url = "http://172.17.0.1:8086/api/v2/tasks/" + taskId;
     const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Curl Init Fehler" << std::endl;
-        return nullptr;
+        return {nullptr, nullptr};
     }
 
     struct curl_slist* headers = nullptr;
@@ -168,7 +179,7 @@ CURL* getCurlInfluxDB_deleteTask(Request& request, const std::string& taskId) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &request.query_response);
 
-    return curl;
+    return {curl, headers};
 }
 
 std::string getTaskIdsForNames() {
@@ -191,6 +202,7 @@ std::string getTaskIdsForNames() {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
     CURLcode res = curl_easy_perform(curl);
+    curl_slist_free_all(headers); // <--- Wichtig: Header-Liste freigeben
     curl_easy_cleanup(curl);
 
     if (res != CURLE_OK) {
@@ -201,31 +213,39 @@ std::string getTaskIdsForNames() {
     return response;
 }
 
+// --- Push-Funktionen bleiben wie gehabt ---
+
 std::string push(std::string payload, const Destination destination) {
     struct Request request;
+    CurlHandleWithHeaders handle{nullptr, nullptr};
 
-    CURL *curl;
     switch (destination)
     {
     case NEO4J:
-        curl = getCurlNeo4j(request);
+        handle = getCurlNeo4j(request);
         break;
     case INFLUXDB_WRITE:
-        curl = getCurlInfluxDB_write(request);
+        handle = getCurlInfluxDB_write(request);
         break;
     case INFLUXDB_READ:
-        curl = getCurlInfluxDB_read(request);
+        handle = getCurlInfluxDB_read(request);
         break;
     case INFLUXDB_SETTASK:
-        curl = getCurlInfluxDB_setTask(request);
+        handle = getCurlInfluxDB_setTask(request);
         break;
     default:
         std::cerr << "unknown request" << std::endl;
-        break;
+        return "";
     }
 
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
-    CURLcode res = curl_easy_perform(curl);
+    if (!handle.curl) {
+        if (handle.headers) curl_slist_free_all(handle.headers);
+        return "";
+    }
+
+    curl_easy_setopt(handle.curl, CURLOPT_POSTFIELDS, payload.c_str());
+    CURLcode res = performAndCleanup(handle);
+
     if (res != CURLE_OK) {
         std::cout << payload << std::endl;
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
@@ -246,22 +266,27 @@ std::string push(std::string payload, const Destination destination) {
     return request.query_response;
 }
 
-
 std::string push(std::string payload, const Destination destination, std::string taskId) {
     struct Request request;
+    CurlHandleWithHeaders handle{nullptr, nullptr};
 
-    CURL *curl;
     switch (destination) {
     case INFLUXDB_UPDATETASK:
-        curl = getCurlInfluxDB_updateTask(request, taskId);
+        handle = getCurlInfluxDB_updateTask(request, taskId);
         break;
     default:
         std::cerr << "unknown request" << std::endl;
-        break;
+        return "";
     }
 
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
-    CURLcode res = curl_easy_perform(curl);
+    if (!handle.curl) {
+        if (handle.headers) curl_slist_free_all(handle.headers);
+        return "";
+    }
+
+    curl_easy_setopt(handle.curl, CURLOPT_POSTFIELDS, payload.c_str());
+    CURLcode res = performAndCleanup(handle);
+
     if (res != CURLE_OK) {
         std::cout << payload << std::endl;
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
@@ -274,19 +299,25 @@ std::string push(std::string payload, const Destination destination, std::string
 
 std::string push(const Destination destination, std::string taskId) {
     struct Request request;
+    CurlHandleWithHeaders handle{nullptr, nullptr};
 
-    CURL *curl;
     switch (destination) {
     case INFLUXDB_DELETETASK:
-        curl = getCurlInfluxDB_deleteTask(request, taskId);
+        handle = getCurlInfluxDB_deleteTask(request, taskId);
         break;
     default:
         std::cerr << "unknown request" << std::endl;
-        break;
+        return "";
     }
 
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
-    CURLcode res = curl_easy_perform(curl);
+    if (!handle.curl) {
+        if (handle.headers) curl_slist_free_all(handle.headers);
+        return "";
+    }
+
+    curl_easy_setopt(handle.curl, CURLOPT_POSTFIELDS, "");
+    CURLcode res = performAndCleanup(handle);
+
     if (res != CURLE_OK) {
         std::cerr << "Fehler bei der Anfrage: " << curl_easy_strerror(res) << std::endl;
     } else {

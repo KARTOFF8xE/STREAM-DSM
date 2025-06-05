@@ -658,7 +658,7 @@ void handleClient(RequestingClient &client, std::vector<RequestingClient> &clien
         for (size_t i = 0; i < clients.size(); i++) {
             if (clients[i].pid == client.pid &&
                 clients[i].requestId == client.requestId) {
-                clients.erase(clients.begin() + i * sizeof(RequestingClient));
+                clients.erase(clients.begin() + i);
                 break;
             }
         }

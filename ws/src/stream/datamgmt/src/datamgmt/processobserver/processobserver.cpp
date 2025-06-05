@@ -122,16 +122,10 @@ void getProcDataByPID(int pid, FullProcessData &pd) {
 }
 
 // Strip the filename to 10 characters with + at the end
-const char* format_filename(const char *exe_filename) {
+std::string format_filename(const std::string& exe_filename) {
     int max_filename_length = 10;
-    char *new_filename;
-    if (strlen(exe_filename)<=max_filename_length) return exe_filename;
-    new_filename = (char*)malloc(max_filename_length+1);
-    for (int i=0; i<max_filename_length-1; i++) { new_filename[i]=exe_filename[i];}
-    new_filename[max_filename_length-1]='+';
-    new_filename[max_filename_length]='\0';
-
-    return new_filename;
+    if (exe_filename.length() <= max_filename_length) return exe_filename;
+    return exe_filename.substr(0, max_filename_length - 1) + "+";
 }
 
 // Get the cpu delta time
@@ -254,31 +248,27 @@ void processObserver(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> 
     auto then = std::chrono::steady_clock::now();
     while (gsRunning) {
         std::vector<influxDB::ValuePairs> pairs;
-        for (auto it = processVec.begin(); it != processVec.end(); ++it) {
-            int index = std::distance(processVec.begin(), it);
-
-            processVec.at(index).cpu_utilisation = get_cpu_utilisation(processVec.at(index));
-            if (processVec.at(index).cpu_utilisation < 0) {
-                std::cout << "removed Process " << processVec.at(index).exe_filename << " with pid " << processVec.at(index).pid << std::endl;
+        for (auto it = processVec.begin(); it != processVec.end(); ) {
+            it->cpu_utilisation = get_cpu_utilisation(*it);
+            if (it->cpu_utilisation < 0) {
+                std::cout << "removed Process " << it->exe_filename << " with pid " << it->pid << std::endl;
                 NodeResponse nodeUpdate {
                     .state              = sharedMem::State::INACTIVE,
                     .stateChangeTime    = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()),
-                    .pid                = processVec.at(index).pid,
+                    .pid                = it->pid,
                 };
                 pipe_ns::writeT<NodeResponse>(pipes[NODEANDTOPICOBSERVER].write, nodeUpdate);
-                processVec.erase(it);
-                if (processVec.size() == 0) break;
-                it--;
+                it = processVec.erase(it);
                 continue;
             }
 
             pairs.push_back(influxDB::ValuePairs{
-                .primaryKey = processVec.at(index).primaryKey,
-                .value      = processVec.at(index).cpu_utilisation
+                .primaryKey = it->primaryKey,
+                .value      = it->cpu_utilisation
             });
 
-            getProcDataByPID(processVec.at(index).pid, processVec.at(index));
-
+            getProcDataByPID(it->pid, *it);
+            ++it;
         }
         curl::push(
             influxDB::createPayloadMultipleVal(pairs),

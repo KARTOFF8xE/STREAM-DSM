@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-SESSION="zmq_demo"
+SESSION="STREAM"
 
 tmux new-session -d -s $SESSION -n demo
 
