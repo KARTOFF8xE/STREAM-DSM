@@ -5,6 +5,7 @@ log/
 tmp/
 Fast-DDS/
 .vscode/browse*
+.vscode/settings.json
 playground/
 ros2_tracing/
 ipc/

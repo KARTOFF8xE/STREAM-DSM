@@ -5,6 +5,16 @@
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
+
+#define URLNEO4J "http://neo4j:7474"
+#define USERNAMENEO4J "neo4j"
+#define PWNEO4J "123456789"
+#define URLINFLUXDB "http://influxdb:8086"
+#define USERNAMEINFLUXDB
+#define PWINFLUXDB
+#define TOKENINFLUXDB "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw=="
+
+
 namespace curl {
 
 struct Request {
@@ -43,9 +53,9 @@ static CURLcode performAndCleanup(CurlHandleWithHeaders& handle) {
 }
 
 CurlHandleWithHeaders getCurlNeo4j(Request &request) {
-    request.username   = "neo4j";
-    request.password   = "123456789";
-    request.url        = "http://neo4j:7474/db/neo4j/tx/commit";
+    request.username   = USERNAMENEO4J;
+    request.password   = PWNEO4J;
+    request.url        = URLNEO4J + std::string("/db/neo4j/tx/commit");
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -71,8 +81,8 @@ CurlHandleWithHeaders getCurlNeo4j(Request &request) {
 }
 
 CurlHandleWithHeaders getCurlInfluxDB_write(Request &request) {
-    request.url = "http://influxdb:8086/api/v2/write?org=TUBAF&bucket=STREAM&precision=ns";
-    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+    request.url = URLINFLUXDB + std::string("/api/v2/write?org=TUBAF&bucket=STREAM&precision=ns");
+    const std::string token = TOKENINFLUXDB;
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -93,8 +103,8 @@ CurlHandleWithHeaders getCurlInfluxDB_write(Request &request) {
 }
 
 CurlHandleWithHeaders getCurlInfluxDB_read(Request &request) {
-    request.url = "http://influxdb:8086/api/v2/query?org=TUBAF&bucket=STREAM&precision=ns";
-    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+    request.url = URLINFLUXDB + std::string("/api/v2/query?org=TUBAF&bucket=STREAM&precision=ns");
+    const std::string token = TOKENINFLUXDB;
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -115,8 +125,8 @@ CurlHandleWithHeaders getCurlInfluxDB_read(Request &request) {
 }
 
 CurlHandleWithHeaders getCurlInfluxDB_setTask(Request &request) {
-    request.url = "http://influxdb:8086/api/v2/tasks";
-    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+    request.url = URLINFLUXDB + std::string("/api/v2/tasks");
+    const std::string token = TOKENINFLUXDB;
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -137,8 +147,8 @@ CurlHandleWithHeaders getCurlInfluxDB_setTask(Request &request) {
 }
 
 CurlHandleWithHeaders getCurlInfluxDB_updateTask(Request &request, const std::string& taskId) {
-    const std::string url = "http://influxdb:8086/api/v2/tasks/" + taskId;
-    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+    const std::string url = URLINFLUXDB + std::string("/api/v2/tasks/") + taskId;
+    const std::string token = TOKENINFLUXDB;
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -160,8 +170,8 @@ CurlHandleWithHeaders getCurlInfluxDB_updateTask(Request &request, const std::st
 }
 
 CurlHandleWithHeaders getCurlInfluxDB_deleteTask(Request& request, const std::string& taskId) {
-    const std::string url = "http://influxdb:8086/api/v2/tasks/" + taskId;
-    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+    const std::string url = URLINFLUXDB + std::string("/api/v2/tasks/") + taskId;
+    const std::string token = TOKENINFLUXDB;
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -183,8 +193,8 @@ CurlHandleWithHeaders getCurlInfluxDB_deleteTask(Request& request, const std::st
 }
 
 std::string getTaskIdsForNames() {
-    const std::string url = "http://influxdb:8086/api/v2/tasks?org=TUBAF";
-    const std::string token = "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==";
+    const std::string url = URLINFLUXDB + std::string("/api/v2/tasks?org=TUBAF");
+    const std::string token = TOKENINFLUXDB;
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -202,7 +212,7 @@ std::string getTaskIdsForNames() {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
     CURLcode res = curl_easy_perform(curl);
-    curl_slist_free_all(headers); // <--- Wichtig: Header-Liste freigeben
+    curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
 
     if (res != CURLE_OK) {
@@ -212,8 +222,6 @@ std::string getTaskIdsForNames() {
 
     return response;
 }
-
-// --- Push-Funktionen bleiben wie gehabt ---
 
 std::string push(std::string payload, const Destination destination) {
     struct Request request;
