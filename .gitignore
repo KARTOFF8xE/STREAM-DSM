@@ -11,3 +11,7 @@ ros2_tracing/
 ipc/
 dmc11RosBag
 valgrind_logs
+handle_debug.log
+latencies.dat
+send.txt
+received.txt
