@@ -5,12 +5,12 @@ apt install python3-babeltrace python3-lttng python3-pytest-cov -y
 
 apt install libglib2.0-dev -y
 filename=babeltrace2-2.0.6.tar.bz2
-  cd /opt/STREAMDSM && \
+cd /opt/STREAMDSM && \
   apt install wget -y && \
   wget https://www.efficios.com/files/babeltrace/${filename} && \
   tar -xvjf ${filename}
 cd /opt/STREAMDSM/babeltrace2-2.0.6 && \
-  BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure --disable-debug-info && \
+  BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=WARNING ./configure --disable-debug-info && \
   make && \
   make install
 
