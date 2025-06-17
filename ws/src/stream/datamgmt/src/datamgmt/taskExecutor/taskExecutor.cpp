@@ -93,6 +93,17 @@ std::vector<std::string> getCustomResponseQueryNeo4J(Task &task) {
     return responseSplitted;
 }
 
+void removeTask(Tasks &tasks, Task &task) {
+    tasks.vec.erase(find_if(tasks.vec.begin(), tasks.vec.end(),
+        [&task](const Task &vectorTask) {
+            return (
+                task.requestId == vectorTask.requestId &&
+                task.pid == vectorTask.pid
+            );
+        }
+    ));
+}
+
 void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &running, Tasks &tasks) {
     std::cout << "started taskExecutor" << std::endl;
 
@@ -119,7 +130,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     );
 
                     if (!std::get<SingleAttributesRequest>(task.task).continuous) {
-                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                        removeTask(tasks, task);
                     }
                     break;
                 }
@@ -139,7 +150,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     );
 
                     if (!std::get<AggregatedAttributesRequest>(task.task).continuous) {
-                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                        removeTask(tasks, task);
                     }
                     break;
                 }
@@ -164,7 +175,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     }
 
                     if (!std::get<CustomAttributesTask>(task.task).continuous) {
-                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                        removeTask(tasks, task);
                     }
                     break;
                 }
@@ -186,7 +197,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     }
 
                     if (!std::get<AggregatedMemberRequest>(task.task).continuous) {
-                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                        removeTask(tasks, task);
                     }
 
                     break;
@@ -212,7 +223,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     }
 
                     if (!std::get<CustomMemberTask>(task.task).continuous) {
-                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                        removeTask(tasks, task);
                     }
                     break;
                 }
@@ -232,7 +243,7 @@ void taskExecutor(std::map<Module_t, pipe_ns::Pipe> pipes, std::atomic<bool> &ru
                     );
 
                     if (!std::get<RelationTask>(task.task).continuous) {
-                        tasks.vec.erase(find(tasks.vec.begin(), tasks.vec.end(), task));
+                        removeTask(tasks, task);
                     }
                     break;
                 }
