@@ -25,7 +25,7 @@ services:
       - NEO4J_dbms_security_procedures_allowlist=apoc.*
 
   influxdb:
-    image: influxdb:latest
+    image: influxdb:2.7.11
     ports:
       - "8086:8086"
     environment:
