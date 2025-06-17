@@ -36,6 +36,8 @@ tmux select-pane -t 3
 # tmux send-keys -t $SESSION '' C-m
 # tmux select-pane -t 5
 tmux send-keys -t $SESSION 'watch -n 1 ipcs -' C-m
+tmux split-window -v -t $SESSION
+tmux send-keys -t $SESSION 'process-exporter --config.path .devcontainer/configs/process-exporter.yml' C-m
 tmux select-pane -t 2
 
 # tmux send-keys -t $SESSION 'watch -n 1 ipcs -q' C-m

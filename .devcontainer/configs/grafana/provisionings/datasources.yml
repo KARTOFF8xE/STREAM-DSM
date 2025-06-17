@@ -1,0 +1,26 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus_uid
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: InfluxDB
+    type: influxdb
+    uid: influx_uid
+    access: proxy
+    isDefault: false
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux
+      organization: TUBAF
+      defaultBucket: STREAM
+      tlsSkipVerify: true
+    secureJsonData:
+      token: WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==
+    editable: true
