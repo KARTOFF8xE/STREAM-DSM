@@ -36,7 +36,7 @@ int main() {
   while (true) {
     {
       sharedMem::Response sharedMemResponse {};
-      if (!channel.receive(sharedMemResponse, false)) continue;
+      if (!channel.receive(sharedMemResponse, true)) continue;
 
       printResponse<sharedMem::NumericalResponse>(sharedMemResponse);
     }
