@@ -8,5 +8,17 @@ def generate_launch_description():
             executable='talker',
             name='my_talker',
             namespace='halloWelt'
-        )
+        ),
+        launch_ros.actions.Node(
+            package='cpp_pubsub',
+            executable='listener',
+            name='saturn_listener',
+            namespace='hallo/saturn'
+        ),
+        launch_ros.actions.Node(
+            package='cpp_pubsub',
+            executable='talker',
+            name='erde_talker',
+            namespace='hallo/erde'
+        ),
     ])
