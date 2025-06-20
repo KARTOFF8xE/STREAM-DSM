@@ -5,12 +5,12 @@
 
 * Algorithmus:
 ```
-für alle n:
-   für alle freq:
+für alle freq:
+   für alle n:
        latenzSumme=0
        für alle i:
            a=berechne die jeweiligen Schnittlatenzen
            latenSumme+=a
-       a/=max(i)
+       a/=n
        schreibe in Datei: n, freq, latency        
 ```

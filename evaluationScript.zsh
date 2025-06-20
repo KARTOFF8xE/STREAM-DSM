@@ -1,16 +1,24 @@
 #!/bin/zsh
 
-declare -a frequency_arr=(1 10 100)
-declare -a num_pairs_arr=(1 10 20)
+declare -a frequency_arr=(10 100)
+declare -a num_pairs_arr=(2 20)
 
-test_period=10
-pause_period=10
+test_period=300
+pause_period=300
+output_file="evaluation/times.csv"
+mkdir -p evaluation
+
+if [[ ! -f "$output_file" ]]; then
+    echo "freq,num_nodes,starttimestamp,stoptimestamp" > "$output_file"
+fi
 
 start_process() {
     local freq=$1
     local num_pairs=$2
 
     echo -ne "\rLaunching: $num_pairs Nodes with ${freq}Hz per Talker"
+
+    local start_time=$(date "+%Y-%m-%d %H:%M:%S")
 
     setsid bash -c "ros2 launch evaluationpkg evaluation_launch.launch.py frequency:=$freq num_nodes:=$num_pairs" 1>/dev/null &
     pid=$!
@@ -30,6 +38,11 @@ start_process() {
         sleep 1
         kill -KILL -"$pgid" 2>/dev/null
     fi
+
+    local stop_time=$(date "+%Y-%m-%d %H:%M:%S")
+    echo "$freq,$num_pairs,\"$start_time\",\"$stop_time\"" >> "$output_file"
+
+    # sudo sync && sudo sh -c 'echo 3 > /d'
 }
 
 clear
