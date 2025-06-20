@@ -40,7 +40,8 @@ private:
         }
 
         if (msg_num >= 0) {
-            std::ofstream out("received.txt", std::ios_base::app);
+            std::string fileName = "received_" + getpid() + std::string(".txt");
+            std::ofstream out(fileName.c_str(), std::ios_base::app);
             out << msg_num << " " << now << "\n";
         }
 

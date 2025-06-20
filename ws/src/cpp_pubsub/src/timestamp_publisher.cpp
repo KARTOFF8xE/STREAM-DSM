@@ -30,7 +30,8 @@ private:
         auto now = duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count();
         publisher_->publish(message);
 
-        std::ofstream out("send.txt", std::ios_base::app);
+        std::string fileName = "send_" + getpid() + std::string(".txt");
+        std::ofstream out(fileName.c_str(), std::ios_base::app);
         out << count_ << " " << now << "\n";
 
         count_++;
