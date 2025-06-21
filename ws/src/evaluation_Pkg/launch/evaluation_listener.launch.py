@@ -8,12 +8,13 @@ import os
 def launch_setup(context, *args, **kwargs):
     num_nodes = int(LaunchConfiguration('num_nodes').perform(context))
     frequency = float(LaunchConfiguration('frequency').perform(context))
+    test_type = LaunchConfiguration('test_type').perform(context)
 
     nodes = []
 
 
     for i in range(num_nodes):
-        base_path = f"latencies/{frequency}/{num_nodes}/{i}"
+        base_path = f"latencies/{test_type}/{frequency}/{num_nodes}/{i}"
         topic_name = f"/topic_{i}"
 
         params = [

@@ -44,9 +44,8 @@ RUN apt update && apt upgrade -y
 
 ARG DIRECTORY=/testspace
 COPY ws $DIRECTORY/ws
-COPY start.tmux $DIRECTORY/start.tmux
-COPY run_all_services.sh $DIRECTORY/run_all_services.sh
-COPY buildScript.sh $DIRECTORY/buildScript.sh
+COPY scripts/start.tmux $DIRECTORY/start.tmux
+COPY scripts/run_all_services.sh $DIRECTORY/run_all_services.sh
 COPY .devcontainer/configs/process-exporter.yml $DIRECTORY/configs/process-exporter.yml
 RUN mkdir -p ${DIRECTORY}/latencies
 

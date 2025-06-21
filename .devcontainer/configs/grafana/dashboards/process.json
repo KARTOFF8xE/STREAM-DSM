@@ -18,13 +18,171 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 2,
-  "id": 5,
+  "id": 3,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "eenth7tsp5nnkd"
+        "uid": "prometheus_uid"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 4,
+      "interval": "1s",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eenth7tsp5nnkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "sum(namedprocess_namegroup_cpu_seconds_total{groupname=\"datamgmt\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "legendFormat": "datamgmt",
+          "range": true,
+          "refId": "datamgmt",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eenth7tsp5nnkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "sum(namedprocess_namegroup_cpu_seconds_total{groupname=\"structural\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "legendFormat": "structural",
+          "range": true,
+          "refId": "structural",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus_uid"
+          },
+          "editorMode": "code",
+          "expr": "sum(namedprocess_namegroup_cpu_seconds_total{groupname=\"continuous\"})",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "continuous",
+          "range": true,
+          "refId": "continuous"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus_uid"
+          },
+          "editorMode": "code",
+          "expr": "container_cpu_system_seconds_total{name=\"neo4j\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "neo4j",
+          "range": true,
+          "refId": "neo4j"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus_uid"
+          },
+          "editorMode": "code",
+          "expr": "container_cpu_system_seconds_total{name=\"influxdb\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "influxdb",
+          "range": true,
+          "refId": "influxdb"
+        }
+      ],
+      "title": "CPU (process exporter)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus_uid"
       },
       "fieldConfig": {
         "defaults": {
@@ -86,9 +244,9 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 8
       },
-      "id": 1,
+      "id": 3,
       "interval": "1s",
       "options": {
         "legend": {
@@ -103,7 +261,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.1",
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -143,7 +301,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "eenth7tsp5nnkd"
+        "uid": "prometheus_uid"
       },
       "fieldConfig": {
         "defaults": {
@@ -204,7 +362,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 16
       },
       "id": 2,
       "interval": "1s",
@@ -221,7 +379,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.1",
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -277,5 +435,5 @@
   "timezone": "browser",
   "title": "Process",
   "uid": "84d235df-a1bf-4a67-914a-b82d0281602b",
-  "version": 11
+  "version": 1
 }

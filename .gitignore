@@ -17,3 +17,5 @@ send.txt
 received.txt
 latencies.txt
 output.csv
+latencies/*
+!latencies/.keep

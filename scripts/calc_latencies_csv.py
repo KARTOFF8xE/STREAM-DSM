@@ -49,8 +49,8 @@ def process_directory(root_path):
                 ])
 
             if latenzen:
-                median_latenz = round(np.median(latenzen) / 1000, 2)       # ns → µs
-                mean_latenz = round(np.mean(latenzen) / 1000, 2)           # ns → µs
+                median_latenz = round(np.median(latenzen) / 1000, 2)
+                mean_latenz = round(np.mean(latenzen) / 1000, 2)
                 results.append((f, n, median_latenz, mean_latenz))
 
     return results
@@ -58,24 +58,24 @@ def process_directory(root_path):
 def write_csv(results, output_file):
     with open(output_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['frequenz', 'n', 'medianlatenz', 'durchschnittslatenz'])
+        writer.writerow(['frequency', 'n', 'median', 'mean'])
         for row in results:
             writer.writerow(row)
 
 def main():
     if len(sys.argv) != 2:
-        print("Verwendung: python3 latenx_auswertung.py /pfad/zum/root")
+        print("Usage: python3 calc_latencies_csv.py /path/to/root")
         sys.exit(1)
 
     root_path = sys.argv[1]
     if not os.path.isdir(root_path):
-        print(f"Pfad ungültig: {root_path}")
+        print(f"Invalid path: {root_path}")
         sys.exit(1)
 
     results = process_directory(root_path)
-    output_file = os.path.join(root_path, "output.csv")
+    output_file = os.path.join(root_path, "latencies.csv")
     write_csv(results, output_file)
-    print(f"Auswertung abgeschlossen. Ergebnis gespeichert in {output_file}")
+    print(f"Finalised. Stored result in {output_file}")
 
 if __name__ == "__main__":
     main()
