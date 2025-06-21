@@ -26,7 +26,7 @@ This is my practical part, for my [diploma thesis](https://github.com/KARTOFF8xE
 ## Run
 * on host: `docker compose -f .devcontainer/docker-compose.yml up -d`
 * `scripts/start.tmux`
-
+* I suggest [ros2_performance](https://github.com/Irobot-ros/ros2-performance) for exemplary ROS2 networks (a script for installation lies within `scripts/`)
 
 ## Run tests
 * build test container: `docker build -f .devcontainer/Dockerfile.testspace -t testspace .`

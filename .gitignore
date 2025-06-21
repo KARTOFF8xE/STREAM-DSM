@@ -19,3 +19,4 @@ latencies.txt
 output.csv
 latencies/*
 !latencies/.keep
+performance_ws
