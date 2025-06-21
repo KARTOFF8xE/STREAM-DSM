@@ -29,6 +29,7 @@ if [[ $TEST_TYPE == TRACE ]]; then
 
     setsid bash -c "echo starting in 3s && sleep 3 && ros2 run datamgmt datamgmt" &
     pid_datamgmt=$!
+    sleep 10
 else 
     echo "Starting all Processes (BASE); runtime: ${RUN_TIME}s with freq=${FREQ}Hz, num_pairs=$NUM_PAIRS"
 fi
@@ -37,12 +38,12 @@ setsid process-exporter --config.path ./configs/process-exporter.yml &
 pid_proc_exp=$!
 
 setsid ros2 launch evaluationpkg evaluation_listener.launch.py frequency:=$FREQ num_nodes:=$NUM_PAIRS test_type:=$TEST_TYPE & # 1>/dev/null &
-pid_eval=$!
+pid_listeners=$!
 
 sleep 10
 
 setsid ros2 launch evaluationpkg evaluation_talker.launch.py frequency:=$FREQ num_nodes:=$NUM_PAIRS test_type:=$TEST_TYPE & # 1>/dev/null &
-pid_eval=$!
+pid_talkers=$!
 
 sleep 10
 
@@ -56,17 +57,22 @@ stop_time=$(date '+%Y-%m-%d %H:%M:%S')
 echo "${FREQ},${NUM_PAIRS},${TEST_TYPE},${start_time},${stop_time}" >> "$csv_file"
 
 if [[ $TEST_TYPE == TRACE ]]; then
-    kill -- -$pid_structural
-    kill -- -$pid_continuous
-    kill -- -$pid_datamgmt
+    kill -- -$pid_structural || true
+    kill -- -$pid_continuous || true
+    kill -- -$pid_datamgmt || true
+
+    wait $pid_structural || true
+    wait $pid_continuous || true
+    wait $pid_datamgmt || true
 fi
-kill -- -$pid_eval
+
+kill -- -$pid_listeners
+kill -- -$pid_talkers
+echo pid_proc_exp: $pid_proc_exp
 kill -- -$pid_proc_exp
 
-wait $pid_structural || true
-wait $pid_continuous || true
-wait $pid_datamgmt || true
-wait $pid_eval || true
+wait $pid_listeners || true
+wait $pid_talkers || true
 wait $pid_proc_exp || true
 
 

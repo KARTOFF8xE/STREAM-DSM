@@ -3,10 +3,10 @@ set -e
 
 CONTAINER_NAME="testspace"
 
-frequency_arr=(10 100) # (0 10 20 30 40 50 60 70 80 90 100)
-num_pairs_arr=(2 20) # (0 10 20 30 40)
-test_period=300
-pause_period=60
+frequency_arr=(0 10 20 30 40 50 60 70 80 90 100)
+num_pairs_arr=(0 10 20 30 40)
+test_period=450
+pause_period=300
 
 for num_pairs in "${num_pairs_arr[@]}"; do
   for freq in "${frequency_arr[@]}"; do
@@ -26,7 +26,7 @@ for num_pairs in "${num_pairs_arr[@]}"; do
 
     echo "Finalized test (trace) with num_pairs=$num_pairs freq=$freq."
 
-    for ((i=RUN_TIME; i>=0; i--)); do
+    for ((i=pause_period; i>=0; i--)); do
       echo -ne "\r\033[K"
       echo -ne "\rStarting next test (base) (num_pairs: $num_pairs freq: ${freq}Hz) in ${i}s"
     done
@@ -46,7 +46,7 @@ for num_pairs in "${num_pairs_arr[@]}"; do
 
     echo "Finalized test (base) with num_pairs=$num_pairs freq=$freq."
 
-    for ((i=RUN_TIME; i>=0; i--)); do
+    for ((i=pause_period; i>=0; i--)); do
       echo -ne "\r\033[K"
       echo -ne "\rStarting next test (trace) (num_pairs: $num_pairs freq: ${freq}Hz) in ${i}s"
       sleep 1
