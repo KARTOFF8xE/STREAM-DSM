@@ -1,93 +1,81 @@
 import os
+import sys
 import csv
-import argparse
+import numpy as np
 
-def read_timestamps(file_path):
-    timestamps = {}
-    with open(file_path, "r") as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) != 2:
-                continue
-            x, timestamp = parts
-            timestamps[x] = int(timestamp)
-    return timestamps
+def parse_file(filepath):
+    """Parst eine Datei zu einem Dictionary: {index: timestamp}"""
+    with open(filepath, 'r') as file:
+        lines = file.readlines()
+    return {
+        int(line.strip().split()[0]): int(line.strip().split()[1])
+        for line in lines if line.strip()
+    }
 
-def compute_latencies_us(send_path, receive_path):
-    send = read_timestamps(send_path)
-    receive = read_timestamps(receive_path)
+def process_directory(root_path):
+    results = []
 
-    latencies_us = []
-    for x in send:
-        if x in receive:
-            latency_ns = receive[x] - send[x]
-            latency_us = latency_ns / 1000  # nanosekunden -> mikrosekunden
-            latencies_us.append(latency_us)
+    for f in os.listdir(root_path):
+        f_path = os.path.join(root_path, f)
+        if not os.path.isdir(f_path):
+            continue
 
-    return latencies_us
-
-def save_latencies(latencies_us, output_path):
-    with open(output_path, "w") as f:
-        for latency in latencies_us:
-            f.write(f"{latency:.3f}\n")  # 3 Nachkommastellen
-
-def main(root_path):
-    output_csv_path = os.path.join(root_path, "latencies.csv")
-
-    with open(output_csv_path, mode="w", newline="") as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(["frequency", "n", "average_latency_us"])
-
-        for freq_dir in sorted(os.listdir(root_path)):
-            freq_path = os.path.join(root_path, freq_dir)
-            if not os.path.isdir(freq_path):
+        for n in os.listdir(f_path):
+            n_path = os.path.join(f_path, n)
+            if not os.path.isdir(n_path):
                 continue
 
-            try:
-                freq = float(freq_dir)
-            except ValueError:
-                continue
+            latenzen = []
 
-            for n_dir in sorted(os.listdir(freq_path)):
-                n_path = os.path.join(freq_path, n_dir)
-                if not os.path.isdir(n_path):
+            for i in os.listdir(n_path):
+                i_path = os.path.join(n_path, i)
+                if not os.path.isdir(i_path):
                     continue
 
-                try:
-                    n = int(n_dir)
-                except ValueError:
+                received_file = os.path.join(i_path, "received.txt")
+                send_file = os.path.join(i_path, "send.txt")
+
+                if not os.path.exists(received_file) or not os.path.exists(send_file):
                     continue
 
-                total_latency = 0
-                valid_runs = 0
+                received_dict = parse_file(received_file)
+                send_dict = parse_file(send_file)
 
-                for i in range(n):
-                    run_path = os.path.join(n_path, str(i))
-                    send_path = os.path.join(run_path, "send.txt")
-                    receive_path = os.path.join(run_path, "received.txt")
+                common_indices = received_dict.keys() & send_dict.keys()
 
-                    if not os.path.exists(send_path) or not os.path.exists(receive_path):
-                        continue
+                latenzen.extend([
+                    received_dict[j] - send_dict[j]
+                    for j in common_indices
+                ])
 
-                    latencies_us = compute_latencies_us(send_path, receive_path)
+            if latenzen:
+                median_latenz = round(np.median(latenzen) / 1000, 2)       # ns → µs
+                mean_latenz = round(np.mean(latenzen) / 1000, 2)           # ns → µs
+                results.append((f, n, median_latenz, mean_latenz))
 
-                    if not latencies_us:
-                        continue
+    return results
 
-                    latencies_output_path = os.path.join(run_path, "latencies.txt")
-                    save_latencies(latencies_us, latencies_output_path)
+def write_csv(results, output_file):
+    with open(output_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['frequenz', 'n', 'medianlatenz', 'durchschnittslatenz'])
+        for row in results:
+            writer.writerow(row)
 
-                    avg_latency = sum(latencies_us) / len(latencies_us)
-                    total_latency += avg_latency
-                    valid_runs += 1
+def main():
+    if len(sys.argv) != 2:
+        print("Verwendung: python3 latenx_auswertung.py /pfad/zum/root")
+        sys.exit(1)
 
-                if valid_runs > 0:
-                    overall_avg_latency = total_latency / valid_runs
-                    csv_writer.writerow([freq, n, round(overall_avg_latency, 3)])
+    root_path = sys.argv[1]
+    if not os.path.isdir(root_path):
+        print(f"Pfad ungültig: {root_path}")
+        sys.exit(1)
+
+    results = process_directory(root_path)
+    output_file = os.path.join(root_path, "output.csv")
+    write_csv(results, output_file)
+    print(f"Auswertung abgeschlossen. Ergebnis gespeichert in {output_file}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Berechne durchschnittliche Latenzen (in µs) aus einer Ordnerstruktur.")
-    parser.add_argument("root_path", help="Pfad zum Root-Ordner mit der freq/n/i Struktur")
-    args = parser.parse_args()
-
-    main(args.root_path)
+    main()

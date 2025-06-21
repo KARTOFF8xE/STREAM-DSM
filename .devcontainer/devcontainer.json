@@ -1,16 +1,10 @@
 {
 	"name": "RollyRolling",
 
-	// "build": {	// due to Docker Compose
-	// "dockerfile": "Dockerfile"
-	// },
-	// "workspaceMount": "source=${localWorkspaceFolder}/,target=/home/ubuntu/stream/,type=bind", // due to Docker Compose
-
-	"dockerComposeFile": "docker-compose.yml",
+	"dockerComposeFile": "docker-compose.devcontainer.yml",
 	"service": "devcontainer",
 	"workspaceFolder": "/home/ubuntu/stream/",
 	"shutdownAction": "stopCompose",
-	// "runServices": [ "devcontainer" ],
 	
 	"mounts": [
 		"source=${localWorkspaceFolder}/.devcontainer/zsh_history,target=/home/ubuntu/.cache/zsh/history,type=bind",
@@ -18,10 +12,10 @@
 		"source=/home/georg/.gitconfig,target=/home/ubuntu/.gitconfig,type=bind"
 	],
 	
-		"updateRemoteUserUID": false,
-		"postCreateCommand": ".devcontainer/onCreate.zsh",
-		"updateContentCommand": "sudo apt update && sudo apt upgrade -y",
-	
+	"updateRemoteUserUID": false,
+	"postCreateCommand": ".devcontainer/onCreate.zsh",
+	"updateContentCommand": "sudo apt update && sudo apt upgrade -y",
+
 	"forwardPorts": [7474, 8086],
 	
 	"customizations": {

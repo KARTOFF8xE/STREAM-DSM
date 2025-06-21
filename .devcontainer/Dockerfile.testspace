@@ -1,0 +1,63 @@
+FROM osrf/ros:rolling-desktop AS testspace
+WORKDIR /usr/local/app
+ARG USERNAME=ubuntu
+
+# RUN set -x && \
+#   echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+#   chmod 0440 /etc/sudoers.d/$USERNAME
+
+RUN apt update && apt upgrade -y
+RUN apt install apt-utils -y
+
+# ros2-tracing
+RUN apt update && apt upgrade -y
+RUN apt install lttng-tools liblttng-ust-dev liblttng-ctl-dev babeltrace2 -y
+RUN apt install python3-babeltrace python3-lttng python3-pytest-cov -y
+
+# Babeltrace
+ARG filename=babeltrace2-2.0.6.tar.bz2
+RUN apt install wget -y
+RUN wget https://www.efficios.com/files/babeltrace/${filename}
+RUN tar -xvjf ${filename}
+RUN cd babeltrace2-2.0.6 && \
+  BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure --disable-debug-info && \
+  make && \
+  make install
+
+# nlohmann/json.git
+RUN apt update && apt upgrade -y
+RUN git clone https://github.com/nlohmann/json.git /home/$USERNAME/json && \
+  cd /home/$USERNAME/json && \
+  mkdir -p build && \
+  cd build && \
+  cmake .. && \
+  make install
+
+# install process exporter
+RUN apt-get update && apt-get install -y wget tar
+RUN wget https://github.com/ncabatoff/process-exporter/releases/download/v0.7.7/process-exporter-0.7.7.linux-amd64.tar.gz -O /tmp/process-exporter.tar.gz \
+ && tar -xzf /tmp/process-exporter.tar.gz -C /usr/local/bin --strip-components=1 process-exporter-0.7.7.linux-amd64/process-exporter \
+ && rm /tmp/process-exporter.tar.gz
+COPY .devcontainer/configs/process-exporter.yml /etc/process-exporter.yml
+
+RUN apt update && apt upgrade -y
+
+ARG DIRECTORY=/testspace
+COPY ws $DIRECTORY/ws
+COPY start.tmux $DIRECTORY/start.tmux
+COPY run_all_services.sh $DIRECTORY/run_all_services.sh
+COPY buildScript.sh $DIRECTORY/buildScript.sh
+COPY .devcontainer/configs/process-exporter.yml $DIRECTORY/configs/process-exporter.yml
+RUN mkdir -p ${DIRECTORY}/latencies
+
+RUN /bin/bash -c "\
+    source /opt/ros/rolling/setup.bash && \
+    cd $DIRECTORY/ws && \
+    rm -rf build install log && \
+    colcon build --symlink-install --packages-select ipc dbs tracer datamgmt babeltrace_plugins evaluationpkg"
+
+RUN echo "source /opt/ros/rolling/setup.bash" >> ~/.bashrc
+RUN echo "source $DIRECTORY/ws/install/setup.bash" >> ~/.bashrc
+
+# USER $USERNAME
+WORKDIR /$DIRECTORY

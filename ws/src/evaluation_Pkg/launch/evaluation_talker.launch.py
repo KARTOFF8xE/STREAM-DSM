@@ -32,16 +32,6 @@ def launch_setup(context, *args, **kwargs):
             )
         )
 
-        nodes.append(
-            launch_ros.actions.Node(
-                package='evaluationpkg',
-                executable='listener',
-                name=f'listener_{i}',
-                namespace='listeners',
-                parameters=params
-            )
-        )
-
     return nodes
 
 def generate_launch_description():

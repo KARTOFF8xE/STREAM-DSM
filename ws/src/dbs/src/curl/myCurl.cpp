@@ -6,10 +6,10 @@
 #include <nlohmann/json.hpp>
 
 
-#define URLNEO4J "http://neo4j:7474"
+#define URLNEO4J "http://localhost:7474"
 #define USERNAMENEO4J "neo4j"
 #define PWNEO4J "123456789"
-#define URLINFLUXDB "http://influxdb:8086"
+#define URLINFLUXDB "http://localhost:8086"
 #define USERNAMEINFLUXDB
 #define PWINFLUXDB
 #define TOKENINFLUXDB "WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw=="
@@ -25,7 +25,6 @@ struct Request {
     std::string query_response;
 };
 
-// Hilfsstruktur, um CURL* und Header-Liste gemeinsam zu verwalten
 struct CurlHandleWithHeaders {
     CURL* curl;
     struct curl_slist* headers;
@@ -42,13 +41,12 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
     return totalSize;
 }
 
-// Hilfsfunktion: Führt Request aus, gibt Header und CURL frei
 static CURLcode performAndCleanup(CurlHandleWithHeaders& handle) {
     CURLcode res = curl_easy_perform(handle.curl);
     if (handle.headers) {
-        curl_slist_free_all(handle.headers); // Header-Liste freigeben
+        curl_slist_free_all(handle.headers);
     }
-    curl_easy_cleanup(handle.curl); // CURL-Handle freigeben
+    curl_easy_cleanup(handle.curl);
     return res;
 }
 
