@@ -24,7 +24,8 @@
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-extension-pack",
 				"Gruntfuggly.todo-tree",
-				"ms-python.python"
+				"ms-python.python",
+				"mechatroner.rainbow-csv"
 			]
 		}
 	}
