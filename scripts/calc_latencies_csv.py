@@ -4,7 +4,6 @@ import csv
 import numpy as np
 
 def parse_file(filepath):
-    """Parst eine Datei zu einem Dictionary: {index: timestamp}"""
     with open(filepath, 'r') as file:
         lines = file.readlines()
     return {
@@ -20,12 +19,15 @@ def process_directory(root_path):
         if not os.path.isdir(f_path):
             continue
 
+        print(f"frequency: {f}")
+
         for n in os.listdir(f_path):
             n_path = os.path.join(f_path, n)
             if not os.path.isdir(n_path):
                 continue
+            print(f"\tn: {n}")
 
-            latenzen = []
+            latencies = []
 
             for i in os.listdir(n_path):
                 i_path = os.path.join(n_path, i)
@@ -43,15 +45,16 @@ def process_directory(root_path):
 
                 common_indices = received_dict.keys() & send_dict.keys()
 
-                latenzen.extend([
+                latencies.extend([
                     received_dict[j] - send_dict[j]
                     for j in common_indices
+                    if (received_dict[j] - send_dict[j]) < 1_000_000
                 ])
 
-            if latenzen:
-                median_latenz = round(np.median(latenzen) / 1000, 2)
-                mean_latenz = round(np.mean(latenzen) / 1000, 2)
-                results.append((f, n, median_latenz, mean_latenz))
+            if latencies:
+                median_latency = round(np.median(latencies) / 1000, 2)
+                mean_latency = round(np.mean(latencies) / 1000, 2)
+                results.append((f, n, median_latency, mean_latency))
 
     return results
 

@@ -1,46 +1,66 @@
 import csv
-import sys
+import argparse
 
-def compare_csv_files(file1_path, file2_path, output_path):
-    with open(file1_path, newline='') as f1, open(file2_path, newline='') as f2:
-        reader1 = csv.DictReader(f1)
-        reader2 = csv.DictReader(f2)
+def read_csv_to_dict(file_path):
+    data = {}
+    with open(file_path, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            key = (row['frequency'], row['n'])
+            data[key] = {
+                'median': float(row['median']),
+                'mean': float(row['mean']),
+            }
+    return data
 
-        if reader1.fieldnames != reader2.fieldnames:
-            raise ValueError("Csv-headers do not match.")
+def main(file1_path, file2_path, output_path):
+    data1 = read_csv_to_dict(file1_path)
+    data2 = read_csv_to_dict(file2_path)
 
-        rows1 = list(reader1)
-        rows2 = list(reader2)
+    all_keys = set(data1.keys()).union(set(data2.keys()))
+    warnings = []
 
-        if len(rows1) != len(rows2):
-            raise ValueError("Can not compare files (are of different lengths).")
+    rows = []
 
-        with open(output_path, mode='w', newline='') as fout:
-            fieldnames = ['frequency', 'n', 'diff_median', 'diff_mean']
-            writer = csv.DictWriter(fout, fieldnames=fieldnames)
-            writer.writeheader()
+    for key in all_keys:
+        freq, n = key
+        if key not in data1:
+            warnings.append(f"Missing in {file1_path}: frequency={freq}, n={n}")
+            continue
+        if key not in data2:
+            warnings.append(f"Missing in {file2_path}: frequency={freq}, n={n}")
+            continue
 
-            for row1, row2 in zip(rows1, rows2):
-                try:
-                    median1 = float(row1['median'])
-                    median2 = float(row2['median'])
-                    mean1 = float(row1['mean'])
-                    mean2 = float(row2['mean'])
-                except ValueError as e:
-                    raise ValueError(f"invalid numerical value in line: {e}")
+        median_diff = data1[key]['median'] - data2[key]['median']
+        mean_diff = data1[key]['mean'] - data2[key]['mean']
 
-                writer.writerow({
-                    'frequency': row1['frequency'],
-                    'n': row1['n'],
-                    'diff_median': median1 - median2,
-                    'diff_mean': mean1 - mean2
-                })
+        rows.append({
+            'frequency': freq,
+            'n': n,
+            'median': median_diff,
+            'mean': mean_diff
+        })
 
-    print(f"Finalized, stored in: {output_path}")
+    rows.sort(key=lambda row: (float(row['frequency']), int(row['n'])))
+
+    with open(output_path, 'w', newline='') as csvfile:
+        fieldnames = ['frequency', 'n', 'median', 'mean']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    if warnings:
+        print("Warnings:")
+        for w in warnings:
+            print("  -", w)
+    else:
+        print("All entries matched and output written to:", output_path)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        print("Usage: python3 compare_csv.py <file1.csv> <file2.csv> <output.csv>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='Compute differences between two CSV files and sort for TikZ matrix plot.')
+    parser.add_argument('file1', help='First input CSV file')
+    parser.add_argument('file2', help='Second input CSV file')
+    parser.add_argument('output', help='Output CSV file with differences')
 
-    compare_csv_files(sys.argv[1], sys.argv[2], sys.argv[3])
+    args = parser.parse_args()
+    main(args.file1, args.file2, args.output)
