@@ -20,3 +20,4 @@ output.csv
 latencies/*
 !latencies/.keep
 performance_ws
+performanceTest

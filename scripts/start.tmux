@@ -18,18 +18,18 @@ tmux select-layout -t $SESSION tiled
 
 cd ~/stream
 lttng destroy -a
-lttng-sessiond --daemonize
+lttng-sessiond --daemonize --verbose-consumer -vvv &> "/tmp/lttng.log"
 lttng-relayd -d
 rm -rf /tmp/continuous_traces
 rm -rf /tmp/structural_traces
 sleep 1
 
 tmux select-pane -t 0
-tmux send-keys -t $SESSION 'clear && ros2 run tracer structuralLO' C-m
+tmux send-keys -t $SESSION 'clear && ros2 run tracer structuralLO &> "/tmp/structural.log"' C-m
 tmux select-pane -t 1
-tmux send-keys -t $SESSION 'clear && ros2 run tracer continuous' C-m
+tmux send-keys -t $SESSION 'clear && ros2 run tracer continuous &> "/tmp/continuous.log"' C-m
 tmux select-pane -t 2
-tmux send-keys -t $SESSION 'clear && echo "starting in 3s" && sleep 3 && clear && ros2 run datamgmt datamgmt' C-m
+tmux send-keys -t $SESSION 'clear && echo "starting in 3s" && sleep 3 && clear && ros2 run datamgmt datamgmt &> "/tmp/datamgmt.log"' C-m
 tmux select-pane -t 3
 # tmux send-keys -t $SESSION '' C-m
 # tmux select-pane -t 4

@@ -57,9 +57,9 @@ stop_time=$(date '+%Y-%m-%d %H:%M:%S')
 echo "${FREQ},${NUM_PAIRS},${TEST_TYPE},${start_time},${stop_time}" >> "$csv_file"
 
 if [[ $TEST_TYPE == TRACE ]]; then
-    kill -- -$pid_structural || true
-    kill -- -$pid_continuous || true
-    kill -- -$pid_datamgmt || true
+    kill -SIGINT -$pid_structural || true
+    kill -SIGINT -$pid_continuous || true
+    kill -SIGINT -$pid_datamgmt || true
 
     wait $pid_structural || true
     wait $pid_continuous || true
