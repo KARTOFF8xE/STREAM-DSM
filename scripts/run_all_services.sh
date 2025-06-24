@@ -40,12 +40,12 @@ pid_proc_exp=$!
 setsid ros2 launch evaluationpkg evaluation_listener.launch.py frequency:=$FREQ num_nodes:=$NUM_PAIRS test_type:=$TEST_TYPE & # 1>/dev/null &
 pid_listeners=$!
 
-sleep 10
+sleep 30
 
 setsid ros2 launch evaluationpkg evaluation_talker.launch.py frequency:=$FREQ num_nodes:=$NUM_PAIRS test_type:=$TEST_TYPE & # 1>/dev/null &
 pid_talkers=$!
 
-sleep 10
+sleep 30
 
 start_time=$(date '+%Y-%m-%d %H:%M:%S')
 for ((i=RUN_TIME; i>=0; i--)); do
@@ -57,19 +57,18 @@ stop_time=$(date '+%Y-%m-%d %H:%M:%S')
 echo "${FREQ},${NUM_PAIRS},${TEST_TYPE},${start_time},${stop_time}" >> "$csv_file"
 
 if [[ $TEST_TYPE == TRACE ]]; then
-    kill -- -$pid_structural || true
-    kill -- -$pid_continuous || true
-    kill -- -$pid_datamgmt || true
+    kill -SIGINT -$pid_structural || true
+    kill -SIGINT -$pid_continuous || true
+    kill -SIGINT -$pid_datamgmt || true
 
     wait $pid_structural || true
     wait $pid_continuous || true
     wait $pid_datamgmt || true
 fi
 
-kill -- -$pid_listeners
-kill -- -$pid_talkers
-echo pid_proc_exp: $pid_proc_exp
-kill -- -$pid_proc_exp
+kill -- -$pid_listeners || true
+kill -- -$pid_talkers || true
+kill -- -$pid_proc_exp || true
 
 wait $pid_listeners || true
 wait $pid_talkers || true

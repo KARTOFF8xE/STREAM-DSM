@@ -26,11 +26,6 @@ public:
         this->get_parameter("frequency", frequency_);
         this->get_parameter("log_base_path", log_base_path_);
 
-        if (frequency_ <= 0.0) {
-            RCLCPP_WARN(this->get_logger(), "Frequency <= 0, set to 1 Hz");
-            frequency_ = 1.0;
-        }
-
         if (!log_base_path_.empty()) {
             int ret = mkdir_recursive(log_base_path_);
             if (ret != 0) {
@@ -40,10 +35,14 @@ public:
 
         publisher_ = this->create_publisher<std_msgs::msg::UInt64>(topic_name_, 10);
 
-        auto interval = std::chrono::duration<double>(1.0 / frequency_);
-        timer_ = this->create_wall_timer(
-            std::chrono::duration_cast<std::chrono::milliseconds>(interval),
-            std::bind(&Talker::timer_callback, this));
+        if (frequency_ > 0.0) {
+            auto interval = std::chrono::duration<double>(1.0 / frequency_);
+            timer_ = this->create_wall_timer(
+                std::chrono::duration_cast<std::chrono::milliseconds>(interval),
+                std::bind(&Talker::timer_callback, this));
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Frequency is zero or negative, no messages will be sent.");
+        }
 
         log_file_ = log_base_path_ + "/send.txt";
     }
