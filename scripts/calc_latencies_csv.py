@@ -78,12 +78,12 @@ def write_csv(results, output_file):
         writer.writerow([
             'frequency',
             'n',
-            'median_latency_ms',
-            'mean_latency_ms',
-            'variance_latency_ms²',
-            'std_dev_latency_ms',
-            'mad_latency_ms',
-            'mav_latency_ms²'
+            'median',
+            'mean',
+            'variance',
+            'std_dev',
+            'mad',
+            'mav'
         ])
         for row in results:
             writer.writerow(row)

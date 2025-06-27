@@ -50,7 +50,7 @@ def main(times_csv, input_csv, output_dir):
             col_groups[col] = "db"
         else:
             col_groups[col] = None
-        prop = col.split("/",1)[1] if "/" in col else col
+        prop = col.split("/", 1)[1] if "/" in col else col
         col_props[col] = prop
 
     trace_rows = []
@@ -65,9 +65,12 @@ def main(times_csv, input_csv, output_dir):
 
         sub_df = data_df[(data_df["Time"] >= start) & (data_df["Time"] <= stop)]
 
-        means = sub_df.mean(skipna=True)
-        medians = sub_df.median(skipna=True)
-        medians = medians.fillna(0)
+        # Datenframe für Mittelwerte vorbereiten (bereinigt)
+        sub_df_clean = sub_df.drop(columns=["Time"], errors="ignore")
+
+        means = sub_df_clean.mean(skipna=True)
+        # explizite Typkonvertierung verhindert FutureWarning
+        medians = sub_df_clean.median(skipna=True).astype(float).fillna(0)
 
         group_mean = {"stream": {}, "ros2": {}, "db": {}}
         group_median = {"stream": {}, "ros2": {}, "db": {}}
