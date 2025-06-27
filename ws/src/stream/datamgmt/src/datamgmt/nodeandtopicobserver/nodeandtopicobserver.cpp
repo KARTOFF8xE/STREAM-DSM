@@ -51,7 +51,7 @@ void singleTimeNodeResponse(const IpcServer &server, RequestingClient &client, s
         }
 
         size_t counter = 0;
-        while (item[counter].contains("relationship")) {
+        while (counter < item.size() && item[counter].contains("relationship")) {
             if (item[counter]["relationship"] == "publishing") {
                 for (const json & node: item[counter]["nodes"]) {
                     NodePublishersToUpdate tmp { .isUpdate = false};
