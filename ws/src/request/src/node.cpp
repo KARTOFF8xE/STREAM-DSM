@@ -1,10 +1,11 @@
 #include <iostream>
+#include <fstream>
+ 
+#include <chrono>
+#include <thread>
 
 #include <ipc/ipc-client.hpp>
 #include <ipc/util.hpp>
-
-#include <chrono>
-#include <thread>
 
 int main() {
   std::cout << "Make a Node Request..." << std::endl;
@@ -23,6 +24,10 @@ int main() {
     {
       std::optional<NodeResponse> optResp = client.receiveNodeResponse(false);
       if (optResp.has_value()) {
+        std::ofstream out;
+        out.open("stopped", std::ios::app);
+        out << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        system("scripts/evalForwardingLatency.bash &");
         NodeResponse resp = optResp.value();
         std::cout <<
           "Received Node Reponse" <<

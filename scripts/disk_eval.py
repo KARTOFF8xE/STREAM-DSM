@@ -29,6 +29,20 @@ def median_no_fill(values):
         return 0
     return filtered.median()
 
+def std_no_fill(values):
+    filtered = values.dropna()
+    if filtered.empty:
+        return 0
+    return filtered.std()
+
+def mad_no_fill(values):
+    filtered = values.dropna()
+    if filtered.empty:
+        return 0
+    median = filtered.median()
+    mad = np.median(np.abs(filtered - median))
+    return mad
+
 def process_interval(io_df, start, stop):
     mask = (io_df['Time'] >= start) & (io_df['Time'] <= stop)
     interval_df = io_df.loc[mask].copy()
@@ -43,28 +57,48 @@ def analyze_interval(interval_df):
 
     write_mean_total = 0
     write_median_total = 0
+    write_std_total = 0
+    write_mad_total = 0
+
     read_mean_total = 0
     read_median_total = 0
+    read_std_total = 0
+    read_mad_total = 0
 
     for col in write_keys + read_keys:
         series = interval_df[col]
         slopes = compute_slopes(times, series)
+
         mean_val = mean_with_zero_fill(slopes)
         median_val = median_no_fill(slopes)
+        std_val = std_no_fill(slopes)
+        mad_val = mad_no_fill(slopes)
+
         results[col + '_mean'] = mean_val
         results[col + '_median'] = median_val
+        results[col + '_std'] = std_val
+        results[col + '_mad'] = mad_val
 
         if col in write_keys:
             write_mean_total += mean_val
             write_median_total += median_val
+            write_std_total += std_val
+            write_mad_total += mad_val
         elif col in read_keys:
             read_mean_total += mean_val
             read_median_total += median_val
+            read_std_total += std_val
+            read_mad_total += mad_val
 
     results['write_mean'] = write_mean_total
     results['write_median'] = write_median_total
+    results['write_std'] = write_std_total
+    results['write_mad'] = write_mad_total
+
     results['read_mean'] = read_mean_total
     results['read_median'] = read_median_total
+    results['read_std'] = read_std_total
+    results['read_mad'] = read_mad_total
 
     return results
 

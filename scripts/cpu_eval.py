@@ -29,6 +29,20 @@ def median_no_fill(values):
         return 0
     return filtered.median()
 
+def std_no_fill(values):
+    filtered = values.dropna()
+    if filtered.empty:
+        return 0
+    return filtered.std()
+
+def mad_no_fill(values):
+    filtered = values.dropna()
+    if filtered.empty:
+        return 0
+    median = filtered.median()
+    mad = np.median(np.abs(filtered - median))
+    return mad
+
 def process_interval(cpu_df, start, stop):
     mask = (cpu_df['Time'] >= start) & (cpu_df['Time'] <= stop)
     interval_df = cpu_df.loc[mask].copy()
@@ -42,30 +56,50 @@ def analyze_interval(interval_df):
 
     stream_mean_total = 0
     stream_median_total = 0
+    stream_std_total = 0
+    stream_mad_total = 0
+
     ros2_mean_total = 0
     ros2_median_total = 0
+    ros2_std_total = 0
+    ros2_mad_total = 0
 
     for col in interval_df.columns:
         if col == 'Time':
             continue
         series = interval_df[col]
         slopes = compute_slopes(times, series)
+
         mean_val = mean_with_zero_fill(slopes)
         median_val = median_no_fill(slopes)
+        std_val = std_no_fill(slopes)
+        mad_val = mad_no_fill(slopes)
+
         results[col + '_mean'] = mean_val
         results[col + '_median'] = median_val
+        results[col + '_std'] = std_val
+        results[col + '_mad'] = mad_val
 
         if col in stream_keys:
             stream_mean_total += mean_val
             stream_median_total += median_val
+            stream_std_total += std_val
+            stream_mad_total += mad_val
         elif col in ros2_keys:
             ros2_mean_total += mean_val
             ros2_median_total += median_val
+            ros2_std_total += std_val
+            ros2_mad_total += mad_val
 
     results['stream/cpu_mean'] = stream_mean_total
     results['stream/cpu_median'] = stream_median_total
+    results['stream/cpu_std'] = stream_std_total
+    results['stream/cpu_mad'] = stream_mad_total
+
     results['ros2/cpu_mean'] = ros2_mean_total
     results['ros2/cpu_median'] = ros2_median_total
+    results['ros2/cpu_std'] = ros2_std_total
+    results['ros2/cpu_mad'] = ros2_mad_total
 
     return results
 

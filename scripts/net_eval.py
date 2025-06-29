@@ -52,9 +52,19 @@ def mean_no_fill(values):
 
 def median_no_fill(values):
     filtered = values.dropna()
+    return 0 if filtered.empty else filtered.median()
+
+def std_no_fill(values):
+    filtered = values.dropna()
+    return 0 if filtered.empty else filtered.std()
+
+def mad_no_fill(values):
+    filtered = values.dropna()
     if filtered.empty:
         return 0
-    return filtered.median()
+    median = filtered.median()
+    mad = np.median(np.abs(filtered - median))
+    return mad
 
 def process_interval(net_df, start, stop):
     mask = (net_df['Time'] >= start) & (net_df['Time'] <= stop)
@@ -67,30 +77,50 @@ def analyze_interval(interval_df):
 
     received_total_mean = 0
     received_total_median = 0
+    received_total_std = 0
+    received_total_mad = 0
+
     transmitted_total_mean = 0
     transmitted_total_median = 0
+    transmitted_total_std = 0
+    transmitted_total_mad = 0
 
     for col in interval_df.columns:
         if col == 'Time':
             continue
         series = interval_df[col]
         slopes = compute_slopes(times, series)
+
         mean_val = mean_no_fill(slopes)
         median_val = median_no_fill(slopes)
+        std_val = std_no_fill(slopes)
+        mad_val = mad_no_fill(slopes)
+
         results[col + '_mean'] = mean_val
         results[col + '_median'] = median_val
+        results[col + '_std'] = std_val
+        results[col + '_mad'] = mad_val
 
         if 'receivedBytes' in col:
             received_total_mean += mean_val
             received_total_median += median_val
+            received_total_std += std_val
+            received_total_mad += mad_val
         elif 'transmittedBytes' in col:
             transmitted_total_mean += mean_val
             transmitted_total_median += median_val
+            transmitted_total_std += std_val
+            transmitted_total_mad += mad_val
 
     results['received/mean'] = received_total_mean
     results['received/median'] = received_total_median
+    results['received/std'] = received_total_std
+    results['received/mad'] = received_total_mad
+
     results['transmitted/mean'] = transmitted_total_mean
     results['transmitted/median'] = transmitted_total_median
+    results['transmitted/std'] = transmitted_total_std
+    results['transmitted/mad'] = transmitted_total_mad
 
     return results
 

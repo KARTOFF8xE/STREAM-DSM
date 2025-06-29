@@ -17,25 +17,26 @@ def convert_to_bytes(val):
         except:
             return np.nan
     number, unit = match.groups()
-    number = float(number.replace(",","."))
+    number = float(number.replace(",", "."))
     unit = unit.upper()
-    factor = 1
-    if unit == "K":
-        factor = 1024
-    elif unit == "M":
-        factor = 1024**2
-    elif unit == "G":
-        factor = 1024**3
+    factor = {"": 1, "K": 1024, "M": 1024**2, "G": 1024**3}.get(unit, 1)
     return number * factor
+
+def compute_mad(series):
+    s = series.dropna()
+    if s.empty:
+        return 0
+    median = s.median()
+    mad = np.median(np.abs(s - median))
+    return mad
 
 def main(times_csv, input_csv, output_dir):
     times_df = pd.read_csv(times_csv, parse_dates=["start_time", "stop_time"])
     data_df = pd.read_csv(input_csv, parse_dates=["Time"])
 
     for col in data_df.columns:
-        if col == "Time":
-            continue
-        data_df[col] = data_df[col].apply(convert_to_bytes)
+        if col != "Time":
+            data_df[col] = data_df[col].apply(convert_to_bytes)
 
     col_groups = {}
     col_props = {}
@@ -64,22 +65,18 @@ def main(times_csv, input_csv, output_dir):
         stop = row.stop_time
 
         sub_df = data_df[(data_df["Time"] >= start) & (data_df["Time"] <= stop)]
-
-        # Datenframe für Mittelwerte vorbereiten (bereinigt)
         sub_df_clean = sub_df.drop(columns=["Time"], errors="ignore")
 
         means = sub_df_clean.mean(skipna=True)
-        # explizite Typkonvertierung verhindert FutureWarning
         medians = sub_df_clean.median(skipna=True).astype(float).fillna(0)
+        stds = sub_df_clean.std(skipna=True)
+        mads = sub_df_clean.apply(compute_mad)
 
-        group_mean = {"stream": {}, "ros2": {}, "db": {}}
-        group_median = {"stream": {}, "ros2": {}, "db": {}}
+        group_mean, group_median = {"stream": {}, "ros2": {}, "db": {}}, {"stream": {}, "ros2": {}, "db": {}}
+        group_std, group_mad = {"stream": {}, "ros2": {}, "db": {}}, {"stream": {}, "ros2": {}, "db": {}}
 
-        db_prop_vals_mean = {}
-        db_prop_vals_median = {}
-
-        stream_ros2_mean = {}
-        stream_ros2_median = {}
+        db_agg = {"mean": {}, "median": {}, "std": {}, "mad": {}}
+        sr_agg = {"mean": {}, "median": {}, "std": {}, "mad": {}}
 
         out = {"frequency": freq, "num_pairs": npairs}
 
@@ -90,52 +87,53 @@ def main(times_csv, input_csv, output_dir):
             prop = col_props.get(col)
             if group is None:
                 continue
+
             mean_val = means.get(col, 0)
             median_val = medians.get(col, 0)
+            std_val = stds.get(col, 0)
+            mad_val = mads.get(col, 0)
 
-            out[f"{col}_mean"] = mean_val if not pd.isna(mean_val) else 0
-            out[f"{col}_median"] = median_val if median_val is not None else 0
+            out[f"{col}_mean"] = 0 if pd.isna(mean_val) else mean_val
+            out[f"{col}_median"] = 0 if pd.isna(median_val) else median_val
+            out[f"{col}_std"] = 0 if pd.isna(std_val) else std_val
+            out[f"{col}_mad"] = 0 if pd.isna(mad_val) else mad_val
 
             if group == "db":
-                if prop not in db_prop_vals_mean:
-                    db_prop_vals_mean[prop] = 0
-                    db_prop_vals_median[prop] = 0
-                if not pd.isna(mean_val):
-                    db_prop_vals_mean[prop] += mean_val
-                if median_val is not None and not pd.isna(median_val):
-                    db_prop_vals_median[prop] += median_val
+                for key, val in [("mean", mean_val), ("median", median_val), ("std", std_val), ("mad", mad_val)]:
+                    if not pd.isna(val):
+                        db_agg[key][prop] = db_agg[key].get(prop, 0) + val
             else:
-                key_mean = (group, prop)
-                stream_ros2_mean[key_mean] = stream_ros2_mean.get(key_mean, 0) + (mean_val if not pd.isna(mean_val) else 0)
-                stream_ros2_median[key_mean] = stream_ros2_median.get(key_mean, 0) + (median_val if median_val is not None else 0)
+                for key, val in [("mean", mean_val), ("median", median_val), ("std", std_val), ("mad", mad_val)]:
+                    if not pd.isna(val):
+                        sr_agg[key][(group, prop)] = sr_agg[key].get((group, prop), 0) + val
 
-        for (group, prop), val in stream_ros2_mean.items():
-            group_mean[group][prop] = val
-        for (group, prop), val in stream_ros2_median.items():
-            group_median[group][prop] = val
-        for prop in db_prop_vals_mean:
-            group_mean["db"][prop] = db_prop_vals_mean[prop]
-        for prop in db_prop_vals_median:
-            group_median["db"][prop] = db_prop_vals_median[prop]
+        # Gruppierte Werte eintragen
+        for agg_dict, target in [(sr_agg["mean"], group_mean), (sr_agg["median"], group_median),
+                                 (sr_agg["std"], group_std), (sr_agg["mad"], group_mad)]:
+            for (group, prop), val in agg_dict.items():
+                target[group][prop] = val
+
+        for agg_dict, target in [(db_agg["mean"], group_mean), (db_agg["median"], group_median),
+                                 (db_agg["std"], group_std), (db_agg["mad"], group_mad)]:
+            for prop, val in agg_dict.items():
+                target["db"][prop] = val
 
         for group in ["stream", "ros2", "db"]:
-            for prop in sorted(set(list(group_mean[group].keys()) + list(group_median[group].keys()))):
-                mmean = group_mean[group].get(prop, 0)
-                mmedian = group_median[group].get(prop, 0)
-                out[f"{group}/{prop}_mean"] = mmean
-                out[f"{group}/{prop}_median"] = mmedian
+            props = set(group_mean[group]) | set(group_median[group]) | set(group_std[group]) | set(group_mad[group])
+            for prop in sorted(props):
+                out[f"{group}/{prop}_mean"] = group_mean[group].get(prop, 0)
+                out[f"{group}/{prop}_median"] = group_median[group].get(prop, 0)
+                out[f"{group}/{prop}_std"] = group_std[group].get(prop, 0)
+                out[f"{group}/{prop}_mad"] = group_mad[group].get(prop, 0)
 
         if ttype == "TRACE":
             trace_rows.append(out)
         else:
             base_rows.append(out)
 
-    trace_df = pd.DataFrame(trace_rows).sort_values(["frequency", "num_pairs"]).reset_index(drop=True)
-    base_df = pd.DataFrame(base_rows).sort_values(["frequency", "num_pairs"]).reset_index(drop=True)
-
     os.makedirs(output_dir, exist_ok=True)
-    trace_df.to_csv(os.path.join(output_dir, "ram_usage_trace.csv"), index=False)
-    base_df.to_csv(os.path.join(output_dir, "ram_usage_base.csv"), index=False)
+    pd.DataFrame(trace_rows).sort_values(["frequency", "num_pairs"]).to_csv(os.path.join(output_dir, "ram_usage_trace.csv"), index=False)
+    pd.DataFrame(base_rows).sort_values(["frequency", "num_pairs"]).to_csv(os.path.join(output_dir, "ram_usage_base.csv"), index=False)
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:

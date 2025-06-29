@@ -2,7 +2,7 @@ import os
 import sys
 import csv
 import numpy as np
-from scipy.stats import ttest_ind, mannwhitneyu
+from scipy.stats import ttest_ind, mannwhitneyu, shapiro
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -16,7 +16,6 @@ def parse_file(filepath):
 
 def collect_latencies(base_path):
     latencies = {}
-
     freqs = [f for f in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, f))]
     for freq in tqdm(freqs, desc="Frequencies"):
         freq_path = os.path.join(base_path, freq)
@@ -39,7 +38,7 @@ def collect_latencies(base_path):
                 lat_run = [
                     (received_dict[j] - send_dict[j]) / 1000  # ns → µs
                     for j in common_indices
-                    if (received_dict[j] - send_dict[j]) < 1_000_000  # Filter: <1s
+                    if (received_dict[j] - send_dict[j]) < 1_000_000
                 ]
                 all_latencies.extend(lat_run)
 
@@ -91,49 +90,63 @@ def main():
     print("Collecting BASE latencies...")
     lat_base = collect_latencies(base_path)
 
-    print("Available freq,n keys TRACE:", sorted(lat_trace.keys()))
-    print("Available freq,n keys BASE:", sorted(lat_base.keys()))
-
-    results = []
     all_keys = set(lat_trace.keys()) | set(lat_base.keys())
 
-    for key in all_keys:
-        freq, n = key
-        trace_vals = lat_trace.get(key, [])
-        base_vals = lat_base.get(key, [])
+    results_base = []
+    results_trace = []
 
-        if len(trace_vals) > 1 and len(base_vals) > 1:
-            # Neben t-Test auch Mann-Whitney U-Test für Robustheit
-            t_stat, p_val = ttest_ind(trace_vals, base_vals, equal_var=False)
-            mw_stat, mw_p_val = mannwhitneyu(trace_vals, base_vals, alternative='two-sided')
-            mean_trace = np.mean(trace_vals)
+    print("Führe Shapiro-Wilk-Tests durch...")
+
+    for key in tqdm(sorted(all_keys, key=lambda x: (try_float(x[0]), try_float(x[1]))), desc="Normalverteilungstest"):
+        freq, n = key
+
+        # BASE
+        base_vals = lat_base.get(key, [])
+        if len(base_vals) > 3:
+            _, p_base = shapiro(base_vals)
+            is_normal_base = int(p_base > 0.05)
             mean_base = np.mean(base_vals)
         else:
-            t_stat, p_val, mw_stat, mw_p_val = None, None, None, None
-            mean_trace = np.mean(trace_vals) if trace_vals else None
-            mean_base = np.mean(base_vals) if base_vals else None
+            p_base = ''
+            is_normal_base = ''
+            mean_base = ''
 
-        results.append([freq, n, mean_base, mean_trace, t_stat, p_val, mw_stat, mw_p_val])
+        results_base.append([
+            freq, n, mean_base, p_base, is_normal_base
+        ])
 
-    # Sortieren numerisch (Frequenz und n)
-    results.sort(key=lambda x: (try_float(x[0]), try_float(x[1])))
+        # TRACE
+        trace_vals = lat_trace.get(key, [])
+        if len(trace_vals) > 3:
+            _, p_trace = shapiro(trace_vals)
+            is_normal_trace = int(p_trace > 0.05)
+            mean_trace = np.mean(trace_vals)
+        else:
+            p_trace = ''
+            is_normal_trace = ''
+            mean_trace = ''
 
-    output_file = os.path.join(root_path, "significance_per_config.csv")
-    with open(output_file, 'w', newline='') as f:
+        results_trace.append([
+            freq, n, mean_trace, p_trace, is_normal_trace
+        ])
+
+    # CSV schreiben
+    base_file = os.path.join(root_path, "normaltest_base.csv")
+    trace_file = os.path.join(root_path, "normaltest_trace.csv")
+
+    with open(base_file, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['frequency', 'n', 'mean_base', 'mean_trace', 't_stat', 't_p_value', 'mw_stat', 'mw_p_value'])
-        writer.writerows(results)
+        writer.writerow(['frequency', 'n', 'mean_latency', 'shapiro_p_value', 'is_normal'])
+        writer.writerows(results_base)
 
-    print(f"Signifikanz-Ergebnisse in {output_file} gespeichert.")
+    with open(trace_file, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['frequency', 'n', 'mean_latency', 'shapiro_p_value', 'is_normal'])
+        writer.writerows(results_trace)
 
-    # Beispiel-Visualisierungen — passe hier an, welche freq/n du sehen willst:
-    # Nutze echte Strings der Ordner, z.B. "10.0", "3" usw.
-    to_visualize = [
-        ("10.0", "3"),
-        ("20.0", "1"),
-    ]
-    for freq, n in to_visualize:
-        visualize_distribution(lat_trace, lat_base, freq, n)
+    print(f"BASE-Ergebnisse gespeichert in: {base_file}")
+    print(f"TRACE-Ergebnisse gespeichert in: {trace_file}")
+
 
 
 if __name__ == "__main__":
