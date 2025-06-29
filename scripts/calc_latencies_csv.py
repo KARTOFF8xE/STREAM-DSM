@@ -52,16 +52,39 @@ def process_directory(root_path):
                 ])
 
             if latencies:
-                median_latency = round(np.median(latencies) / 1000, 2)
-                mean_latency = round(np.mean(latencies) / 1000, 2)
-                results.append((f, n, median_latency, mean_latency))
+                latencies_ms = [x / 1000 for x in latencies]
+                median = np.median(latencies_ms)
+                mean = np.mean(latencies_ms)
+                var = np.var(latencies_ms)
+                std = np.std(latencies_ms)
+                mad = np.median([abs(x - median) for x in latencies_ms])
+                mav = np.median([(x - median) ** 2 for x in latencies_ms])
+
+                results.append((
+                    f, n,
+                    round(median, 2),
+                    round(mean, 2),
+                    round(var, 2),
+                    round(std, 2),
+                    round(mad, 2),
+                    round(mav, 2)
+                ))
 
     return results
 
 def write_csv(results, output_file):
     with open(output_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['frequency', 'n', 'median', 'mean'])
+        writer.writerow([
+            'frequency',
+            'n',
+            'median',
+            'mean',
+            'variance',
+            'std_dev',
+            'mad',
+            'mav'
+        ])
         for row in results:
             writer.writerow(row)
 

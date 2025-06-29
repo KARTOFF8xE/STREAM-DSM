@@ -85,7 +85,6 @@ def main(times_path, io_path, out_dir):
 
         interval_df = process_interval(io_df, start, stop)
         if interval_df.empty:
-            # Optional: handle leere Intervalle, z.B. mit 0 füllen oder überspringen
             continue
 
         stats = analyze_interval(interval_df)

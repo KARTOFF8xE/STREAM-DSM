@@ -37,6 +37,7 @@ RUN apt install lttng-tools liblttng-ust-dev liblttng-ctl-dev babeltrace2 -y
 RUN apt install python3-babeltrace python3-lttng python3-pytest-cov -y
 
 # Babeltrace
+RUN apt install wget -y
 ARG filename=babeltrace2-2.0.6.tar.bz2
 RUN wget https://www.efficios.com/files/babeltrace/${filename}
 RUN tar -xvjf ${filename}
