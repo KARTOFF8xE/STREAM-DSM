@@ -40,7 +40,8 @@
 
 ## Observe
 * [grafana](http://localhost:3000/)
-* [neo4j](http://localhost:7474/)
+* [neo4j](http://localhost:7474/) (UN: neo4j PW: 123456789)
+* [influxdb](http://localhost:8086/) (UN: KARTOFF8xE PW: 123456789)
 
 
 
