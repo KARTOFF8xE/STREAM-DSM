@@ -1,6 +1,5 @@
 services:
   devcontainer:
-    network_mode: "host"
     build:
       context: .
       dockerfile: Dockerfile
@@ -14,7 +13,6 @@ services:
       - influxdb
 
   neo4j:
-    network_mode: "host"
     image: neo4j:5.26.1
     restart: always
     ports:
@@ -27,7 +25,6 @@ services:
       - NEO4J_dbms_security_procedures_allowlist=apoc.*
 
   influxdb:
-    network_mode: "host"
     image: influxdb:2.7.11
     ports:
       - "8086:8086"
@@ -40,7 +37,6 @@ services:
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: WVvSEEbHPqeMFpcgWqThaEcU6u6SWJ-L26ct4oRuEJmKdMOk-ZG8XlKA5xcitJXENa2r2YNLNwxjE6-KKkx8xw==
 
   cadvisor:
-    network_mode: "host"
     image: gcr.io/cadvisor/cadvisor:latest
     ports:
       - "8080:8080"
@@ -52,7 +48,6 @@ services:
     restart: always
 
   prometheus:
-    network_mode: "host"
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
@@ -66,7 +61,6 @@ services:
       - cadvisor
 
   grafana:
-    network_mode: "host"
     image: grafana/grafana:latest
     ports:
       - "3000:3000"

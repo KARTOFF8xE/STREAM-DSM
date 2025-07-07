@@ -48,7 +48,7 @@ def process_directory(root_path):
                 latencies.extend([
                     received_dict[j] - send_dict[j]
                     for j in common_indices
-                    if (received_dict[j] - send_dict[j]) < 1_000_000
+                    # if (received_dict[j] - send_dict[j]) < 1_000_000
                 ])
 
             if latencies:
