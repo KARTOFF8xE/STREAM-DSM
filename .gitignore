@@ -15,3 +15,9 @@ handle_debug.log
 latencies.dat
 send.txt
 received.txt
+latencies.txt
+output.csv
+latencies/*
+!latencies/.keep
+performance_ws
+performanceTest

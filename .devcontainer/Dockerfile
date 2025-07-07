@@ -2,16 +2,6 @@ FROM osrf/ros:rolling-desktop AS rollyrolling
 WORKDIR /usr/local/app
 ARG USERNAME=ubuntu
 
-# # non-root user support
-# RUN apt install sudo -y
-# ARG USERNAME=Georg
-# ARG USER_UID=1001
-# ARG USER_GID=$USER_UID
-
-# # RUN groupadd --gid $USER_GID $USERNAME
-# RUN getent group $USER_GID || groupadd --gid $USER_GID $USERNAME
-# RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
-
 RUN set -x && \
   echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
   chmod 0440 /etc/sudoers.d/$USERNAME
@@ -47,6 +37,7 @@ RUN apt install lttng-tools liblttng-ust-dev liblttng-ctl-dev babeltrace2 -y
 RUN apt install python3-babeltrace python3-lttng python3-pytest-cov -y
 
 # Babeltrace
+RUN apt install wget -y
 ARG filename=babeltrace2-2.0.6.tar.bz2
 RUN wget https://www.efficios.com/files/babeltrace/${filename}
 RUN tar -xvjf ${filename}
@@ -77,7 +68,6 @@ RUN wget https://github.com/ncabatoff/process-exporter/releases/download/v0.7.7/
  && tar -xzf /tmp/process-exporter.tar.gz -C /usr/local/bin --strip-components=1 process-exporter-0.7.7.linux-amd64/process-exporter \
  && rm /tmp/process-exporter.tar.gz
 COPY configs/process-exporter.yml /etc/process-exporter.yml
-# RUN apt-get install -y tini
 
 # other stuff
 RUN apt install nano -y
@@ -88,11 +78,6 @@ RUN apt install htop -y
 RUN apt install gdb -y
 RUN apt install python3-requests -y
 RUN apt update && apt upgrade -y
-
-# # set user
-# USER $USERNAME
-# WORKDIR /home/$USERNAME
-
 
 USER $USERNAME
 WORKDIR /home/$USERNAME

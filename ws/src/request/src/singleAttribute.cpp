@@ -20,7 +20,7 @@ int main() {
   requestId_t requestId;
   SingleAttributesRequest request {
     .attribute = PUBLISHINGRATES,
-    .direction = Direction::EDGEOUTGOING,
+    .direction = Direction::EDGEINCOMING,
     .continuous = true,
   };
   util::parseString(request.primaryKey, pKey);

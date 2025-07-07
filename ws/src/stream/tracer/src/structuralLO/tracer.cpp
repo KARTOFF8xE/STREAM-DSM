@@ -80,7 +80,8 @@ int main() {
     std::cout << "LTTng session created successfully." << std::endl;
 
     lttng_domain lttngDomain {
-        .type       = lttng_domain_type::LTTNG_DOMAIN_UST
+        .type       = lttng_domain_type::LTTNG_DOMAIN_UST,
+        .buf_type   = LTTNG_BUFFER_PER_UID,
     };
     lttng_handle *lttngHandle = lttng_create_handle("structuralSession", &lttngDomain);
 

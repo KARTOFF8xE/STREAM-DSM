@@ -14,3 +14,6 @@ process_names:
   - name: "structural"
     cmdline:
       - "/lib/tracer/structural"
+  - name: "requests"
+    cmdline:
+      - "request"
