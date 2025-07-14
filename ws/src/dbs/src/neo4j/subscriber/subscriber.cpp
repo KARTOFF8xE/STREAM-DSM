@@ -11,7 +11,7 @@ namespace subscriber {
             {{
                 "statements":
                     [
-                        {{ "statement": "MATCH (n:Active {{handle: $node_handle}}) MERGE (t:Passive {{name: $name}}) ON CREATE SET t.primaryKey=randomUUID() MERGE (n)<-[s:subscribing]-(t) ON CREATE SET s.primaryKey=randomUUID() SET s.active=true RETURN {{node_id: n.primaryKey, edge_id: s.primaryKey, topic_id: t.primaryKey}} AS row ",
+                        {{ "statement": "MATCH (n:Active {{handle: $node_handle}}) WITH n MERGE (t:Passive {{name: $name}}) ON CREATE SET t.primaryKey=randomUUID() MERGE (n)<-[s:subscribing]-(t) ON CREATE SET s.primaryKey=randomUUID() SET s.active=true RETURN {{node_id: n.primaryKey, edge_id: s.primaryKey, topic_id: t.primaryKey}} AS row ",
                         "parameters": {{
                             "name": "{}",
                             "node_handle": {}
